@@ -1,0 +1,218 @@
+<x-app-layout>
+    <x-slot name="header">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="font-semibold text-2xl text-secondary leading-tight">
+                    {{ trans('messages.Trip Details') }} #{{ $trip->id }}
+                </h2>
+                <p class="text-sm text-gray-500 mt-1">
+                    {{ trans('messages.تفاصيل الرحلة') }}
+                </p>
+            </div>
+            <div class="flex items-center gap-3">
+                @if($trip->status === 'active')
+                    <form action="{{ route('admin.trips.complete', $trip) }}" method="POST" class="inline-block">
+                        @csrf
+                        <button type="submit" class="px-4 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-lg hover:bg-emerald-600"
+                                onclick="return confirm('{{ trans('messages.هل أنت متأكد من إنهاء هذه الرحلة؟') }}')">
+                            {{ trans('messages.Complete Trip') }}
+                        </button>
+                    </form>
+                @endif
+                <a href="{{ route('admin.trips.edit', $trip) }}"
+                   class="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
+                    {{ trans('messages.تعديل') }}
+                </a>
+                <a href="{{ route('admin.trips.index') }}"
+                   class="text-sm text-gray-600 hover:text-secondary">
+                    {{ trans('messages.رجوع') }}
+                </a>
+            </div>
+        </div>
+    </x-slot>
+
+    <div class="py-6">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+            @if (session('status'))
+                <div class="rounded-lg bg-emerald-50 text-emerald-700 px-4 py-3 text-sm">
+                    {{ session('status') }}
+                </div>
+            @endif
+
+            @if (session('error'))
+                <div class="rounded-lg bg-red-50 text-red-700 px-4 py-3 text-sm">
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            <!-- Trip Info Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                    <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Status') }}</div>
+                    @php
+                        $statusColors = [
+                            'active' => 'bg-blue-50 text-blue-700',
+                            'completed' => 'bg-emerald-50 text-emerald-700',
+                            'cancelled' => 'bg-red-50 text-red-700',
+                        ];
+                    @endphp
+                    <div>
+                        <span class="inline-flex px-3 py-1 rounded-full text-sm font-medium {{ $statusColors[$trip->status] ?? 'bg-gray-100 text-gray-700' }}">
+                            {{ ucfirst($trip->status) }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                    <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Duration') }}</div>
+                    <div class="text-2xl font-bold text-secondary">
+                        @if($trip->duration_minutes)
+                            {{ $trip->duration_minutes }} {{ trans('messages.min') }}
+                        @else
+                            <span class="text-gray-400">-</span>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                    <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Total Cost') }}</div>
+                    <div class="text-2xl font-bold text-emerald-600">
+                        {{ number_format($trip->cost, 2) }} {{ trans('messages.EGP') }}
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                    <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Zone Exit') }}</div>
+                    <div>
+                        @if($trip->zone_exit_detected)
+                            <span class="inline-flex px-3 py-1 rounded-full text-sm font-medium bg-rose-50 text-rose-700">
+                                {{ trans('messages.Detected') }}
+                            </span>
+                        @else
+                            <span class="inline-flex px-3 py-1 rounded-full text-sm font-medium bg-emerald-50 text-emerald-700">
+                                {{ trans('messages.No') }}
+                            </span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trip Details -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 class="text-sm font-semibold text-secondary mb-4">{{ trans('messages.Trip Information') }}</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">{{ trans('messages.User') }}</div>
+                        <div class="font-semibold text-secondary">
+                            <a href="{{ route('admin.users.show', $trip->user) }}" class="hover:text-primary">
+                                {{ $trip->user->name }}
+                            </a>
+                        </div>
+                        <div class="text-xs text-gray-500">{{ $trip->user->email }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Scooter') }}</div>
+                        <div class="font-semibold text-secondary">
+                            <a href="{{ route('admin.scooters.show', $trip->scooter) }}" class="hover:text-primary">
+                                {{ $trip->scooter->code }}
+                            </a>
+                        </div>
+                        <div class="text-xs text-gray-500">Battery: {{ $trip->scooter->battery_percentage }}%</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Start Time') }}</div>
+                        <div class="text-gray-700">{{ $trip->start_time->format('Y-m-d H:i:s') }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">{{ trans('messages.End Time') }}</div>
+                        <div class="text-gray-700">
+                            {{ $trip->end_time ? $trip->end_time->format('Y-m-d H:i:s') : '-' }}
+                        </div>
+                    </div>
+                    @if($trip->start_latitude && $trip->start_longitude)
+                        <div>
+                            <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Start Location') }}</div>
+                            <div class="text-gray-700 font-mono text-xs">
+                                {{ $trip->start_latitude }}, {{ $trip->start_longitude }}
+                            </div>
+                        </div>
+                    @endif
+                    @if($trip->end_latitude && $trip->end_longitude)
+                        <div>
+                            <div class="text-xs text-gray-500 mb-1">{{ trans('messages.End Location') }}</div>
+                            <div class="text-gray-700 font-mono text-xs">
+                                {{ $trip->end_latitude }}, {{ $trip->end_longitude }}
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Cost Breakdown -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 class="text-sm font-semibold text-secondary mb-4">{{ trans('messages.Cost Breakdown') }}</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Base Cost') }}</div>
+                        <div class="font-semibold text-secondary">{{ number_format($trip->base_cost, 2) }} {{ trans('messages.EGP') }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Discount') }}</div>
+                        <div class="font-semibold text-emerald-600">-{{ number_format($trip->discount_amount, 2) }} {{ trans('messages.EGP') }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Penalty') }}</div>
+                        <div class="font-semibold text-red-600">+{{ number_format($trip->penalty_amount, 2) }} {{ trans('messages.EGP') }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Total') }}</div>
+                        <div class="text-lg font-bold text-secondary">{{ number_format($trip->cost, 2) }} {{ trans('messages.EGP') }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zone Exit Details -->
+            @if($trip->zone_exit_detected)
+                <div class="bg-rose-50 rounded-xl shadow-sm border border-rose-200 p-6">
+                    <h3 class="text-sm font-semibold text-rose-700 mb-2">{{ trans('messages.Zone Exit Detected') }}</h3>
+                    <div class="text-xs text-rose-600">
+                        @if($trip->zone_exit_details)
+                            {{ $trip->zone_exit_details }}
+                        @else
+                            {{ trans('messages.User exited the allowed zone during this trip.') }}
+                        @endif
+                    </div>
+                </div>
+            @endif
+
+            <!-- Coupon & Penalty -->
+            @if($trip->coupon || $trip->penalty)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="text-sm font-semibold text-secondary mb-4">{{ trans('messages.Related Items') }}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        @if($trip->coupon)
+                            <div>
+                                <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Coupon Used') }}</div>
+                                <div class="font-semibold text-secondary">{{ $trip->coupon->code ?? 'N/A' }}</div>
+                            </div>
+                        @endif
+                        @if($trip->penalty)
+                            <div>
+                                <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Penalty Applied') }}</div>
+                                <div class="font-semibold text-red-600">{{ $trip->penalty->type ?? 'N/A' }}</div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endif
+
+            @if($trip->notes)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="text-sm font-semibold text-secondary mb-2">{{ trans('messages.Notes') }}</h3>
+                    <div class="text-sm text-gray-700">{{ $trip->notes }}</div>
+                </div>
+            @endif
+        </div>
+    </div>
+</x-app-layout>
+

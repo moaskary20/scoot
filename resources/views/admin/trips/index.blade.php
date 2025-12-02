@@ -1,0 +1,160 @@
+<x-app-layout>
+    <x-slot name="header">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="font-semibold text-2xl text-secondary leading-tight">
+                    {{ trans('messages.Trips Management') }}
+                </h2>
+                <p class="text-sm text-gray-500 mt-1">
+                    {{ trans('messages.إدارة جميع الرحلات في النظام') }}
+                </p>
+            </div>
+            <a href="{{ route('admin.trips.create') }}"
+               class="inline-flex items-center px-4 py-2 bg-primary text-secondary text-sm font-semibold rounded-lg shadow-sm hover:bg-yellow-400 transition">
+                +
+                <span class="ml-2">{{ trans('messages.بدء رحلة جديدة') }}</span>
+            </a>
+        </div>
+    </x-slot>
+
+    <div class="py-6">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            @if (session('status'))
+                <div class="mb-4 rounded-lg bg-emerald-50 text-emerald-700 px-4 py-3 text-sm">
+                    {{ session('status') }}
+                </div>
+            @endif
+
+            <!-- Filters -->
+            <div class="mb-6 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                <form method="GET" action="{{ route('admin.trips.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Status') }}</label>
+                        <select name="status" class="w-full text-sm rounded-lg border-gray-300">
+                            <option value="">{{ trans('messages.All') }}</option>
+                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>{{ trans('messages.Active') }}</option>
+                            <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>{{ trans('messages.Completed') }}</option>
+                            <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>{{ trans('messages.Cancelled') }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Zone Exit') }}</label>
+                        <select name="zone_exit" class="w-full text-sm rounded-lg border-gray-300">
+                            <option value="">{{ trans('messages.All') }}</option>
+                            <option value="1" {{ request('zone_exit') === '1' ? 'selected' : '' }}>{{ trans('messages.Yes') }}</option>
+                            <option value="0" {{ request('zone_exit') === '0' ? 'selected' : '' }}>{{ trans('messages.No') }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Date From') }}</label>
+                        <input type="date" name="date_from" value="{{ request('date_from') }}" class="w-full text-sm rounded-lg border-gray-300">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Date To') }}</label>
+                        <input type="date" name="date_to" value="{{ request('date_to') }}" class="w-full text-sm rounded-lg border-gray-300">
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" class="w-full px-4 py-2 bg-primary text-secondary text-sm font-semibold rounded-lg hover:bg-yellow-400">
+                            {{ trans('messages.Filter') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200 text-sm" dir="rtl">
+                    <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Users') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Scooters') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Start Time') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Duration') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Cost') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Status') }}</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Actions') }}</th>
+                    </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-100">
+                    @forelse($trips as $trip)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-gray-500 text-xs text-right">
+                                {{ $trip->id }}
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <div class="font-semibold text-secondary">{{ $trip->user->name }}</div>
+                                <div class="text-xs text-gray-500">{{ $trip->user->email }}</div>
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <span class="font-semibold text-secondary">{{ $trip->scooter->code }}</span>
+                            </td>
+                            <td class="px-4 py-3 text-xs text-gray-600 text-right">
+                                {{ $trip->start_time->format('Y-m-d H:i') }}
+                            </td>
+                            <td class="px-4 py-3 text-xs text-gray-600 text-right">
+                                @if($trip->duration_minutes)
+                                    {{ $trip->duration_minutes }} {{ trans('messages.Minutes') }}
+                                @else
+                                    <span class="text-gray-400">-</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <span class="font-semibold text-emerald-600">
+                                    {{ number_format($trip->cost, 2) }} {{ trans('messages.EGP') }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                @php
+                                    $statusColors = [
+                                        'active' => 'bg-blue-50 text-blue-700',
+                                        'completed' => 'bg-emerald-50 text-emerald-700',
+                                        'cancelled' => 'bg-red-50 text-red-700',
+                                    ];
+                                @endphp
+                                <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium {{ $statusColors[$trip->status] ?? 'bg-gray-100 text-gray-700' }}">
+                                    {{ trans('messages.' . ucfirst($trip->status)) }}
+                                </span>
+                                @if($trip->zone_exit_detected)
+                                    <div class="mt-1">
+                                        <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium bg-rose-50 text-rose-700">
+                                            {{ trans('messages.Zone Exit') }}
+                                        </span>
+                                    </div>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-left">
+                                <div class="flex items-center gap-2">
+                                    <a href="{{ route('admin.trips.show', $trip) }}"
+                                       class="text-xs text-gray-600 hover:text-secondary">
+                                        {{ trans('messages.View') }}
+                                    </a>
+                                    @if($trip->status === 'active')
+                                        <form action="{{ route('admin.trips.cancel', $trip) }}" method="POST" class="inline-block">
+                                            @csrf
+                                            <button type="submit" class="text-xs text-red-500 hover:text-red-600"
+                                                    onclick="return confirm('{{ trans('messages.هل أنت متأكد من إلغاء هذه الرحلة؟') }}')">
+                                                {{ trans('messages.Cancel') }}
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="px-4 py-6 text-center text-sm text-gray-500" dir="rtl">
+                                {{ trans('messages.No trips found') }}
+                            </td>
+                        </tr>
+                    @endforelse
+                    </tbody>
+                </table>
+
+                <div class="px-4 py-3 border-t border-gray-100">
+                    {{ $trips->links() }}
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
+

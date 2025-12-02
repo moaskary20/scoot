@@ -30,40 +30,48 @@ return new class extends Migration
         }
         
         // إضافة foreign keys بعد إنشاء جميع الجداول
-        Schema::table('trips', function (Blueprint $table) {
-            // التحقق من وجود foreign key قبل إضافتها
-            $foreignKeys = Schema::getConnection()
-                ->getDoctrineSchemaManager()
-                ->listTableForeignKeys('trips');
-            
-            $hasCouponFK = false;
-            $hasPenaltyFK = false;
-            
-            foreach ($foreignKeys as $foreignKey) {
-                if ($foreignKey->getColumns()[0] === 'coupon_id') {
-                    $hasCouponFK = true;
-                }
-                if ($foreignKey->getColumns()[0] === 'penalty_id') {
-                    $hasPenaltyFK = true;
-                }
+        // استخدام try-catch لتجنب الأخطاء إذا كانت foreign keys موجودة بالفعل
+        try {
+            if (Schema::hasTable('coupons') && Schema::hasColumn('trips', 'coupon_id')) {
+                Schema::table('trips', function (Blueprint $table) {
+                    // محاولة إسقاط foreign key القديم إذا كان موجوداً
+                    try {
+                        $table->dropForeign(['trips_coupon_id_foreign']);
+                    } catch (\Exception $e) {
+                        // تجاهل الخطأ إذا لم يكن موجوداً
+                    }
+                    
+                    // إضافة foreign key للكوبونات
+                    $table->foreign('coupon_id')
+                        ->references('id')
+                        ->on('coupons')
+                        ->onDelete('set null');
+                });
             }
-            
-            // إضافة foreign key للكوبونات (بعد إنشاء coupons table)
-            if (!$hasCouponFK && Schema::hasTable('coupons')) {
-                $table->foreign('coupon_id')
-                    ->references('id')
-                    ->on('coupons')
-                    ->onDelete('set null');
+        } catch (\Exception $e) {
+            // تجاهل الخطأ إذا كانت foreign key موجودة بالفعل
+        }
+        
+        try {
+            if (Schema::hasTable('penalties') && Schema::hasColumn('trips', 'penalty_id')) {
+                Schema::table('trips', function (Blueprint $table) {
+                    // محاولة إسقاط foreign key القديم إذا كان موجوداً
+                    try {
+                        $table->dropForeign(['trips_penalty_id_foreign']);
+                    } catch (\Exception $e) {
+                        // تجاهل الخطأ إذا لم يكن موجوداً
+                    }
+                    
+                    // إضافة foreign key للغرامات
+                    $table->foreign('penalty_id')
+                        ->references('id')
+                        ->on('penalties')
+                        ->onDelete('set null');
+                });
             }
-            
-            // إضافة foreign key للغرامات (بعد إنشاء penalties table)
-            if (!$hasPenaltyFK && Schema::hasTable('penalties')) {
-                $table->foreign('penalty_id')
-                    ->references('id')
-                    ->on('penalties')
-                    ->onDelete('set null');
-            }
-        });
+        } catch (\Exception $e) {
+            // تجاهل الخطأ إذا كانت foreign key موجودة بالفعل
+        }
     }
 
     /**

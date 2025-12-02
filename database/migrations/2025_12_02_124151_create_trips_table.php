@@ -11,6 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // إذا كان الجدول موجوداً بالفعل، نتخطى الإنشاء
+        if (Schema::hasTable('trips')) {
+            return;
+        }
+        
         Schema::create('trips', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');

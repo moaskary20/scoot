@@ -38,8 +38,8 @@ return new class extends Migration
             $table->boolean('zone_exit_detected')->default(false); // كشف خروج من المنطقة
             $table->text('zone_exit_details')->nullable(); // تفاصيل الخروج من المنطقة
             
-            $table->foreignId('coupon_id')->nullable()->constrained()->onDelete('set null'); // الكوبون المستخدم
-            $table->foreignId('penalty_id')->nullable()->constrained()->onDelete('set null'); // الغرامة المرتبطة
+            $table->unsignedBigInteger('coupon_id')->nullable(); // الكوبون المستخدم (سيتم إضافة foreign key لاحقاً)
+            $table->unsignedBigInteger('penalty_id')->nullable(); // الغرامة المرتبطة (سيتم إضافة foreign key لاحقاً)
             
             $table->text('notes')->nullable(); // ملاحظات إضافية
             

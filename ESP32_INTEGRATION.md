@@ -1,10 +1,21 @@
 # ESP32 Integration Guide
 ## دليل ربط ESP32 مع Laravel Backend
 
-## نظرة عامة
-تم إنشاء نظام متكامل للتحكم في السكوترات من خلال ESP32 يتصل مع Laravel Backend لإرسال واستقبال البيانات والأوامر.
+## ⚠️ ملاحظة مهمة
+**تم استبدال API بـ WebSocket!** 
 
-## API Endpoints في Laravel
+يرجى الرجوع إلى [ESP32_WEBSOCKET_GUIDE.md](./ESP32_WEBSOCKET_GUIDE.md) للحصول على دليل WebSocket الكامل.
+
+## نظرة عامة
+تم إنشاء نظام متكامل للتحكم في السكوترات من خلال ESP32 يتصل مع Laravel Backend عبر WebSocket لإرسال واستقبال البيانات والأوامر في الوقت الفعلي.
+
+## WebSocket Integration
+
+النظام يستخدم الآن WebSocket بدلاً من REST API لتحسين الأداء والاستجابة الفورية.
+
+---
+
+## ~~API Endpoints في Laravel~~ (مهمل - تم استبداله بـ WebSocket)
 
 ### 1. Authentication
 ```

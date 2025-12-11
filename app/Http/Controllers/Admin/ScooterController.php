@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Scooter;
 use App\Repositories\ScooterLogRepository;
 use App\Repositories\ScooterRepository;
+use App\Services\WebSocketService;
 use Illuminate\Http\Request;
 
 class ScooterController extends Controller
@@ -13,6 +14,7 @@ class ScooterController extends Controller
     public function __construct(
         private readonly ScooterRepository $repository,
         private readonly ScooterLogRepository $logRepository,
+        private readonly WebSocketService $webSocketService,
     ) {
         //
     }
@@ -150,6 +152,11 @@ class ScooterController extends Controller
         $this->repository->lock($scooter);
         $this->logRepository->logManualLock($scooter, auth()->id(), true);
 
+        // Send command via WebSocket
+        if ($scooter->device_imei) {
+            $this->webSocketService->sendCommandToScooter($scooter, ['lock' => true, 'unlock' => false]);
+        }
+
         return redirect()
             ->route('admin.scooters.show', $scooter)
             ->with('status', __('Scooter locked successfully.'));
@@ -162,6 +169,11 @@ class ScooterController extends Controller
     {
         $this->repository->unlock($scooter);
         $this->logRepository->logManualLock($scooter, auth()->id(), false);
+
+        // Send command via WebSocket
+        if ($scooter->device_imei) {
+            $this->webSocketService->sendCommandToScooter($scooter, ['lock' => false, 'unlock' => true]);
+        }
 
         return redirect()
             ->route('admin.scooters.show', $scooter)

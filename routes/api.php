@@ -1,28 +1,19 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\ScooterApiController;
+use App\Http\Controllers\WebSocket\ScooterWebSocketController;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes for ESP32 Scooter Control
+| WebSocket Routes for ESP32 Scooter Control
 |--------------------------------------------------------------------------
+| 
+| Note: For full WebSocket functionality, use Laravel Reverb WebSocket server.
+| This endpoint provides HTTP fallback for compatibility.
 */
 
 Route::prefix('v1/scooter')->group(function () {
-    // Authentication by IMEI
-    Route::post('authenticate', [ScooterApiController::class, 'authenticate']);
-    
-    // Update GPS location and battery
-    Route::post('update-location', [ScooterApiController::class, 'updateLocation']);
-    
-    // Update lock status
-    Route::post('update-lock-status', [ScooterApiController::class, 'updateLockStatus']);
-    
-    // Get commands (lock/unlock)
-    Route::post('get-commands', [ScooterApiController::class, 'getCommands']);
-    
-    // Update battery only
-    Route::post('update-battery', [ScooterApiController::class, 'updateBattery']);
+    // WebSocket message handler (HTTP fallback)
+    Route::post('message', [ScooterWebSocketController::class, 'handleMessage']);
 });
 

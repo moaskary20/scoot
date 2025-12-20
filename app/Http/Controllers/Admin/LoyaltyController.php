@@ -60,7 +60,7 @@ class LoyaltyController extends Controller
 
         return redirect()
             ->route('admin.loyalty.settings')
-            ->with('status', __('Loyalty settings updated successfully.'));
+            ->with('status', trans('messages.Loyalty settings updated successfully.'));
     }
 
     public function addPoints(Request $request, User $user)

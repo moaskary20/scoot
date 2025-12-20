@@ -33,7 +33,7 @@ class PermissionController extends Controller
 
         return redirect()
             ->route('admin.permissions.index')
-            ->with('status', __('Permission created successfully.'));
+            ->with('status', trans('messages.Permission created successfully.'));
     }
 
     public function show(Permission $permission)
@@ -61,7 +61,7 @@ class PermissionController extends Controller
 
         return redirect()
             ->route('admin.permissions.show', $permission)
-            ->with('status', __('Permission updated successfully.'));
+            ->with('status', trans('messages.Permission updated successfully.'));
     }
 
     public function destroy(Permission $permission)
@@ -71,6 +71,6 @@ class PermissionController extends Controller
 
         return redirect()
             ->route('admin.permissions.index')
-            ->with('status', __('Permission deleted successfully.'));
+            ->with('status', trans('messages.Permission deleted successfully.'));
     }
 }

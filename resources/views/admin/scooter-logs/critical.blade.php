@@ -6,12 +6,12 @@
                     {{ trans('messages.Critical Alerts') }}
                 </h2>
                 <p class="text-sm text-gray-500 mt-1">
-                    {{ trans('messages.تنبيهات حرجة تتطلب تدخل فوري') }}
+                    {{ trans('messages.Critical alerts requiring immediate intervention') }}
                 </p>
             </div>
             <a href="{{ route('admin.scooter-logs.index') }}"
                class="text-sm text-gray-600 hover:text-secondary">
-                {{ trans('messages.جميع السجلات') }}
+                {{ trans('messages.All Logs') }}
             </a>
         </div>
     </x-slot>

@@ -1,0 +1,57 @@
+==========================================
+  معلومات الاتصال لـ ESP32
+==========================================
+
+🌐 الدومين:
+https://linerscoot.com
+
+📡 WebSocket URL (للإنتاج):
+wss://linerscoot.com:8080/app/m1k6cr5egrbe0p2eycaw
+
+📡 WebSocket URL (للتطوير):
+ws://localhost:8080/app/m1k6cr5egrbe0p2eycaw
+
+🌐 HTTP Endpoint (للإنتاج):
+POST https://linerscoot.com/api/v1/scooter/message
+
+🌐 HTTP Endpoint (للتطوير):
+POST http://localhost:8000/api/v1/scooter/message
+
+🔑 App Key:
+m1k6cr5egrbe0p2eycaw
+
+🆔 App ID:
+318253
+
+📺 Channel للاشتراك:
+scooter.{YOUR_IMEI}
+
+==========================================
+  مثال الكود (للإنتاج):
+==========================================
+
+// WebSocket
+const char* wsServer = "linerscoot.com";
+const int wsPort = 8080;
+const char* wsPath = "/app/m1k6cr5egrbe0p2eycaw";
+
+// HTTP
+const char* httpServer = "https://linerscoot.com";
+
+String imei = "YOUR_IMEI";
+
+// استخدام SSL
+webSocket.beginSSL(wsServer, wsPort, wsPath);
+http.begin(client, httpServer + "/api/v1/scooter/message");
+
+==========================================
+  ملاحظات مهمة:
+==========================================
+
+1. IMEI يجب أن يكون مطابقاً لقاعدة البيانات
+2. في الإنتاج استخدم wss:// و https://
+3. تأكد من فتح المنافذ 8080 و 443 في Firewall
+4. أرسل update-location كل 5-10 ثواني
+
+==========================================
+

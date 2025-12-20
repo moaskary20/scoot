@@ -27,11 +27,11 @@
                     <div class="mt-6 flex items-center justify-end gap-3">
                         <a href="{{ route('admin.subscriptions.index') }}"
                            class="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
-                            {{ trans('messages.إلغاء') }}
+                            {{ trans('messages.Cancel') }}
                         </a>
                         <button type="submit"
                                 class="px-4 py-2 bg-primary text-secondary text-sm font-semibold rounded-lg shadow-sm hover:bg-yellow-400 transition">
-                            {{ trans('messages.حفظ') }}
+                            {{ trans('messages.Save') }}
                         </button>
                     </div>
                 </form>

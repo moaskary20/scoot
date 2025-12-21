@@ -147,15 +147,6 @@
                         <a href="{{ route('dashboard') }}" class="btn-primary px-4 py-2 font-semibold rounded-lg">
                             لوحة التحكم
                         </a>
-                    @else
-                        <a href="{{ route('login') }}" class="px-4 py-2 text-black font-semibold hover:text-[#FFD600] transition-colors duration-300">
-                            تسجيل الدخول
-                        </a>
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="btn-primary px-6 py-2 font-semibold rounded-lg">
-                                إنشاء حساب
-                            </a>
-                        @endif
                     @endauth
                 </div>
             </div>
@@ -178,13 +169,6 @@
                         @auth
                             <a href="{{ route('dashboard') }}" class="btn-primary px-8 py-4 rounded-lg font-bold text-lg text-center">
                                 ابدأ الآن
-                            </a>
-                        @else
-                            <a href="{{ route('register') }}" class="btn-primary px-8 py-4 rounded-lg font-bold text-lg text-center">
-                                إنشاء حساب
-                            </a>
-                            <a href="{{ route('login') }}" class="btn-secondary px-8 py-4 rounded-lg font-bold text-lg text-center">
-                                تسجيل الدخول
                             </a>
                         @endauth
                     </div>
@@ -316,13 +300,6 @@
                 @auth
                     <a href="{{ route('dashboard') }}" class="btn-primary px-8 py-4 rounded-lg font-bold text-lg">
                         اذهب إلى لوحة التحكم
-                    </a>
-                @else
-                    <a href="{{ route('register') }}" class="btn-primary px-8 py-4 rounded-lg font-bold text-lg">
-                        إنشاء حساب مجاني
-                    </a>
-                    <a href="{{ route('login') }}" class="px-8 py-4 rounded-lg font-bold text-lg border-2 border-[#FFD600] text-[#FFD600] hover:bg-[#FFD600] hover:text-black transition-all duration-300">
-                        تسجيل الدخول
                     </a>
                 @endauth
             </div>

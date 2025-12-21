@@ -88,8 +88,12 @@
                                 {{ $user->university_id ?: '-' }}
                             </td>
                             <td class="px-4 py-3 text-right">
-                                <span class="font-semibold text-emerald-600">
-                                    {{ number_format($user->calculated_wallet_balance, 2) }} {{ trans('messages.EGP') }}
+                                @php
+                                    $balance = $user->calculated_wallet_balance;
+                                    $isNegative = $balance < 0;
+                                @endphp
+                                <span class="font-semibold {{ $isNegative ? 'text-red-600' : 'text-emerald-600' }}">
+                                    {{ number_format($balance, 2) }} {{ trans('messages.EGP') }}
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-right">

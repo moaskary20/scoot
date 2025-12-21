@@ -90,7 +90,7 @@ class SubscriptionController extends Controller
 
         return redirect()
             ->route('admin.subscriptions.show', $subscription)
-            ->with('status', __('Subscription created successfully.'));
+            ->with('status', trans('messages.Subscription created successfully.'));
     }
 
     public function show(Subscription $subscription)
@@ -140,7 +140,7 @@ class SubscriptionController extends Controller
 
         return redirect()
             ->route('admin.subscriptions.show', $subscription)
-            ->with('status', __('Subscription updated successfully.'));
+            ->with('status', trans('messages.Subscription updated successfully.'));
     }
 
     public function destroy(Subscription $subscription)
@@ -149,7 +149,7 @@ class SubscriptionController extends Controller
 
         return redirect()
             ->route('admin.subscriptions.index')
-            ->with('status', __('Subscription deleted successfully.'));
+            ->with('status', trans('messages.Subscription deleted successfully.'));
     }
 
     public function renew(Subscription $subscription)
@@ -158,7 +158,7 @@ class SubscriptionController extends Controller
 
         return redirect()
             ->route('admin.subscriptions.show', $subscription)
-            ->with('status', __('Subscription renewed successfully.'));
+            ->with('status', trans('messages.Subscription renewed successfully.'));
     }
 
     public function cancel(Subscription $subscription)
@@ -167,7 +167,7 @@ class SubscriptionController extends Controller
 
         return redirect()
             ->route('admin.subscriptions.show', $subscription)
-            ->with('status', __('Subscription cancelled successfully.'));
+            ->with('status', trans('messages.Subscription cancelled successfully.'));
     }
 
     public function suspend(Subscription $subscription)
@@ -176,7 +176,7 @@ class SubscriptionController extends Controller
 
         return redirect()
             ->route('admin.subscriptions.show', $subscription)
-            ->with('status', __('Subscription suspended successfully.'));
+            ->with('status', trans('messages.Subscription suspended successfully.'));
     }
 
     public function activate(Subscription $subscription)
@@ -185,6 +185,6 @@ class SubscriptionController extends Controller
 
         return redirect()
             ->route('admin.subscriptions.show', $subscription)
-            ->with('status', __('Subscription activated successfully.'));
+            ->with('status', trans('messages.Subscription activated successfully.'));
     }
 }

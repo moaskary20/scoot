@@ -109,19 +109,23 @@ class TripRepository
         $startTime = Carbon::parse($trip->start_time);
         $durationMinutes = $startTime->diffInMinutes($endTime);
 
-        // Calculate cost if not already set
-        $cost = $trip->cost ?? ($trip->base_cost - $trip->discount_amount + $trip->penalty_amount);
+        // Calculate cost - use provided cost or calculate from base_cost, discount, and penalty
+        $cost = $endData['cost'] ?? $trip->cost ?? ($trip->base_cost - $trip->discount_amount + $trip->penalty_amount);
+        
+        // Ensure cost is not negative
+        $cost = max(0, (float) $cost);
 
+        // Update trip status to completed
         $trip->update([
             'end_time' => $endTime,
             'duration_minutes' => $durationMinutes,
-            'end_latitude' => $endData['latitude'] ?? null,
-            'end_longitude' => $endData['longitude'] ?? null,
+            'end_latitude' => $endData['end_latitude'] ?? $endData['latitude'] ?? null,
+            'end_longitude' => $endData['end_longitude'] ?? $endData['longitude'] ?? null,
             'cost' => $cost,
             'status' => 'completed',
         ]);
 
-        // Deduct from wallet if cost > 0
+        // Deduct from wallet if cost > 0 (allow negative balance for trips)
         if ($cost > 0) {
             try {
                 $this->walletRepository->deduct(
@@ -129,7 +133,9 @@ class TripRepository
                     $cost,
                     'trip_payment',
                     $trip,
-                    "Payment for trip #{$trip->id} - Duration: {$durationMinutes} minutes"
+                    "Payment for trip #{$trip->id} - Duration: {$durationMinutes} minutes",
+                    null,
+                    true // Allow negative balance (debt)
                 );
             } catch (\Exception $e) {
                 // Log error but don't fail the trip completion

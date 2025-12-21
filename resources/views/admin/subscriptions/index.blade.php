@@ -63,63 +63,63 @@
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <table class="min-w-full divide-y divide-gray-200 text-sm" dir="rtl">
                     <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.User') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Name') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Type') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Usage') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Expires At') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Status') }}</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Actions') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.User') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Name') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Type') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Usage') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Expires At') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Status') }}</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Actions') }}</th>
                     </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-100">
                     @forelse($subscriptions as $subscription)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-gray-500 text-xs">
+                            <td class="px-4 py-3 text-gray-500 text-xs text-right">
                                 {{ $subscription->id }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3 text-right">
                                 <div class="font-semibold text-secondary">
-                                    <a href="{{ route('admin.users.show', $subscription->user) }}" class="hover:text-primary">
+                                    <a href="{{ route('admin.users.show', $subscription->user) }}" class="hover:text-primary transition">
                                         {{ $subscription->user->name }}
                                     </a>
                                 </div>
                                 <div class="text-xs text-gray-500">{{ $subscription->user->email }}</div>
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3 text-right">
                                 <div class="font-semibold text-secondary">{{ $subscription->name }}</div>
                                 <div class="text-xs text-gray-500">
                                     {{ number_format($subscription->price, 2) }} {{ trans('messages.EGP') }} / {{ ucfirst($subscription->billing_period) }}
                                 </div>
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3 text-right">
                                 @if($subscription->type === 'unlimited')
                                     <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-primary/20 text-secondary">
                                         {{ trans('messages.Unlimited') }}
                                     </span>
                                 @else
                                     <span class="text-xs text-gray-600">
-                                        {{ $subscription->minutes_included }} {{ trans('messages.minutes') }}
+                                        {{ $subscription->minutes_included }} {{ trans('messages.Minutes') }}
                                     </span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-xs text-gray-600">
+                            <td class="px-4 py-3 text-xs text-gray-600 text-right">
                                 @if($subscription->type === 'unlimited')
-                                    <div>{{ $subscription->trips_count }} {{ trans('messages.trips') }}</div>
-                                    <div class="text-gray-500">{{ $subscription->minutes_used }} {{ trans('messages.min used') }}</div>
+                                    <div>{{ $subscription->trips_count }} {{ trans('messages.Trips') }}</div>
+                                    <div class="text-gray-500">{{ $subscription->minutes_used }} {{ trans('messages.Minutes') }} {{ trans('messages.Used') }}</div>
                                 @else
-                                    <div>{{ $subscription->minutes_used }} / {{ $subscription->minutes_included }} {{ trans('messages.min') }}</div>
-                                    <div class="text-gray-500">{{ $subscription->trips_count }} {{ trans('messages.trips') }}</div>
+                                    <div>{{ $subscription->minutes_used }} / {{ $subscription->minutes_included }} {{ trans('messages.Minutes') }}</div>
+                                    <div class="text-gray-500">{{ $subscription->trips_count }} {{ trans('messages.Trips') }}</div>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-xs text-gray-600">
+                            <td class="px-4 py-3 text-xs text-gray-600 text-right">
                                 {{ $subscription->expires_at->format('Y-m-d H:i') }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3 text-right">
                                 @php
                                     $statusColors = [
                                         'active' => 'bg-emerald-50 text-emerald-700',
@@ -139,20 +139,22 @@
                                     </div>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-right space-x-2">
-                                <a href="{{ route('admin.subscriptions.show', $subscription) }}"
-                                   class="text-xs text-gray-600 hover:text-secondary">
-                                    {{ trans('messages.View') }}
-                                </a>
-                                <a href="{{ route('admin.subscriptions.edit', $subscription) }}"
-                                   class="text-xs text-primary hover:text-yellow-500">
-                                    {{ trans('messages.Edit') }}
-                                </a>
+                            <td class="px-4 py-3 text-left">
+                                <div class="flex items-center gap-2">
+                                    <a href="{{ route('admin.subscriptions.show', $subscription) }}"
+                                       class="text-xs text-gray-600 hover:text-secondary">
+                                        {{ trans('messages.View') }}
+                                    </a>
+                                    <a href="{{ route('admin.subscriptions.edit', $subscription) }}"
+                                       class="text-xs text-primary hover:text-yellow-500">
+                                        {{ trans('messages.Edit') }}
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-4 py-6 text-center text-sm text-gray-500">
+                            <td colspan="8" class="px-4 py-6 text-center text-sm text-gray-500" dir="rtl">
                                 {{ trans('messages.No subscriptions found') }}
                             </td>
                         </tr>

@@ -35,7 +35,13 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                     <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Wallet Balance') }}</div>
                     <div class="text-2xl font-bold text-emerald-600">
-                        {{ number_format($user->calculated_wallet_balance, 2) }} {{ trans('messages.EGP') }}
+                        @php
+                            $balance = $user->calculated_wallet_balance;
+                            $isNegative = $balance < 0;
+                        @endphp
+                        <span class="{{ $isNegative ? 'text-red-600' : 'text-emerald-600' }}">
+                            {{ number_format($balance, 2) }} {{ trans('messages.EGP') }}
+                        </span>
                     </div>
                     <div class="mt-2">
                         <a href="{{ route('admin.users.wallet.transactions', $user) }}" class="text-xs text-primary hover:underline">

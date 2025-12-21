@@ -58,6 +58,9 @@ class TripController extends Controller
         }
 
         $trips = $query->orderByDesc('start_time')->paginate(20);
+        
+        // Load wallet transactions for payment status calculation
+        $trips->load('walletTransactions');
 
         return view('admin.trips.index', compact('trips'));
     }
@@ -132,7 +135,7 @@ class TripController extends Controller
 
     public function show(Trip $trip)
     {
-        $trip->load(['user', 'scooter', 'coupon', 'penalty']);
+        $trip->load(['user', 'scooter', 'coupon', 'penalty', 'walletTransactions']);
 
         // Get geo zone for this trip based on start location
         $geoZone = null;
@@ -233,11 +236,45 @@ class TripController extends Controller
                 ->with('error', __('Trip is not active.'));
         }
 
-        $data = $request->validate([
-            'end_latitude' => ['nullable', 'numeric'],
-            'end_longitude' => ['nullable', 'numeric'],
-            'cost' => ['required', 'numeric', 'min:0'],
-        ]);
+        // Calculate cost based on duration and geo zone pricing
+        $endTime = Carbon::now();
+        $startTime = Carbon::parse($trip->start_time);
+        $durationMinutes = $startTime->diffInMinutes($endTime);
+        
+        // Get geo zone for pricing
+        $geoZone = null;
+        if ($trip->start_latitude && $trip->start_longitude) {
+            $geoZone = \App\Models\GeoZone::where('type', 'allowed')
+                ->where('is_active', true)
+                ->get()
+                ->first(function ($zone) use ($trip) {
+                    return $this->isPointInPolygon(
+                        $trip->start_latitude,
+                        $trip->start_longitude,
+                        $zone->polygon
+                    );
+                });
+        }
+        
+        // Calculate cost
+        $cost = 0;
+        if ($geoZone && $geoZone->price_per_minute) {
+            $tripStartFee = $geoZone->trip_start_fee ?? 0;
+            $pricePerMinute = $geoZone->price_per_minute ?? 0;
+            $cost = $tripStartFee + ($durationMinutes * $pricePerMinute);
+        } else {
+            // Use existing cost or calculate from base_cost, discount, and penalty
+            $cost = $trip->base_cost - $trip->discount_amount + $trip->penalty_amount;
+        }
+        
+        // Ensure cost is not negative
+        $cost = max(0, (float) $cost);
+
+        $data = [
+            'end_latitude' => $request->input('end_latitude'),
+            'end_longitude' => $request->input('end_longitude'),
+            'cost' => $cost,
+        ];
 
         $this->repository->completeTrip($trip, $data);
 
@@ -268,5 +305,80 @@ class TripController extends Controller
         return redirect()
             ->route('admin.trips.show', $trip)
             ->with('status', __('Trip cancelled successfully.'));
+    }
+
+    public function settings()
+    {
+        $settings = $this->getTripSettings();
+
+        return view('admin.trips.settings', compact('settings'));
+    }
+
+    public function updateSettings(Request $request)
+    {
+        $data = $request->validate([
+            'max_trip_duration_minutes' => ['required', 'integer', 'min:1'],
+            'max_trip_cost' => ['required', 'numeric', 'min:0'],
+            'max_trips_per_day' => ['required', 'integer', 'min:1'],
+            'max_coupon_uses_per_month' => ['required', 'integer', 'min:0'],
+            'max_penalties_before_account_suspension' => ['required', 'integer', 'min:0'],
+            'max_trip_distance_km' => ['nullable', 'numeric', 'min:0'],
+            'min_trip_duration_minutes' => ['nullable', 'integer', 'min:0'],
+            'min_trip_cost' => ['nullable', 'numeric', 'min:0'],
+            'max_discount_percentage' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'max_penalty_amount' => ['nullable', 'numeric', 'min:0'],
+            'enable_trip_duration_warning' => ['sometimes', 'boolean'],
+            'trip_duration_warning_threshold' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'enable_cost_warning' => ['sometimes', 'boolean'],
+            'cost_warning_threshold' => ['nullable', 'integer', 'min:0', 'max:100'],
+        ]);
+
+        foreach ($data as $key => $value) {
+            $this->setTripSetting($key, $value);
+        }
+
+        return redirect()
+            ->route('admin.trips.settings')
+            ->with('status', trans('messages.Trip settings updated successfully.'));
+    }
+
+    private function getTripSettings(): array
+    {
+        $keys = [
+            'max_trip_duration_minutes',
+            'max_trip_cost',
+            'max_trips_per_day',
+            'max_coupon_uses_per_month',
+            'max_penalties_before_account_suspension',
+            'max_trip_distance_km',
+            'min_trip_duration_minutes',
+            'min_trip_cost',
+            'max_discount_percentage',
+            'max_penalty_amount',
+            'enable_trip_duration_warning',
+            'trip_duration_warning_threshold',
+            'enable_cost_warning',
+            'cost_warning_threshold',
+        ];
+
+        $settings = [];
+        foreach ($keys as $key) {
+            $setting = \DB::table('trip_settings')->where('key', $key)->first();
+            $settings[$key] = $setting ? $setting->value : null;
+        }
+
+        return $settings;
+    }
+
+    private function setTripSetting(string $key, $value): void
+    {
+        \DB::table('trip_settings')
+            ->updateOrInsert(
+                ['key' => $key],
+                [
+                    'value' => is_bool($value) ? ($value ? '1' : '0') : (string) $value,
+                    'updated_at' => now(),
+                ]
+            );
     }
 }

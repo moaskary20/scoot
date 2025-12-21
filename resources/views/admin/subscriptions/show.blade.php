@@ -12,11 +12,11 @@
             <div class="flex items-center gap-3">
                 <a href="{{ route('admin.subscriptions.edit', $subscription) }}"
                    class="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
-                    {{ trans('messages.تعديل') }}
+                    {{ trans('messages.Edit') }}
                 </a>
                 <a href="{{ route('admin.subscriptions.index') }}"
                    class="text-sm text-gray-600 hover:text-secondary">
-                    {{ trans('messages.رجوع') }}
+                    {{ trans('messages.Back') }}
                 </a>
             </div>
         </div>
@@ -61,7 +61,7 @@
                             {{ $subscription->minutes_used }} / {{ $subscription->minutes_included }}
                         </div>
                         <div class="text-xs text-gray-500 mt-1">
-                            {{ $subscription->getRemainingMinutes() }} {{ trans('messages.remaining') }}
+                            {{ $subscription->getRemainingMinutes() }} {{ trans('messages.Remaining') }}
                         </div>
                     @endif
                 </div>

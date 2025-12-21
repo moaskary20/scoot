@@ -51,33 +51,33 @@
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <table class="min-w-full divide-y divide-gray-200 text-sm" dir="rtl">
                     <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.User') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Type') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Points') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Balance After') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Description') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Date') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.User') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Type') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Points') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Balance After') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Description') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Date') }}</th>
                     </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-100">
                     @forelse($transactions as $transaction)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-gray-500 text-xs">
+                            <td class="px-4 py-3 text-gray-500 text-xs text-right">
                                 {{ $transaction->id }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3 text-right">
                                 <div class="font-semibold text-secondary">
-                                    <a href="{{ route('admin.users.show', $transaction->user) }}" class="hover:text-primary">
+                                    <a href="{{ route('admin.users.show', $transaction->user) }}" class="hover:text-primary transition">
                                         {{ $transaction->user->name }}
                                     </a>
                                 </div>
                                 <div class="text-xs text-gray-500">{{ $transaction->user->email }}</div>
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3 text-right">
                                 @php
                                     $typeColors = [
                                         'earned' => 'bg-emerald-50 text-emerald-700',
@@ -85,35 +85,41 @@
                                         'adjusted' => 'bg-blue-50 text-blue-700',
                                         'expired' => 'bg-gray-100 text-gray-700',
                                     ];
+                                    $typeLabels = [
+                                        'earned' => trans('messages.Earned'),
+                                        'redeemed' => trans('messages.Redeemed'),
+                                        'adjusted' => trans('messages.Adjusted'),
+                                        'expired' => trans('messages.Expired'),
+                                    ];
                                 @endphp
                                 <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium {{ $typeColors[$transaction->type] ?? 'bg-gray-100 text-gray-700' }}">
-                                    {{ ucfirst($transaction->type) }}
+                                    {{ $typeLabels[$transaction->type] ?? ucfirst($transaction->type) }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3 text-right">
                                 <span class="font-semibold {{ $transaction->points > 0 ? 'text-emerald-600' : 'text-red-600' }}">
-                                    {{ $transaction->points > 0 ? '+' : '' }}{{ $transaction->points }}
+                                    {{ $transaction->points > 0 ? '+' : '' }}{{ number_format($transaction->points) }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-gray-600">
+                            <td class="px-4 py-3 text-gray-600 text-right">
                                 {{ number_format($transaction->balance_after) }}
                             </td>
-                            <td class="px-4 py-3 text-xs text-gray-600">
-                                {{ $transaction->description ?: '-' }}
+                            <td class="px-4 py-3 text-xs text-gray-600 text-right">
+                                <div>{{ $transaction->description ?: '-' }}</div>
                                 @if($transaction->trip)
                                     <div class="text-gray-500 mt-1">
-                                        Trip #{{ $transaction->trip->id }}
+                                        {{ trans('messages.Trip') }} #{{ $transaction->trip->id }}
                                     </div>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-xs text-gray-600">
+                            <td class="px-4 py-3 text-xs text-gray-600 text-right">
                                 {{ $transaction->created_at->format('Y-m-d H:i') }}
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-4 py-6 text-center text-sm text-gray-500">
-                                {{ trans('messages.لا توجد معاملات حتى الآن.') }}
+                            <td colspan="7" class="px-4 py-6 text-center text-sm text-gray-500" dir="rtl">
+                                {{ trans('messages.No transactions found') }}
                             </td>
                         </tr>
                     @endforelse

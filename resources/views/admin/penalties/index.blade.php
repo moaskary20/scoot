@@ -80,34 +80,34 @@
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <table class="min-w-full divide-y divide-gray-200 text-sm" dir="rtl">
                     <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.User') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Type') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Title') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Amount') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Status') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Applied At') }}</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Actions') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.User') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Type') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Title') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Amount') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Status') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Applied At') }}</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Actions') }}</th>
                     </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-100">
                     @forelse($penalties as $penalty)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-gray-500 text-xs">
+                            <td class="px-4 py-3 text-gray-500 text-xs text-right">
                                 {{ $penalty->id }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3 text-right">
                                 <div class="font-semibold text-secondary">
-                                    <a href="{{ route('admin.users.show', $penalty->user) }}" class="hover:text-primary">
+                                    <a href="{{ route('admin.users.show', $penalty->user) }}" class="hover:text-primary transition">
                                         {{ $penalty->user->name }}
                                     </a>
                                 </div>
                                 <div class="text-xs text-gray-500">{{ $penalty->user->email }}</div>
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3 text-right">
                                 @php
                                     $typeLabels = [
                                         'zone_exit' => trans('messages.Zone Exit'),
@@ -127,15 +127,15 @@
                                     </div>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-gray-700">
+                            <td class="px-4 py-3 text-gray-700 text-right">
                                 {{ $penalty->title }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3 text-right">
                                 <span class="font-semibold text-red-600">
                                     {{ number_format($penalty->amount, 2) }} {{ trans('messages.EGP') }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3 text-right">
                                 @php
                                     $statusColors = [
                                         'pending' => 'bg-amber-50 text-amber-700',
@@ -148,23 +148,25 @@
                                     {{ trans('messages.' . ucfirst($penalty->status)) }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-xs text-gray-600">
+                            <td class="px-4 py-3 text-xs text-gray-600 text-right">
                                 {{ $penalty->applied_at?->format('Y-m-d H:i') ?: '-' }}
                             </td>
-                            <td class="px-4 py-3 text-right space-x-2">
-                                <a href="{{ route('admin.penalties.show', $penalty) }}"
-                                   class="text-xs text-gray-600 hover:text-secondary">
-                                    {{ trans('messages.View') }}
-                                </a>
-                                <a href="{{ route('admin.penalties.edit', $penalty) }}"
-                                   class="text-xs text-primary hover:text-yellow-500">
-                                    {{ trans('messages.Edit') }}
-                                </a>
+                            <td class="px-4 py-3 text-left">
+                                <div class="flex items-center gap-2">
+                                    <a href="{{ route('admin.penalties.show', $penalty) }}"
+                                       class="text-xs text-gray-600 hover:text-secondary">
+                                        {{ trans('messages.View') }}
+                                    </a>
+                                    <a href="{{ route('admin.penalties.edit', $penalty) }}"
+                                       class="text-xs text-primary hover:text-yellow-500">
+                                        {{ trans('messages.Edit') }}
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-4 py-6 text-center text-sm text-gray-500">
+                            <td colspan="8" class="px-4 py-6 text-center text-sm text-gray-500" dir="rtl">
                                 {{ trans('messages.No penalties found') }}
                             </td>
                         </tr>

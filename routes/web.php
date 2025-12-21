@@ -38,9 +38,12 @@ Route::middleware('auth')->group(function () {
             Route::post('users/{user}/add-wallet-balance', [\App\Http\Controllers\Admin\UserController::class, 'addWalletBalance'])->name('users.add-wallet-balance');
             Route::post('users/{user}/add-loyalty-points', [\App\Http\Controllers\Admin\UserController::class, 'addLoyaltyPoints'])->name('users.add-loyalty-points');
             
-            Route::resource('trips', \App\Http\Controllers\Admin\TripController::class);
+            // Custom trip routes MUST come before resource route
+            Route::get('trips/settings', [\App\Http\Controllers\Admin\TripController::class, 'settings'])->name('trips.settings');
+            Route::post('trips/settings', [\App\Http\Controllers\Admin\TripController::class, 'updateSettings'])->name('trips.settings.update');
             Route::post('trips/{trip}/complete', [\App\Http\Controllers\Admin\TripController::class, 'complete'])->name('trips.complete');
             Route::post('trips/{trip}/cancel', [\App\Http\Controllers\Admin\TripController::class, 'cancel'])->name('trips.cancel');
+            Route::resource('trips', \App\Http\Controllers\Admin\TripController::class);
 
             Route::resource('geo-zones', GeoZoneController::class);
             

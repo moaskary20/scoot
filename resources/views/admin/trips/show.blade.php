@@ -11,8 +11,10 @@
             </div>
             <div class="flex items-center gap-3">
                 @if($trip->status === 'active')
-                    <form action="{{ route('admin.trips.complete', $trip) }}" method="POST" class="inline-block">
+                    <form action="{{ route('admin.trips.complete', $trip) }}" method="POST" class="inline-block" id="complete-trip-form">
                         @csrf
+                        <input type="hidden" name="end_latitude" id="complete-end-latitude">
+                        <input type="hidden" name="end_longitude" id="complete-end-longitude">
                         <button type="submit" class="px-4 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-lg hover:bg-emerald-600"
                                 onclick="return confirm('{{ trans('messages.هل أنت متأكد من إنهاء هذه الرحلة؟') }}')">
                             {{ trans('messages.Complete Trip') }}
@@ -80,7 +82,12 @@
 
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                     <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Total Cost') }}</div>
-                    <div class="text-2xl font-bold text-emerald-600">
+                    @php
+                        $paymentStatus = $trip->payment_status;
+                        $isFullyPaid = $paymentStatus === 'paid';
+                        $costColor = $isFullyPaid ? 'text-emerald-600' : 'text-red-600';
+                    @endphp
+                    <div class="text-2xl font-bold {{ $costColor }}">
                         @if($trip->status === 'active')
                             <div id="trip-cost">{{ number_format($trip->cost, 2) }}</div>
                         @else
@@ -88,6 +95,15 @@
                         @endif
                         {{ trans('messages.EGP') }}
                     </div>
+                    @if(!$isFullyPaid && $trip->status === 'completed')
+                        <div class="text-xs text-red-600 mt-1">
+                            @if($paymentStatus === 'partially_paid')
+                                {{ trans('messages.Partially Paid') }}: {{ number_format($trip->paid_amount, 2) }} {{ trans('messages.EGP') }}
+                            @else
+                                {{ trans('messages.Unpaid') }}
+                            @endif
+                        </div>
+                    @endif
                 </div>
 
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
@@ -175,7 +191,21 @@
                     </div>
                     <div>
                         <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Total') }}</div>
-                        <div class="text-lg font-bold text-secondary">{{ number_format($trip->cost, 2) }} {{ trans('messages.EGP') }}</div>
+                        @php
+                            $paymentStatus = $trip->payment_status;
+                            $isFullyPaid = $paymentStatus === 'paid';
+                            $totalColor = $isFullyPaid ? 'text-secondary' : 'text-red-600';
+                        @endphp
+                        <div class="text-lg font-bold {{ $totalColor }}">{{ number_format($trip->cost, 2) }} {{ trans('messages.EGP') }}</div>
+                        @if(!$isFullyPaid && $trip->status === 'completed')
+                            <div class="text-xs {{ $totalColor }} mt-1">
+                                @if($paymentStatus === 'partially_paid')
+                                    ({{ trans('messages.Paid') }}: {{ number_format($trip->paid_amount, 2) }} {{ trans('messages.EGP') }})
+                                @else
+                                    ({{ trans('messages.Unpaid') }})
+                                @endif
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -291,6 +321,29 @@
                     
                     // Update every second continuously
                     setInterval(updateTimer, 1000);
+                    
+                    // Handle form submission - try to get current location
+                    const completeForm = document.getElementById('complete-trip-form');
+                    if (completeForm) {
+                        completeForm.addEventListener('submit', function(e) {
+                            // Try to get current location if available
+                            if (navigator.geolocation) {
+                                navigator.geolocation.getCurrentPosition(
+                                    function(position) {
+                                        document.getElementById('complete-end-latitude').value = position.coords.latitude;
+                                        document.getElementById('complete-end-longitude').value = position.coords.longitude;
+                                        completeForm.submit();
+                                    },
+                                    function(error) {
+                                        // If geolocation fails, submit without coordinates
+                                        completeForm.submit();
+                                    },
+                                    { timeout: 2000 }
+                                );
+                                e.preventDefault();
+                            }
+                        });
+                    }
                 })();
             </script>
         @endpush

@@ -268,7 +268,11 @@
                                         <div class="text-sm text-gray-900">{{ $user->phone ?? '-' }}</div>
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap">
-                                        <div class="text-sm font-semibold text-gray-900">{{ number_format($user->wallet_balance, 2) }} {{ trans('messages.EGP') }}</div>
+                                        @php
+                                            $balance = $user->wallet_balance;
+                                            $isNegative = $balance < 0;
+                                        @endphp
+                                        <div class="text-sm font-semibold {{ $isNegative ? 'text-red-600' : 'text-gray-900' }}">{{ number_format($balance, 2) }} {{ trans('messages.EGP') }}</div>
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap">
                                         <div class="text-sm font-semibold text-gray-900">{{ number_format($user->loyalty_points) }}</div>

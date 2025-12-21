@@ -9,11 +9,21 @@
                     {{ trans('messages.إدارة جميع الرحلات في النظام') }}
                 </p>
             </div>
-            <a href="{{ route('admin.trips.create') }}"
-               class="inline-flex items-center px-4 py-2 bg-primary text-secondary text-sm font-semibold rounded-lg shadow-sm hover:bg-yellow-400 transition">
-                +
-                <span class="ml-2">{{ trans('messages.بدء رحلة جديدة') }}</span>
-            </a>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('admin.trips.settings') }}"
+                   class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg shadow-sm hover:bg-gray-200 transition">
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>{{ trans('messages.Trip Settings') }}</span>
+                </a>
+                <a href="{{ route('admin.trips.create') }}"
+                   class="inline-flex items-center px-4 py-2 bg-primary text-secondary text-sm font-semibold rounded-lg shadow-sm hover:bg-yellow-400 transition">
+                    +
+                    <span class="ml-2">{{ trans('messages.بدء رحلة جديدة') }}</span>
+                </a>
+            </div>
         </div>
     </x-slot>
 
@@ -86,6 +96,7 @@
                         <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Start Time') }}</th>
                         <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Duration') }}</th>
                         <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Cost') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Payment Status') }}</th>
                         <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Status') }}</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Actions') }}</th>
                     </tr>
@@ -118,8 +129,30 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-right">
-                                <span class="font-semibold text-emerald-600">
+                                @php
+                                    $paymentStatus = $trip->payment_status;
+                                    $isFullyPaid = $paymentStatus === 'paid';
+                                @endphp
+                                <span class="font-semibold {{ $isFullyPaid ? 'text-emerald-600' : 'text-red-600' }}">
                                     {{ number_format($trip->cost, 2) }} {{ trans('messages.EGP') }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                @php
+                                    $paymentStatus = $trip->payment_status;
+                                    $statusLabels = [
+                                        'paid' => trans('messages.Paid'),
+                                        'partially_paid' => trans('messages.Partially Paid'),
+                                        'unpaid' => trans('messages.Unpaid'),
+                                    ];
+                                    $statusColors = [
+                                        'paid' => 'bg-emerald-50 text-emerald-700',
+                                        'partially_paid' => 'bg-yellow-50 text-yellow-700',
+                                        'unpaid' => 'bg-red-50 text-red-700',
+                                    ];
+                                @endphp
+                                <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium {{ $statusColors[$paymentStatus] ?? 'bg-gray-100 text-gray-700' }}">
+                                    {{ $statusLabels[$paymentStatus] ?? $paymentStatus }}
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-right">
@@ -161,7 +194,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-4 py-6 text-center text-sm text-gray-500" dir="rtl">
+                            <td colspan="9" class="px-4 py-6 text-center text-sm text-gray-500" dir="rtl">
                                 {{ trans('messages.No trips found') }}
                             </td>
                         </tr>

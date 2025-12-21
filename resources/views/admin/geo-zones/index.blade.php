@@ -26,27 +26,27 @@
             @endif
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <table class="min-w-full divide-y divide-gray-200 text-sm" dir="rtl">
                     <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Name') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Type') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Color') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Status') }}</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Actions') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Name') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Type') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Color') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Status') }}</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Actions') }}</th>
                     </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-100">
                     @forelse($zones as $zone)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-gray-500 text-xs">
+                            <td class="px-4 py-3 text-gray-500 text-xs text-right">
                                 {{ $zone->id }}
                             </td>
-                            <td class="px-4 py-3 font-semibold text-secondary">
+                            <td class="px-4 py-3 font-semibold text-secondary text-right">
                                 {{ $zone->name }}
                             </td>
-                            <td class="px-4 py-3 text-xs">
+                            <td class="px-4 py-3 text-right">
                                 @php
                                     $typeLabels = [
                                         'allowed' => trans('messages.Allowed Zone'),
@@ -58,13 +58,13 @@
                                     {{ $typeLabels[$zone->type] ?? $zone->type }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3 text-right">
                                 <div class="inline-flex items-center gap-2">
-                                    <span class="h-4 w-4 rounded-full border" style="background-color: {{ $zone->color }}"></span>
+                                    <span class="h-4 w-4 rounded-full border border-gray-300" style="background-color: {{ $zone->color }}"></span>
                                     <span class="text-xs text-gray-600">{{ $zone->color }}</span>
                                 </div>
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3 text-right">
                                 @if($zone->is_active)
                                     <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700">
                                         {{ trans('messages.Active') }}
@@ -75,31 +75,33 @@
                                     </span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-right space-x-2">
-                                <a href="{{ route('admin.geo-zones.show', $zone) }}"
-                                   class="text-xs text-gray-600 hover:text-secondary">
-                                    {{ trans('messages.View') }}
-                                </a>
-                                <a href="{{ route('admin.geo-zones.edit', $zone) }}"
-                                   class="text-xs text-primary hover:text-yellow-500">
-                                    {{ trans('messages.Edit') }}
-                                </a>
-                                <form action="{{ route('admin.geo-zones.destroy', $zone) }}"
-                                      method="POST"
-                                      class="inline-block"
-                                      onsubmit="return confirm('{{ trans('messages.هل أنت متأكد من حذف هذه المنطقة؟') }}')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                            class="text-xs text-red-500 hover:text-red-600">
-                                        {{ trans('messages.Delete') }}
-                                    </button>
-                                </form>
+                            <td class="px-4 py-3 text-left">
+                                <div class="flex items-center gap-2">
+                                    <a href="{{ route('admin.geo-zones.show', $zone) }}"
+                                       class="text-xs text-gray-600 hover:text-secondary transition">
+                                        {{ trans('messages.View') }}
+                                    </a>
+                                    <a href="{{ route('admin.geo-zones.edit', $zone) }}"
+                                       class="text-xs text-primary hover:text-yellow-500 transition">
+                                        {{ trans('messages.Edit') }}
+                                    </a>
+                                    <form action="{{ route('admin.geo-zones.destroy', $zone) }}"
+                                          method="POST"
+                                          class="inline-block"
+                                          onsubmit="return confirm('{{ trans('messages.Are you sure you want to delete this zone?') }}')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                class="text-xs text-red-500 hover:text-red-600 transition">
+                                            {{ trans('messages.Delete') }}
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-6 text-center text-sm text-gray-500">
+                            <td colspan="6" class="px-4 py-6 text-center text-sm text-gray-500" dir="rtl">
                                 {{ trans('messages.No geo zones found') }}
                             </td>
                         </tr>

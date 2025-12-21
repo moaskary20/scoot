@@ -189,6 +189,34 @@ class WalletRepository
     }
 
     /**
+     * Calculate current wallet balance from transactions
+     */
+    public function calculateBalanceFromTransactions(int $userId): float
+    {
+        $lastTransaction = WalletTransaction::where('user_id', $userId)
+            ->where('status', 'completed')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($lastTransaction) {
+            return (float) $lastTransaction->balance_after;
+        }
+
+        // If no transactions, return 0
+        return 0.0;
+    }
+
+    /**
+     * Sync user wallet balance from transactions
+     */
+    public function syncBalanceFromTransactions(User $user): void
+    {
+        $calculatedBalance = $this->calculateBalanceFromTransactions($user->id);
+        $user->update(['wallet_balance' => $calculatedBalance]);
+    }
+
+    /**
      * Get wallet statistics for a user
      */
     public function getUserStatistics(int $userId): array

@@ -107,6 +107,69 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="border-t border-gray-200 pt-6">
+                            <h3 class="text-sm font-semibold text-secondary mb-4">{{ trans('messages.Points Redemption Settings') }}</h3>
+                            
+                            <div class="space-y-4">
+                                <div class="flex items-center">
+                                    <input type="checkbox" name="points_redeem_enabled" id="points_redeem_enabled" value="1"
+                                           {{ old('points_redeem_enabled', $redeemSettings['enabled'] ?? false) ? 'checked' : '' }}
+                                           class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                    <label for="points_redeem_enabled" class="ml-2 block text-sm text-gray-700">
+                                        {{ trans('messages.Enable Points Redemption') }}
+                                    </label>
+                                </div>
+                                <p class="text-xs text-gray-500 ml-6">
+                                    {{ trans('messages.Allow users to redeem their loyalty points for discounts on trips') }}
+                                </p>
+
+                                <div>
+                                    <label for="points_to_egp_rate" class="block text-sm font-medium text-gray-700 mb-1">
+                                        {{ trans('messages.Points to EGP Exchange Rate') }} <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number" min="1" name="points_to_egp_rate" id="points_to_egp_rate"
+                                           value="{{ old('points_to_egp_rate', $redeemSettings['points_to_egp_rate'] ?? 100) }}" required
+                                           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        {{ trans('messages.Number of points required for 1 EGP discount (e.g., 100 points = 1 EGP)') }}
+                                    </p>
+                                    @error('points_to_egp_rate')
+                                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div>
+                                    <label for="min_points_to_redeem" class="block text-sm font-medium text-gray-700 mb-1">
+                                        {{ trans('messages.Minimum Points to Redeem') }} <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number" min="1" name="min_points_to_redeem" id="min_points_to_redeem"
+                                           value="{{ old('min_points_to_redeem', $redeemSettings['min_points_to_redeem'] ?? 100) }}" required
+                                           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        {{ trans('messages.Minimum number of points required to redeem') }}
+                                    </p>
+                                    @error('min_points_to_redeem')
+                                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div>
+                                    <label for="max_redeem_percentage" class="block text-sm font-medium text-gray-700 mb-1">
+                                        {{ trans('messages.Max Redemption Percentage') }} <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number" min="1" max="100" name="max_redeem_percentage" id="max_redeem_percentage"
+                                           value="{{ old('max_redeem_percentage', $redeemSettings['max_redeem_percentage'] ?? 50) }}" required
+                                           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        {{ trans('messages.Maximum percentage of trip cost that can be redeemed with points (0-100)') }}
+                                    </p>
+                                    @error('max_redeem_percentage')
+                                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="mt-6 flex items-center justify-end gap-3">

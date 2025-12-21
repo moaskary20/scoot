@@ -10,14 +10,15 @@
     ];
 @endphp
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6" dir="rtl">
     <div>
         <label for="code" class="block text-sm font-medium text-gray-700 mb-1">
-            {{ trans('messages.Code') }} <span class="text-red-500">*</span>
+            {{ trans('messages.Code') }} <span class="text-gray-400 text-xs">({{ trans('messages.Optional') }})</span>
         </label>
         <input type="text" name="code" id="code" value="{{ old('code', $coupon->code ?? '') }}"
                class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary font-mono"
-               placeholder="{{ trans('messages.Leave empty to auto-generate') }}" required>
+               placeholder="{{ trans('messages.Leave empty to auto-generate') }}">
+        <p class="mt-1 text-xs text-gray-500">{{ trans('messages.Leave empty to auto-generate') }}</p>
         @error('code')
             <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
         @enderror

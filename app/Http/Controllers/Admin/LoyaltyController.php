@@ -38,8 +38,9 @@ class LoyaltyController extends Controller
     {
         $pointsPerMinute = $this->repository->getPointsPerMinute();
         $thresholds = $this->repository->getLevelThresholds();
+        $redeemSettings = $this->repository->getPointsRedeemSettings();
 
-        return view('admin.loyalty.settings', compact('pointsPerMinute', 'thresholds'));
+        return view('admin.loyalty.settings', compact('pointsPerMinute', 'thresholds', 'redeemSettings'));
     }
 
     public function updateSettings(Request $request)
@@ -49,6 +50,10 @@ class LoyaltyController extends Controller
             'bronze_threshold' => ['required', 'integer', 'min:0'],
             'silver_threshold' => ['required', 'integer', 'min:0', 'gte:bronze_threshold'],
             'gold_threshold' => ['required', 'integer', 'min:0', 'gte:silver_threshold'],
+            'points_redeem_enabled' => ['sometimes', 'boolean'],
+            'points_to_egp_rate' => ['required', 'integer', 'min:1'],
+            'min_points_to_redeem' => ['required', 'integer', 'min:1'],
+            'max_redeem_percentage' => ['required', 'integer', 'min:1', 'max:100'],
         ]);
 
         $this->repository->setPointsPerMinute($data['points_per_minute']);
@@ -56,6 +61,14 @@ class LoyaltyController extends Controller
             'bronze' => $data['bronze_threshold'],
             'silver' => $data['silver_threshold'],
             'gold' => $data['gold_threshold'],
+        ]);
+
+        // Update redeem settings
+        $this->repository->setPointsRedeemSettings([
+            'enabled' => $request->boolean('points_redeem_enabled', false),
+            'points_to_egp_rate' => $data['points_to_egp_rate'],
+            'min_points_to_redeem' => $data['min_points_to_redeem'],
+            'max_redeem_percentage' => $data['max_redeem_percentage'],
         ]);
 
         return redirect()

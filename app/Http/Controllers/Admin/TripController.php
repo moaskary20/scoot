@@ -47,6 +47,16 @@ class TripController extends Controller
             $query->where('zone_exit_detected', $request->zone_exit === '1');
         }
 
+        // Search by user name, phone, or university_id
+        if ($request->filled('user_search')) {
+            $search = $request->user_search;
+            $query->whereHas('user', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('university_id', 'like', "%{$search}%");
+            });
+        }
+
         $trips = $query->orderByDesc('start_time')->paginate(20);
 
         return view('admin.trips.index', compact('trips'));
@@ -59,8 +69,24 @@ class TripController extends Controller
             ->where('status', 'available')
             ->orderBy('code')
             ->get();
+        $coupons = \App\Models\Coupon::where('is_active', true)
+            ->where(function($query) {
+                $query->where('applicable_to', 'trips')
+                      ->orWhere('applicable_to', 'all');
+            })
+            ->where(function($query) {
+                $query->whereNull('expires_at')
+                      ->orWhere('expires_at', '>', now());
+            })
+            ->orderBy('code')
+            ->get();
+        $geoZones = \App\Models\GeoZone::where('type', 'allowed')
+            ->where('is_active', true)
+            ->where('allow_trip_start', true)
+            ->orderBy('name')
+            ->get();
 
-        return view('admin.trips.create', compact('users', 'scooters'));
+        return view('admin.trips.create', compact('users', 'scooters', 'coupons', 'geoZones'));
     }
 
     public function store(Request $request)
@@ -68,6 +94,8 @@ class TripController extends Controller
         $data = $request->validate([
             'user_id' => ['required', 'exists:users,id'],
             'scooter_id' => ['required', 'exists:scooters,id'],
+            'coupon_id' => ['nullable', 'exists:coupons,id'],
+            'geo_zone_id' => ['nullable', 'exists:geo_zones,id'],
             'start_latitude' => ['nullable', 'numeric'],
             'start_longitude' => ['nullable', 'numeric'],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -83,6 +111,18 @@ class TripController extends Controller
         $data['cost'] = 0;
         $data['base_cost'] = 0;
 
+        // إذا تم اختيار منطقة جغرافية، استخدم إحداثيات المركز
+        if (isset($data['geo_zone_id']) && $data['geo_zone_id']) {
+            $geoZone = \App\Models\GeoZone::find($data['geo_zone_id']);
+            if ($geoZone && $geoZone->center_latitude && $geoZone->center_longitude) {
+                $data['start_latitude'] = $geoZone->center_latitude;
+                $data['start_longitude'] = $geoZone->center_longitude;
+            }
+        }
+
+        // إزالة geo_zone_id من البيانات قبل الحفظ (لا يوجد عمود في جدول trips)
+        unset($data['geo_zone_id']);
+
         $trip = $this->repository->create($data);
 
         return redirect()
@@ -94,7 +134,49 @@ class TripController extends Controller
     {
         $trip->load(['user', 'scooter', 'coupon', 'penalty']);
 
-        return view('admin.trips.show', compact('trip'));
+        // Get geo zone for this trip based on start location
+        $geoZone = null;
+        if ($trip->start_latitude && $trip->start_longitude) {
+            $geoZone = \App\Models\GeoZone::where('type', 'allowed')
+                ->where('is_active', true)
+                ->get()
+                ->first(function ($zone) use ($trip) {
+                    return $this->isPointInPolygon(
+                        $trip->start_latitude,
+                        $trip->start_longitude,
+                        $zone->polygon
+                    );
+                });
+        }
+
+        return view('admin.trips.show', compact('trip', 'geoZone'));
+    }
+
+    /**
+     * Check if a point is inside a polygon (Ray casting algorithm)
+     */
+    private function isPointInPolygon(float $latitude, float $longitude, array $polygon): bool
+    {
+        $inside = false;
+        $j = count($polygon) - 1;
+
+        for ($i = 0; $i < count($polygon); $i++) {
+            $xi = $polygon[$i]['lat'] ?? $polygon[$i][0] ?? 0;
+            $yi = $polygon[$i]['lng'] ?? $polygon[$i][1] ?? 0;
+            $xj = $polygon[$j]['lat'] ?? $polygon[$j][0] ?? 0;
+            $yj = $polygon[$j]['lng'] ?? $polygon[$j][1] ?? 0;
+
+            $intersect = (($yi > $longitude) != ($yj > $longitude)) &&
+                ($latitude < ($xj - $xi) * ($longitude - $yi) / ($yj - $yi) + $xi);
+
+            if ($intersect) {
+                $inside = !$inside;
+            }
+
+            $j = $i;
+        }
+
+        return $inside;
     }
 
     public function edit(Trip $trip)

@@ -47,10 +47,14 @@ class GeoZoneController extends Controller
             'center_longitude' => ['nullable', 'numeric'],
             'description' => ['nullable', 'string'],
             'is_active' => ['sometimes', 'boolean'],
+            'allow_trip_start' => ['sometimes', 'boolean'],
+            'price_per_minute' => ['required', 'numeric', 'min:0'],
+            'trip_start_fee' => ['required', 'numeric', 'min:0'],
         ]);
 
         $data['polygon'] = json_decode($data['polygon'], true);
         $data['is_active'] = $request->boolean('is_active', true);
+        $data['allow_trip_start'] = $request->boolean('allow_trip_start', true);
 
         $this->repository->create($data);
 
@@ -89,10 +93,14 @@ class GeoZoneController extends Controller
             'center_longitude' => ['nullable', 'numeric'],
             'description' => ['nullable', 'string'],
             'is_active' => ['sometimes', 'boolean'],
+            'allow_trip_start' => ['sometimes', 'boolean'],
+            'price_per_minute' => ['required', 'numeric', 'min:0'],
+            'trip_start_fee' => ['required', 'numeric', 'min:0'],
         ]);
 
         $data['polygon'] = json_decode($data['polygon'], true);
         $data['is_active'] = $request->boolean('is_active', $geoZone->is_active);
+        $data['allow_trip_start'] = $request->boolean('allow_trip_start', $geoZone->allow_trip_start);
 
         $this->repository->update($geoZone, $data);
 

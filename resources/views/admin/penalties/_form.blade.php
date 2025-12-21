@@ -13,11 +13,21 @@
             {{ trans('messages.User') }} <span class="text-red-500">*</span>
         </label>
         <select name="user_id" id="user_id" required
-                class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+                class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary user-select">
             <option value="">{{ trans('messages.Select User') }}</option>
             @foreach($users as $user)
-                <option value="{{ $user->id }}" {{ old('user_id', $penalty->user_id ?? '') == $user->id ? 'selected' : '' }}>
+                <option value="{{ $user->id }}" {{ old('user_id', $penalty->user_id ?? '') == $user->id ? 'selected' : '' }}
+                        data-name="{{ $user->name }}"
+                        data-email="{{ $user->email }}"
+                        data-phone="{{ $user->phone ?? '' }}"
+                        data-university="{{ $user->university_id ?? '' }}">
                     {{ $user->name }} ({{ $user->email }})
+                    @if($user->phone)
+                        - {{ $user->phone }}
+                    @endif
+                    @if($user->university_id)
+                        - {{ trans('messages.University ID') }}: {{ $user->university_id }}
+                    @endif
                 </option>
             @endforeach
         </select>

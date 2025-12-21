@@ -7,11 +7,19 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class UserRepository
 {
-    public function paginate(int $perPage = 15): LengthAwarePaginator
+    public function paginate(int $perPage = 15, ?string $search = null): LengthAwarePaginator
     {
-        return User::query()
-            ->orderByDesc('id')
-            ->paginate($perPage);
+        $query = User::query();
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('university_id', 'like', "%{$search}%");
+            });
+        }
+
+        return $query->orderByDesc('id')->paginate($perPage);
     }
 
     public function find(int $id): User
@@ -84,7 +92,7 @@ class UserRepository
         return $user->fresh();
     }
 
-    protected function updateLoyaltyLevel(User $user): void
+    public function updateLoyaltyLevel(User $user): void
     {
         $points = $user->loyalty_points;
         

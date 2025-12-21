@@ -6,17 +6,17 @@
                     {{ trans('messages.Geo Zone Details') }}: {{ $zone->name }}
                 </h2>
                 <p class="text-sm text-gray-500 mt-1">
-                    {{ trans('messages.عرض تفاصيل المنطقة الجغرافية على الخريطة') }}
+                    {{ trans('messages.View geo zone details on map') }}
                 </p>
             </div>
             <div class="flex items-center gap-3">
                 <a href="{{ route('admin.geo-zones.edit', $zone) }}"
                    class="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
-                    {{ trans('messages.تعديل') }}
+                    {{ trans('messages.Edit') }}
                 </a>
                 <a href="{{ route('admin.geo-zones.index') }}"
                    class="text-sm text-gray-600 hover:text-secondary">
-                    {{ trans('messages.رجوع') }}
+                    {{ trans('messages.Back') }}
                 </a>
             </div>
         </div>
@@ -97,7 +97,7 @@
                             {{ trans('messages.Zone on Map') }}
                         </h3>
                         <p class="text-xs text-gray-500 mt-1">
-                            {{ trans('messages.عرض حدود المنطقة كما تم رسمها على خريطة Google') }}
+                            {{ trans('messages.View zone boundaries as drawn on Google Maps') }}
                         </p>
                     </div>
                 </div>

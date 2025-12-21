@@ -66,6 +66,49 @@
         </label>
     </div>
 
+    <div>
+        <label class="inline-flex items-center gap-2 text-sm text-gray-700 mt-6">
+            <input type="checkbox" name="allow_trip_start" value="1"
+                   @checked(old('allow_trip_start', $zone->allow_trip_start ?? true))>
+            <span>{{ trans('messages.Allow trip start') }}</span>
+        </label>
+        <p class="text-xs text-gray-500 mt-1">{{ trans('messages.Allow users to start trips in this zone') }}</p>
+    </div>
+
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">
+            {{ trans('messages.Price per minute') }} ({{ trans('messages.EGP') }}) <span class="text-red-500">*</span>
+        </label>
+        <input type="number" 
+               name="price_per_minute" 
+               step="0.01" 
+               min="0"
+               value="{{ old('price_per_minute', $zone->price_per_minute ?? 0) }}"
+               class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm"
+               required>
+        <p class="text-xs text-gray-500 mt-1">{{ trans('messages.The price charged per minute for trips in this zone') }}</p>
+        @error('price_per_minute')
+        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+        @enderror
+    </div>
+
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">
+            {{ trans('messages.Trip start fee') }} ({{ trans('messages.EGP') }}) <span class="text-red-500">*</span>
+        </label>
+        <input type="number" 
+               name="trip_start_fee" 
+               step="0.01" 
+               min="0"
+               value="{{ old('trip_start_fee', $zone->trip_start_fee ?? 0) }}"
+               class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm"
+               required>
+        <p class="text-xs text-gray-500 mt-1">{{ trans('messages.The fee charged when starting a trip in this zone') }}</p>
+        @error('trip_start_fee')
+        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+        @enderror
+    </div>
+
     <div class="md:col-span-2">
         <label class="block text-sm font-medium text-gray-700 mb-1">
             {{ trans('messages.Description') }}

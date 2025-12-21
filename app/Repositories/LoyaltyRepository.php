@@ -114,5 +114,170 @@ class LoyaltyRepository
         $pointsPerMinute = $this->getPointsPerMinute();
         return $minutes * $pointsPerMinute;
     }
-}
 
+    /**
+     * Get points redeem settings
+     */
+    public function getPointsRedeemSettings(): array
+    {
+        $settings = DB::table('loyalty_settings')
+            ->whereIn('key', [
+                'points_redeem_enabled',
+                'points_to_egp_rate',
+                'min_points_to_redeem',
+                'max_redeem_percentage',
+            ])
+            ->pluck('value', 'key')
+            ->toArray();
+
+        return [
+            'enabled' => (bool) ($settings['points_redeem_enabled'] ?? true),
+            'points_to_egp_rate' => (int) ($settings['points_to_egp_rate'] ?? 100),
+            'min_points_to_redeem' => (int) ($settings['min_points_to_redeem'] ?? 100),
+            'max_redeem_percentage' => (int) ($settings['max_redeem_percentage'] ?? 50),
+        ];
+    }
+
+    /**
+     * Set points redeem settings
+     */
+    public function setPointsRedeemSettings(array $settings): void
+    {
+        $data = [
+            'points_redeem_enabled' => $settings['enabled'] ?? true,
+            'points_to_egp_rate' => $settings['points_to_egp_rate'] ?? 100,
+            'min_points_to_redeem' => $settings['min_points_to_redeem'] ?? 100,
+            'max_redeem_percentage' => $settings['max_redeem_percentage'] ?? 50,
+        ];
+
+        foreach ($data as $key => $value) {
+            $exists = DB::table('loyalty_settings')->where('key', $key)->exists();
+            
+            if ($exists) {
+                DB::table('loyalty_settings')
+                    ->where('key', $key)
+                    ->update(['value' => $value, 'updated_at' => now()]);
+            } else {
+                DB::table('loyalty_settings')->insert([
+                    'key' => $key,
+                    'value' => $value,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Calculate discount amount from points
+     */
+    public function calculateDiscountFromPoints(int $points, float $tripCost): float
+    {
+        $settings = $this->getPointsRedeemSettings();
+
+        if (!$settings['enabled']) {
+            return 0.0;
+        }
+
+        // Convert points to EGP
+        $discountAmount = ($points / $settings['points_to_egp_rate']);
+
+        // Calculate max discount based on percentage
+        $maxDiscount = ($tripCost * $settings['max_redeem_percentage']) / 100;
+
+        // Return the minimum between calculated discount and max discount
+        return min($discountAmount, $maxDiscount);
+    }
+
+    /**
+     * Calculate required points for a discount amount
+     */
+    public function calculatePointsRequiredForDiscount(float $discountAmount): int
+    {
+        $settings = $this->getPointsRedeemSettings();
+
+        if (!$settings['enabled']) {
+            return 0;
+        }
+
+        return (int) ceil($discountAmount * $settings['points_to_egp_rate']);
+    }
+
+    /**
+     * Verify and recalculate loyalty points balance from transactions
+     * This ensures data integrity by recalculating balance from all transactions
+     */
+    public function verifyAndRecalculateBalance(User $user): array
+    {
+        $transactions = LoyaltyPointsTransaction::where('user_id', $user->id)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
+        $calculatedBalance = 0;
+        $issues = [];
+
+        foreach ($transactions as $transaction) {
+            $calculatedBalance += $transaction->points;
+            
+            // Verify balance_after matches calculated balance
+            if ($transaction->balance_after != $calculatedBalance) {
+                $issues[] = [
+                    'transaction_id' => $transaction->id,
+                    'expected_balance' => $calculatedBalance,
+                    'stored_balance' => $transaction->balance_after,
+                    'difference' => $calculatedBalance - $transaction->balance_after,
+                ];
+            }
+        }
+
+        // Check if user's current balance matches calculated balance
+        if ($user->loyalty_points != $calculatedBalance) {
+            $issues[] = [
+                'type' => 'user_balance_mismatch',
+                'user_id' => $user->id,
+                'expected_balance' => $calculatedBalance,
+                'stored_balance' => $user->loyalty_points,
+                'difference' => $calculatedBalance - $user->loyalty_points,
+            ];
+        }
+
+        return [
+            'calculated_balance' => $calculatedBalance,
+            'current_balance' => $user->loyalty_points,
+            'issues' => $issues,
+            'is_valid' => empty($issues),
+        ];
+    }
+
+    /**
+     * Fix loyalty points balance by recalculating from transactions
+     */
+    public function fixBalanceFromTransactions(User $user): User
+    {
+        $transactions = LoyaltyPointsTransaction::where('user_id', $user->id)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
+        $calculatedBalance = 0;
+
+        foreach ($transactions as $transaction) {
+            $calculatedBalance += $transaction->points;
+            
+            // Update balance_after if incorrect
+            if ($transaction->balance_after != $calculatedBalance) {
+                $transaction->update(['balance_after' => $calculatedBalance]);
+            }
+        }
+
+        // Update user's balance
+        if ($user->loyalty_points != $calculatedBalance) {
+            $user->update(['loyalty_points' => $calculatedBalance]);
+            // Update loyalty level
+            $this->userRepository->updateLoyaltyLevel($user);
+        }
+
+        return $user->fresh();
+    }
+}

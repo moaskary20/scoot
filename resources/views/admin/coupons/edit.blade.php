@@ -18,14 +18,14 @@
 
     <div class="py-6">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <form action="{{ route('admin.coupons.update', $coupon) }}" method="POST">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6" dir="rtl">
+                <form action="{{ route('admin.coupons.update', $coupon) }}" method="POST" dir="rtl">
                     @csrf
                     @method('PUT')
 
                     @include('admin.coupons._form', ['coupon' => $coupon])
 
-                    <div class="mt-6 flex items-center justify-end gap-3">
+                    <div class="mt-6 flex items-center justify-start gap-3" dir="rtl">
                         <a href="{{ route('admin.coupons.index') }}"
                            class="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
                             {{ trans('messages.Cancel') }}

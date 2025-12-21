@@ -26,7 +26,7 @@
             @endif
 
             <!-- Filters -->
-            <div class="mb-6 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <div class="mb-6 bg-white rounded-xl shadow-sm border border-gray-100 p-4" dir="rtl">
                 <form method="GET" action="{{ route('admin.coupons.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Status') }}</label>
@@ -61,18 +61,18 @@
                 </form>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden" dir="rtl">
                 <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Code') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Name') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Discount') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Usage') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Valid Period') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Status') }}</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Actions') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Code') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Name') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Discount') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Usage') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Valid Period') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Status') }}</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Actions') }}</th>
                     </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-100">
@@ -104,7 +104,7 @@
                                     </span>
                                     @if($coupon->max_discount)
                                         <div class="text-xs text-gray-500">
-                                            Max: {{ number_format($coupon->max_discount, 2) }} {{ trans('messages.EGP') }}
+                                            {{ trans('messages.Max') }}: {{ number_format($coupon->max_discount, 2) }} {{ trans('messages.EGP') }}
                                         </div>
                                     @endif
                                 @else
@@ -114,7 +114,7 @@
                                 @endif
                                 @if($coupon->min_amount > 0)
                                     <div class="text-xs text-gray-500">
-                                        Min: {{ number_format($coupon->min_amount, 2) }} {{ trans('messages.EGP') }}
+                                        {{ trans('messages.Min') }}: {{ number_format($coupon->min_amount, 2) }} {{ trans('messages.EGP') }}
                                     </div>
                                 @endif
                             </td>
@@ -128,12 +128,12 @@
                                 @if($coupon->starts_at || $coupon->expires_at)
                                     <div>
                                         @if($coupon->starts_at)
-                                            From: {{ $coupon->starts_at->format('Y-m-d') }}
+                                            {{ trans('messages.From') }}: {{ $coupon->starts_at->format('Y-m-d') }}
                                         @endif
                                     </div>
                                     <div>
                                         @if($coupon->expires_at)
-                                            Until: {{ $coupon->expires_at->format('Y-m-d') }}
+                                            {{ trans('messages.Until') }}: {{ $coupon->expires_at->format('Y-m-d') }}
                                         @endif
                                     </div>
                                 @else
@@ -155,7 +155,7 @@
                                     </span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-right space-x-2">
+                            <td class="px-4 py-3 text-left space-x-2">
                                 <a href="{{ route('admin.coupons.show', $coupon) }}"
                                    class="text-xs text-gray-600 hover:text-secondary">
                                     {{ trans('messages.View') }}

@@ -27,39 +27,54 @@
 
             <!-- Filters -->
             <div class="mb-6 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                <form method="GET" action="{{ route('admin.penalties.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Status') }}</label>
-                        <select name="status" class="w-full text-sm rounded-lg border-gray-300">
-                            <option value="">{{ trans('messages.All') }}</option>
-                            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>{{ trans('messages.Pending') }}</option>
-                            <option value="paid" {{ request('status') === 'paid' ? 'selected' : '' }}>{{ trans('messages.Paid') }}</option>
-                            <option value="waived" {{ request('status') === 'waived' ? 'selected' : '' }}>{{ trans('messages.Waived') }}</option>
-                            <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>{{ trans('messages.Cancelled') }}</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Type') }}</label>
-                        <select name="type" class="w-full text-sm rounded-lg border-gray-300">
-                            <option value="">{{ trans('messages.All') }}</option>
-                            <option value="zone_exit" {{ request('type') === 'zone_exit' ? 'selected' : '' }}>{{ trans('messages.Zone Exit') }}</option>
-                            <option value="forbidden_parking" {{ request('type') === 'forbidden_parking' ? 'selected' : '' }}>{{ trans('messages.Forbidden Parking') }}</option>
-                            <option value="unlocked_scooter" {{ request('type') === 'unlocked_scooter' ? 'selected' : '' }}>{{ trans('messages.Unlocked Scooter') }}</option>
-                            <option value="other" {{ request('type') === 'other' ? 'selected' : '' }}>{{ trans('messages.Other') }}</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Auto Applied') }}</label>
-                        <select name="auto_applied" class="w-full text-sm rounded-lg border-gray-300">
-                            <option value="">{{ trans('messages.All') }}</option>
-                            <option value="1" {{ request('auto_applied') === '1' ? 'selected' : '' }}>{{ trans('messages.Yes') }}</option>
-                            <option value="0" {{ request('auto_applied') === '0' ? 'selected' : '' }}>{{ trans('messages.No') }}</option>
-                        </select>
-                    </div>
-                    <div class="flex items-end">
-                        <button type="submit" class="w-full px-4 py-2 bg-primary text-secondary text-sm font-semibold rounded-lg hover:bg-yellow-400">
-                            {{ trans('messages.Filter') }}
-                        </button>
+                <form method="GET" action="{{ route('admin.penalties.index') }}" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Search') }} ({{ trans('messages.Name') }} / {{ trans('messages.Phone') }} / {{ trans('messages.University ID') }})</label>
+                            <input type="text" 
+                                   name="user_search" 
+                                   value="{{ request('user_search') }}" 
+                                   placeholder="{{ trans('messages.Enter name, phone, or university ID') }}"
+                                   class="w-full text-sm rounded-lg border-gray-300 focus:border-primary focus:ring-primary">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Status') }}</label>
+                            <select name="status" class="w-full text-sm rounded-lg border-gray-300">
+                                <option value="">{{ trans('messages.All') }}</option>
+                                <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>{{ trans('messages.Pending') }}</option>
+                                <option value="paid" {{ request('status') === 'paid' ? 'selected' : '' }}>{{ trans('messages.Paid') }}</option>
+                                <option value="waived" {{ request('status') === 'waived' ? 'selected' : '' }}>{{ trans('messages.Waived') }}</option>
+                                <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>{{ trans('messages.Cancelled') }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Type') }}</label>
+                            <select name="type" class="w-full text-sm rounded-lg border-gray-300">
+                                <option value="">{{ trans('messages.All') }}</option>
+                                <option value="zone_exit" {{ request('type') === 'zone_exit' ? 'selected' : '' }}>{{ trans('messages.Zone Exit') }}</option>
+                                <option value="forbidden_parking" {{ request('type') === 'forbidden_parking' ? 'selected' : '' }}>{{ trans('messages.Forbidden Parking') }}</option>
+                                <option value="unlocked_scooter" {{ request('type') === 'unlocked_scooter' ? 'selected' : '' }}>{{ trans('messages.Unlocked Scooter') }}</option>
+                                <option value="other" {{ request('type') === 'other' ? 'selected' : '' }}>{{ trans('messages.Other') }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Auto Applied') }}</label>
+                            <select name="auto_applied" class="w-full text-sm rounded-lg border-gray-300">
+                                <option value="">{{ trans('messages.All') }}</option>
+                                <option value="1" {{ request('auto_applied') === '1' ? 'selected' : '' }}>{{ trans('messages.Yes') }}</option>
+                                <option value="0" {{ request('auto_applied') === '0' ? 'selected' : '' }}>{{ trans('messages.No') }}</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <button type="submit" class="flex-1 px-4 py-2 bg-primary text-secondary text-sm font-semibold rounded-lg hover:bg-yellow-400">
+                                {{ trans('messages.Filter') }}
+                            </button>
+                            @if(request()->hasAny(['user_search', 'status', 'type', 'auto_applied']))
+                                <a href="{{ route('admin.penalties.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300">
+                                    {{ trans('messages.Reset') }}
+                                </a>
+                            @endif
+                        </div>
                     </div>
                 </form>
             </div>
@@ -158,7 +173,7 @@
                 </table>
 
                 <div class="px-4 py-3 border-t border-gray-100">
-                    {{ $penalties->links() }}
+                    {{ $penalties->appends(request()->query())->links() }}
                 </div>
             </div>
         </div>

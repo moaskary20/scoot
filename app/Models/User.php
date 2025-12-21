@@ -22,6 +22,9 @@ class User extends Authenticatable
         'email',
         'password',
         'phone',
+        'age',
+        'university_id',
+        'national_id_photo',
         'wallet_balance',
         'loyalty_points',
         'loyalty_level',
@@ -108,5 +111,49 @@ class User extends Authenticatable
     public function hasAnyRole(array $roleSlugs): bool
     {
         return $this->roles()->whereIn('slug', $roleSlugs)->exists();
+    }
+
+    /**
+     * Get calculated wallet balance from transactions
+     */
+    public function getCalculatedWalletBalanceAttribute(): float
+    {
+        $lastTransaction = $this->walletTransactions()
+            ->where('status', 'completed')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($lastTransaction) {
+            return (float) $lastTransaction->balance_after;
+        }
+
+        return 0.0;
+    }
+
+    /**
+     * Get calculated loyalty level from loyalty points
+     */
+    public function getCalculatedLoyaltyLevelAttribute(): string
+    {
+        $points = $this->loyalty_points;
+        
+        // الحصول على العتبات من الإعدادات
+        $thresholds = \DB::table('loyalty_settings')
+            ->whereIn('key', ['bronze_threshold', 'silver_threshold', 'gold_threshold'])
+            ->pluck('value', 'key')
+            ->toArray();
+        
+        $goldThreshold = (int) ($thresholds['gold_threshold'] ?? 1000);
+        $silverThreshold = (int) ($thresholds['silver_threshold'] ?? 500);
+        $bronzeThreshold = (int) ($thresholds['bronze_threshold'] ?? 0);
+        
+        if ($points >= $goldThreshold) {
+            return 'gold';
+        } elseif ($points >= $silverThreshold) {
+            return 'silver';
+        } else {
+            return 'bronze';
+        }
     }
 }

@@ -45,8 +45,8 @@ class CouponController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'code' => ['required', 'string', 'max:50', 'unique:coupons,code'],
+        $validationRules = [
+            'code' => ['nullable', 'string', 'max:50'],
             'name' => ['required', 'string', 'max:255'],
             'discount_type' => ['required', 'in:percentage,fixed'],
             'discount_value' => ['required', 'numeric', 'min:0'],
@@ -59,13 +59,23 @@ class CouponController extends Controller
             'expires_at' => ['nullable', 'date', 'after:starts_at'],
             'is_active' => ['sometimes', 'boolean'],
             'description' => ['nullable', 'string', 'max:1000'],
-        ]);
+        ];
+
+        // Add unique validation for code only if provided
+        if ($request->filled('code')) {
+            $validationRules['code'][] = 'unique:coupons,code';
+        }
+
+        $data = $request->validate($validationRules);
 
         // Generate code if not provided
-        if (empty($data['code'])) {
-            $data['code'] = strtoupper(Str::random(8));
+        if (empty($data['code']) || trim($data['code']) === '') {
+            // Generate unique code
+            do {
+                $data['code'] = strtoupper(Str::random(8));
+            } while (Coupon::where('code', $data['code'])->exists());
         } else {
-            $data['code'] = strtoupper($data['code']);
+            $data['code'] = strtoupper(trim($data['code']));
         }
 
         $data['is_active'] = $request->boolean('is_active', true);

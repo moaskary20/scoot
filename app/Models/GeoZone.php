@@ -17,6 +17,9 @@ class GeoZone extends Model
         'center_latitude',
         'center_longitude',
         'is_active',
+        'allow_trip_start',
+        'price_per_minute',
+        'trip_start_fee',
         'description',
     ];
 
@@ -25,5 +28,8 @@ class GeoZone extends Model
         'center_latitude' => 'float',
         'center_longitude' => 'float',
         'is_active' => 'boolean',
+        'allow_trip_start' => 'boolean',
+        'price_per_minute' => 'decimal:2',
+        'trip_start_fee' => 'decimal:2',
     ];
 }

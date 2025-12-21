@@ -21,11 +21,11 @@
                 @endif
                 <a href="{{ route('admin.trips.edit', $trip) }}"
                    class="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
-                    {{ trans('messages.تعديل') }}
+                    {{ trans('messages.Edit') }}
                 </a>
                 <a href="{{ route('admin.trips.index') }}"
                    class="text-sm text-gray-600 hover:text-secondary">
-                    {{ trans('messages.رجوع') }}
+                    {{ trans('messages.Back') }}
                 </a>
             </div>
         </div>
@@ -66,7 +66,11 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                     <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Duration') }}</div>
                     <div class="text-2xl font-bold text-secondary">
-                        @if($trip->duration_minutes)
+                        @if($trip->status === 'active')
+                            <div id="trip-timer" class="text-blue-600">
+                                <span id="trip-duration-hours">00</span>:<span id="trip-duration-minutes">00</span>:<span id="trip-duration-seconds">00</span>
+                            </div>
+                        @elseif($trip->duration_minutes)
                             {{ $trip->duration_minutes }} {{ trans('messages.min') }}
                         @else
                             <span class="text-gray-400">-</span>
@@ -77,7 +81,12 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                     <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Total Cost') }}</div>
                     <div class="text-2xl font-bold text-emerald-600">
-                        {{ number_format($trip->cost, 2) }} {{ trans('messages.EGP') }}
+                        @if($trip->status === 'active')
+                            <div id="trip-cost">{{ number_format($trip->cost, 2) }}</div>
+                        @else
+                            {{ number_format($trip->cost, 2) }}
+                        @endif
+                        {{ trans('messages.EGP') }}
                     </div>
                 </div>
 
@@ -214,5 +223,67 @@
             @endif
         </div>
     </div>
+
+    @if($trip->status === 'active')
+        @push('scripts')
+            <script>
+                (function() {
+                    const startTime = new Date('{{ $trip->start_time->toIso8601String() }}');
+                    @if($geoZone)
+                    const pricePerMinute = {{ $geoZone->price_per_minute }};
+                    const tripStartFee = {{ $geoZone->trip_start_fee }};
+                    const hasPricing = true;
+                    @else
+                    const pricePerMinute = 0;
+                    const tripStartFee = 0;
+                    const hasPricing = false;
+                    @endif
+                    
+                    function updateTimer() {
+                        const now = new Date();
+                        const diff = Math.floor((now - startTime) / 1000); // difference in seconds
+                        
+                        // Update duration timer
+                        const hours = Math.floor(diff / 3600);
+                        const minutes = Math.floor((diff % 3600) / 60);
+                        const seconds = diff % 60;
+                        
+                        const hoursElement = document.getElementById('trip-duration-hours');
+                        const minutesElement = document.getElementById('trip-duration-minutes');
+                        const secondsElement = document.getElementById('trip-duration-seconds');
+                        
+                        if (hoursElement) {
+                            hoursElement.textContent = String(hours).padStart(2, '0');
+                        }
+                        if (minutesElement) {
+                            minutesElement.textContent = String(minutes).padStart(2, '0');
+                        }
+                        if (secondsElement) {
+                            secondsElement.textContent = String(seconds).padStart(2, '0');
+                        }
+                        
+                        // Calculate and update cost based on duration and pricing
+                        const costElement = document.getElementById('trip-cost');
+                        if (costElement) {
+                            if (hasPricing && pricePerMinute > 0) {
+                                const totalMinutes = diff / 60;
+                                const calculatedCost = tripStartFee + (totalMinutes * pricePerMinute);
+                                costElement.textContent = calculatedCost.toFixed(2);
+                            } else {
+                                // If no pricing, keep showing the base cost
+                                costElement.textContent = {{ number_format($trip->cost, 2) }};
+                            }
+                        }
+                    }
+                    
+                    // Update immediately when page loads
+                    updateTimer();
+                    
+                    // Update every second continuously
+                    setInterval(updateTimer, 1000);
+                })();
+            </script>
+        @endpush
+    @endif
 </x-app-layout>
 

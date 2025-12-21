@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\Trip;
 use App\Repositories\WalletRepository;
+use App\Repositories\LoyaltyRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 
@@ -11,6 +12,7 @@ class TripRepository
 {
     public function __construct(
         private readonly WalletRepository $walletRepository,
+        private readonly LoyaltyRepository $loyaltyRepository,
     ) {
         //
     }
@@ -34,7 +36,36 @@ class TripRepository
 
     public function update(Trip $trip, array $data): Trip
     {
+        $wasCompleted = $trip->status === 'completed';
         $trip->update($data);
+        $trip->refresh();
+
+        // If trip status changed to completed and wasn't completed before
+        if (!$wasCompleted && $trip->status === 'completed' && $trip->duration_minutes > 0) {
+            // Check if loyalty points were already added for this trip
+            $existingTransaction = \App\Models\LoyaltyPointsTransaction::where('trip_id', $trip->id)
+                ->where('type', 'earned')
+                ->first();
+
+            // Only add points if no transaction exists for this trip
+            if (!$existingTransaction) {
+                try {
+                    $pointsEarned = $this->loyaltyRepository->calculatePointsForTrip($trip->duration_minutes);
+                    if ($pointsEarned > 0) {
+                        $this->loyaltyRepository->addPoints(
+                            $trip->user,
+                            $pointsEarned,
+                            'earned',
+                            $trip->id,
+                            "Points earned for completed trip #{$trip->id} - Duration: {$trip->duration_minutes} minutes"
+                        );
+                    }
+                } catch (\Exception $e) {
+                    // Log error but don't fail the trip update
+                    \Log::error("Failed to add loyalty points for trip {$trip->id}: " . $e->getMessage());
+                }
+            }
+        }
 
         return $trip;
     }
@@ -103,6 +134,33 @@ class TripRepository
             } catch (\Exception $e) {
                 // Log error but don't fail the trip completion
                 \Log::error("Failed to deduct wallet for trip {$trip->id}: " . $e->getMessage());
+            }
+        }
+
+        // Add loyalty points based on trip duration (only if not already added)
+        if ($durationMinutes > 0) {
+            try {
+                // Check if loyalty points were already added for this trip
+                $existingTransaction = \App\Models\LoyaltyPointsTransaction::where('trip_id', $trip->id)
+                    ->where('type', 'earned')
+                    ->first();
+
+                // Only add points if no transaction exists for this trip
+                if (!$existingTransaction) {
+                    $pointsEarned = $this->loyaltyRepository->calculatePointsForTrip($durationMinutes);
+                    if ($pointsEarned > 0) {
+                        $this->loyaltyRepository->addPoints(
+                            $trip->user,
+                            $pointsEarned,
+                            'earned',
+                            $trip->id,
+                            "Points earned for completed trip #{$trip->id} - Duration: {$durationMinutes} minutes"
+                        );
+                    }
+                }
+            } catch (\Exception $e) {
+                // Log error but don't fail the trip completion
+                \Log::error("Failed to add loyalty points for trip {$trip->id}: " . $e->getMessage());
             }
         }
 

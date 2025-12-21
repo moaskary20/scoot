@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Repositories\UserRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -16,11 +17,21 @@ class UserController extends Controller
         //
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $users = $this->repository->paginate(20);
+        $search = $request->get('search');
+        $users = $this->repository->paginate(20, $search);
+        $users->load('roles');
 
-        return view('admin.users.index', compact('users'));
+        // تحديث مستويات الولاء بناءً على نقاط الولاء
+        foreach ($users as $user) {
+            $calculatedLevel = $user->calculated_loyalty_level;
+            if ($user->loyalty_level !== $calculatedLevel) {
+                $user->update(['loyalty_level' => $calculatedLevel]);
+            }
+        }
+
+        return view('admin.users.index', compact('users', 'search'));
     }
 
     public function create()
@@ -35,6 +46,9 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'phone' => ['nullable', 'string', 'max:20'],
+            'age' => ['nullable', 'integer', 'min:1', 'max:120'],
+            'university_id' => ['nullable', 'string', 'max:255'],
+            'national_id_photo' => ['nullable', 'image', 'max:5120'], // 5MB max
             'wallet_balance' => ['nullable', 'numeric', 'min:0'],
             'loyalty_points' => ['nullable', 'integer', 'min:0'],
             'loyalty_level' => ['nullable', 'in:bronze,silver,gold'],
@@ -47,15 +61,27 @@ class UserController extends Controller
         $data['loyalty_level'] = $data['loyalty_level'] ?? 'bronze';
         $data['is_active'] = $request->boolean('is_active', true);
 
+        // Handle file upload
+        if ($request->hasFile('national_id_photo')) {
+            $data['national_id_photo'] = $request->file('national_id_photo')->store('national_id_photos', 'public');
+        }
+
         $this->repository->create($data);
 
         return redirect()
             ->route('admin.users.index')
-            ->with('status', __('User created successfully.'));
+            ->with('status', trans('messages.User created successfully.'));
     }
 
     public function show(User $user)
     {
+        // تحديث مستوى الولاء بناءً على نقاط الولاء
+        $calculatedLevel = $user->calculated_loyalty_level;
+        if ($user->loyalty_level !== $calculatedLevel) {
+            $user->update(['loyalty_level' => $calculatedLevel]);
+            $user->refresh();
+        }
+
         $user->loadCount(['trips', 'penalties']);
         $user->load('roles');
         $trips = $user->trips()->with(['scooter'])->orderByDesc('start_time')->limit(10)->get();
@@ -78,6 +104,9 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'phone' => ['nullable', 'string', 'max:20'],
+            'age' => ['nullable', 'integer', 'min:1', 'max:120'],
+            'university_id' => ['nullable', 'string', 'max:255'],
+            'national_id_photo' => ['nullable', 'image', 'max:5120'], // 5MB max
             'wallet_balance' => ['nullable', 'numeric', 'min:0'],
             'loyalty_points' => ['nullable', 'integer', 'min:0'],
             'loyalty_level' => ['nullable', 'in:bronze,silver,gold'],
@@ -90,13 +119,22 @@ class UserController extends Controller
             unset($data['password']);
         }
 
+        // Handle file upload
+        if ($request->hasFile('national_id_photo')) {
+            // Delete old photo if exists
+            if ($user->national_id_photo && \Storage::disk('public')->exists($user->national_id_photo)) {
+                \Storage::disk('public')->delete($user->national_id_photo);
+            }
+            $data['national_id_photo'] = $request->file('national_id_photo')->store('national_id_photos', 'public');
+        }
+
         $data['is_active'] = $request->boolean('is_active', $user->is_active);
 
         $this->repository->update($user, $data);
 
         return redirect()
             ->route('admin.users.index')
-            ->with('status', __('User updated successfully.'));
+            ->with('status', trans('messages.User updated successfully.'));
     }
 
     public function destroy(User $user)

@@ -43,6 +43,46 @@
     </div>
 
     <div>
+        <label for="age" class="block text-sm font-medium text-gray-700 mb-1">
+            {{ trans('messages.Age') }}
+        </label>
+        <input type="number" name="age" id="age" min="1" max="120" value="{{ old('age', $user->age ?? '') }}"
+               class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+        @error('age')
+            <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+        @enderror
+    </div>
+
+    <div>
+        <label for="university_id" class="block text-sm font-medium text-gray-700 mb-1">
+            {{ trans('messages.University ID') }}
+        </label>
+        <input type="text" name="university_id" id="university_id" value="{{ old('university_id', $user->university_id ?? '') }}"
+               class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+        @error('university_id')
+            <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+        @enderror
+    </div>
+
+    <div class="md:col-span-2">
+        <label for="national_id_photo" class="block text-sm font-medium text-gray-700 mb-1">
+            {{ trans('messages.Photo of national Id') }}
+        </label>
+        <input type="file" name="national_id_photo" id="national_id_photo" accept="image/*"
+               class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+        @error('national_id_photo')
+            <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+        @enderror
+        @if(isset($user) && $user->national_id_photo)
+            <div class="mt-2">
+                <img src="{{ asset('storage/' . $user->national_id_photo) }}" alt="National ID Photo" 
+                     class="h-32 w-auto rounded-lg border border-gray-300">
+                <p class="mt-1 text-xs text-gray-500">{{ trans('messages.Current photo') }}</p>
+            </div>
+        @endif
+    </div>
+
+    <div>
         <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
             {{ isset($user) ? trans('messages.New Password (leave blank to keep current)') : trans('messages.Password') }} <span class="text-red-500">*</span>
         </label>

@@ -27,36 +27,51 @@
 
             <!-- Filters -->
             <div class="mb-6 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                <form method="GET" action="{{ route('admin.trips.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Status') }}</label>
-                        <select name="status" class="w-full text-sm rounded-lg border-gray-300">
-                            <option value="">{{ trans('messages.All') }}</option>
-                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>{{ trans('messages.Active') }}</option>
-                            <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>{{ trans('messages.Completed') }}</option>
-                            <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>{{ trans('messages.Cancelled') }}</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Zone Exit') }}</label>
-                        <select name="zone_exit" class="w-full text-sm rounded-lg border-gray-300">
-                            <option value="">{{ trans('messages.All') }}</option>
-                            <option value="1" {{ request('zone_exit') === '1' ? 'selected' : '' }}>{{ trans('messages.Yes') }}</option>
-                            <option value="0" {{ request('zone_exit') === '0' ? 'selected' : '' }}>{{ trans('messages.No') }}</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Date From') }}</label>
-                        <input type="date" name="date_from" value="{{ request('date_from') }}" class="w-full text-sm rounded-lg border-gray-300">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Date To') }}</label>
-                        <input type="date" name="date_to" value="{{ request('date_to') }}" class="w-full text-sm rounded-lg border-gray-300">
-                    </div>
-                    <div class="flex items-end">
-                        <button type="submit" class="w-full px-4 py-2 bg-primary text-secondary text-sm font-semibold rounded-lg hover:bg-yellow-400">
-                            {{ trans('messages.Filter') }}
-                        </button>
+                <form method="GET" action="{{ route('admin.trips.index') }}" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Search') }} ({{ trans('messages.Name') }} / {{ trans('messages.Phone') }} / {{ trans('messages.University ID') }})</label>
+                            <input type="text" 
+                                   name="user_search" 
+                                   value="{{ request('user_search') }}" 
+                                   placeholder="{{ trans('messages.Enter name, phone, or university ID') }}"
+                                   class="w-full text-sm rounded-lg border-gray-300 focus:border-primary focus:ring-primary">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Status') }}</label>
+                            <select name="status" class="w-full text-sm rounded-lg border-gray-300">
+                                <option value="">{{ trans('messages.All') }}</option>
+                                <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>{{ trans('messages.Active') }}</option>
+                                <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>{{ trans('messages.Completed') }}</option>
+                                <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>{{ trans('messages.Cancelled') }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Zone Exit') }}</label>
+                            <select name="zone_exit" class="w-full text-sm rounded-lg border-gray-300">
+                                <option value="">{{ trans('messages.All') }}</option>
+                                <option value="1" {{ request('zone_exit') === '1' ? 'selected' : '' }}>{{ trans('messages.Yes') }}</option>
+                                <option value="0" {{ request('zone_exit') === '0' ? 'selected' : '' }}>{{ trans('messages.No') }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Date From') }}</label>
+                            <input type="date" name="date_from" value="{{ request('date_from') }}" class="w-full text-sm rounded-lg border-gray-300">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">{{ trans('messages.Date To') }}</label>
+                            <input type="date" name="date_to" value="{{ request('date_to') }}" class="w-full text-sm rounded-lg border-gray-300">
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <button type="submit" class="flex-1 px-4 py-2 bg-primary text-secondary text-sm font-semibold rounded-lg hover:bg-yellow-400">
+                                {{ trans('messages.Filter') }}
+                            </button>
+                            @if(request()->hasAny(['user_search', 'status', 'zone_exit', 'date_from', 'date_to']))
+                                <a href="{{ route('admin.trips.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300">
+                                    {{ trans('messages.Reset') }}
+                                </a>
+                            @endif
+                        </div>
                     </div>
                 </form>
             </div>
@@ -82,7 +97,11 @@
                                 {{ $trip->id }}
                             </td>
                             <td class="px-4 py-3 text-right">
-                                <div class="font-semibold text-secondary">{{ $trip->user->name }}</div>
+                                <div class="font-semibold text-secondary">
+                                    <a href="{{ route('admin.users.show', $trip->user) }}" class="hover:text-primary transition">
+                                        {{ $trip->user->name }}
+                                    </a>
+                                </div>
                                 <div class="text-xs text-gray-500">{{ $trip->user->email }}</div>
                             </td>
                             <td class="px-4 py-3 text-right">
@@ -151,7 +170,7 @@
                 </table>
 
                 <div class="px-4 py-3 border-t border-gray-100">
-                    {{ $trips->links() }}
+                    {{ $trips->appends(request()->query())->links() }}
                 </div>
             </div>
         </div>

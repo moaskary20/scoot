@@ -35,7 +35,7 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                     <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Wallet Balance') }}</div>
                     <div class="text-2xl font-bold text-emerald-600">
-                        {{ number_format($user->wallet_balance, 2) }} {{ trans('messages.EGP') }}
+                        {{ number_format($user->calculated_wallet_balance, 2) }} {{ trans('messages.EGP') }}
                     </div>
                     <div class="mt-2">
                         <a href="{{ route('admin.users.wallet.transactions', $user) }}" class="text-xs text-primary hover:underline">
@@ -122,6 +122,25 @@
                     <div>
                         <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Phone') }}</div>
                         <div class="text-gray-700">{{ $user->phone ?: '-' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Age') }}</div>
+                        <div class="text-gray-700">{{ $user->age ?: '-' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">{{ trans('messages.University ID') }}</div>
+                        <div class="text-gray-700">{{ $user->university_id ?: '-' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Photo of national Id') }}</div>
+                        @if($user->national_id_photo)
+                            <div class="mt-2">
+                                <img src="{{ asset('storage/' . $user->national_id_photo) }}" alt="National ID Photo" 
+                                     class="h-32 w-auto rounded-lg border border-gray-300">
+                            </div>
+                        @else
+                            <div class="text-gray-500">-</div>
+                        @endif
                     </div>
                     <div>
                         <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Status') }}</div>
@@ -256,38 +275,6 @@
                 </form>
             </div>
 
-            <!-- Roles Management -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h3 class="text-sm font-semibold text-secondary mb-4">{{ trans('messages.Roles & Permissions') }}</h3>
-                
-                <form action="{{ route('admin.users.assign-roles', $user) }}" method="POST">
-                    @csrf
-                    <div class="space-y-3">
-                        @foreach($allRoles as $role)
-                            <label class="flex items-start">
-                                <input type="checkbox" name="roles[]" value="{{ $role->id }}"
-                                       class="mt-1 rounded border-gray-300"
-                                       {{ $user->roles->contains($role->id) ? 'checked' : '' }}>
-                                <div class="ml-2 flex-1">
-                                    <div class="text-sm font-medium text-gray-900">{{ $role->name }}</div>
-                                    @if($role->description)
-                                        <div class="text-xs text-gray-500 mt-0.5">{{ $role->description }}</div>
-                                    @endif
-                                    <div class="text-xs text-gray-400 mt-1">
-                                        {{ trans('messages.Permissions') }}: {{ $role->permissions->count() }}
-                                    </div>
-                                </div>
-                            </label>
-                        @endforeach
-                    </div>
-                    <div class="mt-4">
-                        <button type="submit" class="px-4 py-2 bg-primary text-secondary text-sm font-medium rounded-lg hover:bg-yellow-400">
-                            {{ trans('messages.Update Roles') }}
-                        </button>
-                    </div>
-                </form>
-            </div>
-
             <!-- Trips Section -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div class="flex items-center justify-between mb-4">
@@ -298,17 +285,17 @@
                     </a>
                 </div>
                 @if($trips->count() > 0)
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto" dir="rtl">
                         <table class="min-w-full divide-y divide-gray-200 text-xs">
                             <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.ID') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Scooter') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Start Time') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Duration') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Cost') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Status') }}</th>
-                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Actions') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.ID') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Scooter') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Start Time') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Duration') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Cost') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Status') }}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Actions') }}</th>
                             </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-100">
@@ -335,7 +322,7 @@
                                             {{ trans('messages.' . ucfirst($trip->status)) }}
                                         </span>
                                     </td>
-                                    <td class="px-3 py-2 text-right">
+                                    <td class="px-3 py-2 text-left">
                                         <a href="{{ route('admin.trips.show', $trip) }}"
                                            class="text-primary hover:text-yellow-500">
                                             {{ trans('messages.View') }}
@@ -363,17 +350,17 @@
                     </a>
                 </div>
                 @if($penalties->count() > 0)
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto" dir="rtl">
                         <table class="min-w-full divide-y divide-gray-200 text-xs">
                             <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.ID') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Type') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Title') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Amount') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Status') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Applied At') }}</th>
-                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Actions') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.ID') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Type') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Title') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Amount') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Status') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Applied At') }}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Actions') }}</th>
                             </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-100">
@@ -411,7 +398,7 @@
                                     <td class="px-3 py-2 text-gray-600">
                                         {{ $penalty->applied_at?->format('Y-m-d H:i') ?: '-' }}
                                     </td>
-                                    <td class="px-3 py-2 text-right">
+                                    <td class="px-3 py-2 text-left">
                                         <a href="{{ route('admin.penalties.show', $penalty) }}"
                                            class="text-primary hover:text-yellow-500">
                                             {{ trans('messages.View') }}
@@ -439,16 +426,16 @@
                     </a>
                 </div>
                 @if($loyaltyTransactions->count() > 0)
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto" dir="rtl">
                         <table class="min-w-full divide-y divide-gray-200 text-xs">
                             <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.ID') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Type') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Points') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Balance After') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Description') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Date') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.ID') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Type') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Points') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Balance After') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Description') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Date') }}</th>
                             </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-100">
@@ -506,17 +493,17 @@
                     $userSubscriptions = $user->subscriptions()->with(['coupon'])->orderByDesc('created_at')->limit(5)->get();
                 @endphp
                 @if($userSubscriptions->count() > 0)
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto" dir="rtl">
                         <table class="min-w-full divide-y divide-gray-200 text-xs">
                             <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.ID') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Name') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Type') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Usage') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Status') }}</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Expires At') }}</th>
-                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Actions') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.ID') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Name') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Type') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Usage') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Status') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Expires At') }}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ trans('messages.Actions') }}</th>
                             </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-100">
@@ -552,7 +539,7 @@
                                         </span>
                                     </td>
                                     <td class="px-3 py-2 text-gray-600">{{ $subscription->expires_at->format('Y-m-d H:i') }}</td>
-                                    <td class="px-3 py-2 text-right">
+                                    <td class="px-3 py-2 text-left">
                                         <a href="{{ route('admin.subscriptions.show', $subscription) }}"
                                            class="text-primary hover:text-yellow-500">
                                             {{ trans('messages.View') }}

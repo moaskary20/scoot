@@ -25,6 +25,31 @@
                 </div>
             @endif
 
+            <!-- Search Filter -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+                <form method="GET" action="{{ route('admin.users.index') }}" class="flex items-end gap-4">
+                    <div class="flex-1">
+                        <label for="search" class="block text-xs text-gray-500 mb-1">
+                            {{ trans('messages.Search') }} ({{ trans('messages.Name') }} / {{ trans('messages.Phone') }} / {{ trans('messages.University ID') }})
+                        </label>
+                        <input type="text" 
+                               name="search" 
+                               id="search" 
+                               value="{{ request('search') }}" 
+                               placeholder="{{ trans('messages.Enter name, phone, or university ID') }}"
+                               class="w-full text-sm rounded-lg border-gray-300 focus:border-primary focus:ring-primary">
+                    </div>
+                    <button type="submit" class="px-4 py-2 bg-primary text-secondary text-sm font-medium rounded-lg hover:bg-yellow-400 transition">
+                        {{ trans('messages.Search') }}
+                    </button>
+                    @if(request('search'))
+                        <a href="{{ route('admin.users.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition">
+                            {{ trans('messages.Reset') }}
+                        </a>
+                    @endif
+                </form>
+            </div>
+
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <table class="min-w-full divide-y divide-gray-200 text-sm" dir="rtl">
                     <thead class="bg-gray-50">
@@ -33,6 +58,8 @@
                         <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Name') }}</th>
                         <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Email') }}</th>
                         <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Phone') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Age') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.University ID') }}</th>
                         <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Wallet Balance') }}</th>
                         <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Loyalty') }}</th>
                         <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ trans('messages.Status') }}</th>
@@ -54,9 +81,15 @@
                             <td class="px-4 py-3 text-gray-600 text-xs text-right">
                                 {{ $user->phone ?: '-' }}
                             </td>
+                            <td class="px-4 py-3 text-gray-600 text-xs text-right">
+                                {{ $user->age ?: '-' }}
+                            </td>
+                            <td class="px-4 py-3 text-gray-600 text-xs text-right">
+                                {{ $user->university_id ?: '-' }}
+                            </td>
                             <td class="px-4 py-3 text-right">
                                 <span class="font-semibold text-emerald-600">
-                                    {{ number_format($user->wallet_balance, 2) }} {{ trans('messages.EGP') }}
+                                    {{ number_format($user->calculated_wallet_balance, 2) }} {{ trans('messages.EGP') }}
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-right">
@@ -109,7 +142,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-4 py-6 text-center text-sm text-gray-500" dir="rtl">
+                            <td colspan="10" class="px-4 py-6 text-center text-sm text-gray-500" dir="rtl">
                                 {{ trans('messages.No users found') }}
                             </td>
                         </tr>
@@ -118,7 +151,7 @@
                 </table>
 
                 <div class="px-4 py-3 border-t border-gray-100">
-                    {{ $users->links() }}
+                    {{ $users->appends(request()->query())->links() }}
                 </div>
             </div>
         </div>

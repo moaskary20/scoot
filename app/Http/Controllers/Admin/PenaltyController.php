@@ -40,6 +40,16 @@ class PenaltyController extends Controller
             $query->where('is_auto_applied', $request->auto_applied === '1');
         }
 
+        // Search by user name, phone, or university_id
+        if ($request->filled('user_search')) {
+            $search = $request->user_search;
+            $query->whereHas('user', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('university_id', 'like', "%{$search}%");
+            });
+        }
+
         $penalties = $query->orderByDesc('created_at')->paginate(20);
 
         return view('admin.penalties.index', compact('penalties'));

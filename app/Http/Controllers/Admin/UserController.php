@@ -204,4 +204,210 @@ class UserController extends Controller
             ->route('admin.users.show', $user)
             ->with('status', __('User roles updated successfully.'));
     }
+
+    public function inactive(Request $request)
+    {
+        $search = $request->get('search');
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
+        $export = $request->get('export');
+
+        $query = User::where('is_active', false)
+            ->with('roles')
+            ->orderBy('created_at', 'desc');
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('university_id', 'like', "%{$search}%");
+            });
+        }
+
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+
+        // Export functionality
+        if ($export === 'csv') {
+            $users = $query->get();
+            return $this->exportToCsv($users);
+        }
+
+        $users = $query->paginate(20)->appends(request()->query());
+        $inactiveCount = User::where('is_active', false)->count();
+
+        return view('admin.users.inactive', compact('users', 'search', 'inactiveCount', 'dateFrom', 'dateTo'));
+    }
+
+    private function exportToCsv($users)
+    {
+        $filename = 'inactive_users_' . date('Y-m-d_His') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $callback = function() use ($users) {
+            $file = fopen('php://output', 'w');
+            
+            // Add BOM for UTF-8
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Headers
+            fputcsv($file, [
+                trans('messages.Name'),
+                trans('messages.Email'),
+                trans('messages.Phone'),
+                trans('messages.University ID'),
+                trans('messages.Age'),
+                trans('messages.Email Verified'),
+                trans('messages.Phone Verified'),
+                trans('messages.University ID Verified'),
+                trans('messages.Registered At'),
+                trans('messages.Review Notes'),
+            ]);
+
+            // Data
+            foreach ($users as $user) {
+                fputcsv($file, [
+                    $user->name,
+                    $user->email,
+                    $user->phone ?? '-',
+                    $user->university_id ?? '-',
+                    $user->age ?? '-',
+                    $user->email_verified_at ? trans('messages.Yes') : trans('messages.No'),
+                    $user->phone ? trans('messages.Yes') : trans('messages.No'),
+                    $user->university_id ? trans('messages.Yes') : trans('messages.No'),
+                    $user->created_at->format('Y-m-d H:i'),
+                    $user->review_notes ?? '-',
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function active(Request $request)
+    {
+        $search = $request->get('search');
+        $loyaltyLevel = $request->get('loyalty_level');
+        $walletMin = $request->get('wallet_min');
+        $walletMax = $request->get('wallet_max');
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        
+        $query = User::where('is_active', true)
+            ->with(['roles', 'trips' => function($q) {
+                $q->latest()->limit(1);
+            }])
+            ->withCount('trips');
+
+        // Search filter
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('university_id', 'like', "%{$search}%");
+            });
+        }
+
+        // Loyalty level filter
+        if ($loyaltyLevel) {
+            $query->where('loyalty_level', $loyaltyLevel);
+        }
+
+        // Wallet balance range filter
+        if ($walletMin !== null) {
+            $query->where('wallet_balance', '>=', $walletMin);
+        }
+        if ($walletMax !== null) {
+            $query->where('wallet_balance', '<=', $walletMax);
+        }
+
+        // Sorting
+        $allowedSorts = ['name', 'email', 'wallet_balance', 'loyalty_points', 'loyalty_level', 'created_at', 'trips_count'];
+        if (in_array($sortBy, $allowedSorts)) {
+            if ($sortBy === 'trips_count') {
+                $query->orderBy('trips_count', $sortOrder);
+            } else {
+                $query->orderBy($sortBy, $sortOrder);
+            }
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
+        $users = $query->paginate(20)->appends(request()->query());
+        $activeCount = User::where('is_active', true)->count();
+
+        // تحديث مستويات الولاء
+        foreach ($users as $user) {
+            $calculatedLevel = $user->calculated_loyalty_level;
+            if ($user->loyalty_level !== $calculatedLevel) {
+                $user->update(['loyalty_level' => $calculatedLevel]);
+            }
+        }
+
+        return view('admin.users.active', compact('users', 'search', 'activeCount', 'loyaltyLevel', 'walletMin', 'walletMax', 'sortBy', 'sortOrder'));
+    }
+
+    public function bulkActivate(Request $request)
+    {
+        $request->validate([
+            'user_ids' => ['required', 'array'],
+            'user_ids.*' => ['exists:users,id'],
+        ]);
+
+        $count = User::whereIn('id', $request->user_ids)
+            ->where('is_active', false)
+            ->update(['is_active' => true]);
+
+        return redirect()
+            ->back()
+            ->with('status', trans('messages.:count users activated successfully.', ['count' => $count]));
+    }
+
+    public function quickPreview(User $user)
+    {
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'university_id' => $user->university_id,
+            'age' => $user->age,
+            'email_verified' => (bool) $user->email_verified_at,
+            'registered_at' => $user->created_at->format('Y-m-d H:i'),
+            'review_notes' => $user->review_notes,
+        ]);
+    }
+
+    public function getReviewNotes(User $user)
+    {
+        return response()->json([
+            'review_notes' => $user->review_notes,
+        ]);
+    }
+
+    public function updateReviewNotes(Request $request, User $user)
+    {
+        $data = $request->validate([
+            'review_notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $user->update(['review_notes' => $data['review_notes'] ?? null]);
+
+        return redirect()
+            ->back()
+            ->with('status', trans('messages.Review notes updated successfully.'));
+    }
 }

@@ -30,6 +30,7 @@ class User extends Authenticatable
         'loyalty_level',
         'avatar',
         'is_active',
+        'review_notes',
     ];
 
     /**

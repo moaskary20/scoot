@@ -33,6 +33,7 @@ class WalletRepository
 
     /**
      * Top up wallet (add balance)
+     * Automatically deducts debt (negative balance) first
      */
     public function topUp(
         User $user,
@@ -44,12 +45,37 @@ class WalletRepository
     ): WalletTransaction {
         return DB::transaction(function () use ($user, $amount, $paymentMethod, $reference, $description, $metadata) {
             $balanceBefore = (float) $user->wallet_balance;
+            
+            // Calculate debt (negative balance)
+            $debt = $balanceBefore < 0 ? abs($balanceBefore) : 0;
+            
+            // If there's debt, deduct it from the top-up amount first
+            $remainingAmount = $amount;
+            $debtPaid = 0;
+            
+            if ($debt > 0 && $amount > 0) {
+                if ($amount >= $debt) {
+                    // Full debt payment
+                    $debtPaid = $debt;
+                    $remainingAmount = $amount - $debt;
+                } else {
+                    // Partial debt payment
+                    $debtPaid = $amount;
+                    $remainingAmount = 0;
+                }
+            }
+            
             $balanceAfter = $balanceBefore + $amount;
-
+            
             // Update user balance
             $user->update(['wallet_balance' => $balanceAfter]);
 
-            // Create transaction
+            // Create transaction with debt payment info
+            $transactionDescription = $description ?? "Wallet top-up of {$amount} EGP";
+            if ($debtPaid > 0) {
+                $transactionDescription .= " (Debt paid: {$debtPaid} EGP)";
+            }
+
             return WalletTransaction::create([
                 'user_id' => $user->id,
                 'type' => 'top_up',
@@ -60,8 +86,12 @@ class WalletRepository
                 'reference' => $reference,
                 'payment_method' => $paymentMethod,
                 'status' => 'completed',
-                'description' => $description ?? "Wallet top-up of {$amount} EGP",
-                'metadata' => $metadata,
+                'description' => $transactionDescription,
+                'metadata' => array_merge($metadata ?? [], [
+                    'debt_before' => $debt,
+                    'debt_paid' => $debtPaid,
+                    'remaining_debt' => max(0, $debt - $debtPaid),
+                ]),
                 'processed_at' => now(),
             ]);
         });
@@ -69,6 +99,8 @@ class WalletRepository
 
     /**
      * Deduct from wallet (for trip payment, penalty, etc.)
+     * 
+     * @param bool $allowNegative Allow negative balance (for penalties)
      */
     public function deduct(
         User $user,
@@ -76,13 +108,14 @@ class WalletRepository
         string $type = 'trip_payment',
         ?Trip $trip = null,
         ?string $description = null,
-        ?array $metadata = null
+        ?array $metadata = null,
+        bool $allowNegative = false
     ): WalletTransaction {
-        return DB::transaction(function () use ($user, $amount, $type, $trip, $description, $metadata) {
+        return DB::transaction(function () use ($user, $amount, $type, $trip, $description, $metadata, $allowNegative) {
             $balanceBefore = (float) $user->wallet_balance;
 
-            // Check if user has sufficient balance
-            if ($balanceBefore < $amount) {
+            // Check if user has sufficient balance (unless negative is allowed)
+            if (!$allowNegative && $balanceBefore < $amount) {
                 throw new \Exception("Insufficient wallet balance. Required: {$amount}, Available: {$balanceBefore}");
             }
 
@@ -102,10 +135,34 @@ class WalletRepository
                 'balance_after' => $balanceAfter,
                 'status' => 'completed',
                 'description' => $description ?? "Payment for {$type}",
-                'metadata' => $metadata,
+                'metadata' => array_merge($metadata ?? [], [
+                    'allow_negative' => $allowNegative,
+                    'debt_amount' => $balanceAfter < 0 ? abs($balanceAfter) : 0,
+                ]),
                 'processed_at' => now(),
             ]);
         });
+    }
+
+    /**
+     * Deduct penalty from wallet (allows negative balance)
+     */
+    public function deductPenalty(
+        User $user,
+        float $amount,
+        ?Trip $trip = null,
+        ?string $description = null,
+        ?array $metadata = null
+    ): WalletTransaction {
+        return $this->deduct(
+            $user,
+            $amount,
+            'penalty',
+            $trip,
+            $description,
+            $metadata,
+            true // Allow negative balance for penalties
+        );
     }
 
     /**
@@ -233,6 +290,15 @@ class WalletRepository
             'trip_payments' => $transactions->where('type', 'trip_payment')->sum('amount'),
             'penalties' => $transactions->where('type', 'penalty')->sum('amount'),
         ];
+    }
+
+    /**
+     * Get current debt (negative balance) for a user
+     */
+    public function getDebt(User $user): float
+    {
+        $balance = (float) $user->wallet_balance;
+        return $balance < 0 ? abs($balance) : 0.0;
     }
 }
 

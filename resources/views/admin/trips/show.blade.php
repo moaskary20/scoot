@@ -208,7 +208,17 @@
                         @if($trip->penalty)
                             <div>
                                 <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Penalty Applied') }}</div>
-                                <div class="font-semibold text-red-600">{{ $trip->penalty->type ?? 'N/A' }}</div>
+                                <div class="font-semibold text-red-600">
+                                    @php
+                                        $penaltyTypes = [
+                                            'zone_exit' => trans('messages.Zone Exit'),
+                                            'forbidden_parking' => trans('messages.Forbidden Parking'),
+                                            'unlocked_scooter' => trans('messages.Unlocked Scooter'),
+                                            'other' => trans('messages.Other'),
+                                        ];
+                                    @endphp
+                                    {{ $penaltyTypes[$trip->penalty->type] ?? $trip->penalty->type ?? 'N/A' }}
+                                </div>
                             </div>
                         @endif
                     </div>

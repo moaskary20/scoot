@@ -9,7 +9,7 @@
                     {{ trans('messages.إدارة جميع معاملات المحفظة') }}
                 </p>
             </div>
-            <button onclick="document.getElementById('add-transaction-modal').classList.remove('hidden')"
+            <button onclick="openAddTransactionModal()"
                     class="inline-flex items-center px-4 py-2 bg-primary text-secondary text-sm font-semibold rounded-lg shadow-sm hover:bg-yellow-400 transition">
                 +
                 <span class="mr-2">{{ trans('messages.Add Transaction') }}</span>
@@ -305,8 +305,22 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">
                         {{ trans('messages.Amount') }} ({{ trans('messages.EGP') }}) <span class="text-red-500">*</span>
                     </label>
-                    <input type="number" step="0.01" min="0.01" name="amount" required
+                    <input type="number" step="0.01" min="0.01" name="amount" id="transaction_amount" required
                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm">
+                </div>
+
+                <!-- Payment Method (only for credit transactions) -->
+                <div id="payment_method_container" style="display: none;">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ trans('messages.Payment Method') }} <span class="text-red-500">*</span>
+                    </label>
+                    <select name="payment_method" id="payment_method" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm">
+                        <option value="manual">{{ trans('messages.Manual (Direct)') }}</option>
+                        <option value="paymob">Paymob</option>
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500">
+                        {{ trans('messages.Select payment method. If Paymob is selected, a payment link will be generated.') }}
+                    </p>
                 </div>
 
                 <div>
@@ -330,7 +344,7 @@
                             class="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
                         {{ trans('messages.Cancel') }}
                     </button>
-                    <button type="submit"
+                    <button type="submit" id="submit_btn"
                             class="px-4 py-2 bg-primary text-secondary text-sm font-semibold rounded-lg shadow-sm hover:bg-yellow-400 transition">
                         {{ trans('messages.Save') }}
                     </button>
@@ -338,5 +352,69 @@
             </form>
         </div>
     </div>
+
+    <script>
+        // Function to toggle payment method visibility
+        function togglePaymentMethod() {
+            const transactionTypeSelect = document.querySelector('#add-transaction-modal select[name="transaction_type"]');
+            const paymentMethodContainer = document.getElementById('payment_method_container');
+            const paymentMethodSelect = document.getElementById('payment_method');
+            
+            if (!transactionTypeSelect || !paymentMethodContainer || !paymentMethodSelect) {
+                return;
+            }
+
+            if (transactionTypeSelect.value === 'credit') {
+                paymentMethodContainer.style.display = 'block';
+                paymentMethodSelect.required = true;
+            } else {
+                paymentMethodContainer.style.display = 'none';
+                paymentMethodSelect.required = false;
+                paymentMethodSelect.value = 'manual';
+            }
+        }
+
+        // Function to open modal and setup event listeners
+        function openAddTransactionModal() {
+            const modal = document.getElementById('add-transaction-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                
+                // Setup event listener for transaction type change
+                setTimeout(function() {
+                    const transactionTypeSelect = modal.querySelector('select[name="transaction_type"]');
+                    const paymentMethodContainer = document.getElementById('payment_method_container');
+                    
+                    if (transactionTypeSelect) {
+                        // Remove any existing listeners by cloning
+                        const newSelect = transactionTypeSelect.cloneNode(true);
+                        transactionTypeSelect.parentNode.replaceChild(newSelect, transactionTypeSelect);
+                        
+                        // Add new listener
+                        newSelect.addEventListener('change', togglePaymentMethod);
+                        
+                        // Check initial state - if credit is selected, show payment method
+                        if (newSelect.value === 'credit' && paymentMethodContainer) {
+                            paymentMethodContainer.style.display = 'block';
+                            const paymentMethodSelect = document.getElementById('payment_method');
+                            if (paymentMethodSelect) {
+                                paymentMethodSelect.required = true;
+                            }
+                        }
+                    }
+                }, 150);
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup event listener for transaction type change (in case modal is already visible)
+            const transactionTypeSelect = document.querySelector('#add-transaction-modal select[name="transaction_type"]');
+            if (transactionTypeSelect) {
+                transactionTypeSelect.addEventListener('change', togglePaymentMethod);
+                togglePaymentMethod();
+            }
+        });
+    </script>
 </x-app-layout>
 

@@ -25,13 +25,49 @@
             </a>
 
             <!-- Users -->
-            <a href="{{ route('admin.users.index') }}" 
-               class="flex items-center gap-3 px-4 py-3 rounded-lg transition {{ request()->routeIs('admin.users.*') ? 'bg-primary text-secondary font-semibold' : 'text-gray-700 hover:bg-gray-100' }}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                <span>{{ trans('messages.Users') }}</span>
-            </a>
+            <div x-data="{ open: {{ request()->routeIs('admin.users.*') ? 'true' : 'false' }} }">
+                <button @click="open = !open" 
+                        class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition {{ request()->routeIs('admin.users.*') ? 'bg-primary text-secondary font-semibold' : 'text-gray-700 hover:bg-gray-100' }}">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <span>{{ trans('messages.Users') }}</span>
+                    </div>
+                    <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div x-show="open" x-collapse class="mr-4 mt-1 space-y-1">
+                    <a href="{{ route('admin.users.index') }}" 
+                       class="flex items-center gap-3 px-4 py-2 rounded-lg transition {{ request()->routeIs('admin.users.index') && !request()->routeIs('admin.users.inactive') && !request()->routeIs('admin.users.active') ? 'bg-primary/20 text-primary font-semibold' : 'text-gray-600 hover:bg-gray-50' }}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <span class="text-sm">{{ trans('messages.All Users') }}</span>
+                    </a>
+                    <a href="{{ route('admin.users.inactive') }}" 
+                       class="flex items-center gap-3 px-4 py-2 rounded-lg transition {{ request()->routeIs('admin.users.inactive') ? 'bg-red-50 text-red-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' }}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg>
+                        <span class="text-sm">{{ trans('messages.Inactive Users') }}</span>
+                        @php
+                            $inactiveCount = \App\Models\User::where('is_active', false)->count();
+                        @endphp
+                        @if($inactiveCount > 0)
+                            <span class="ml-auto px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-600 rounded-full">{{ $inactiveCount }}</span>
+                        @endif
+                    </a>
+                    <a href="{{ route('admin.users.active') }}" 
+                       class="flex items-center gap-3 px-4 py-2 rounded-lg transition {{ request()->routeIs('admin.users.active') ? 'bg-emerald-50 text-emerald-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' }}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="text-sm">{{ trans('messages.Active Users') }}</span>
+                    </a>
+                </div>
+            </div>
 
             <!-- Trips -->
             <a href="{{ route('admin.trips.index') }}" 
@@ -140,6 +176,15 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
                 <span>{{ trans('messages.Permissions') }}</span>
+            </a>
+
+            <!-- Payment Settings -->
+            <a href="{{ route('admin.payment-settings.index') }}" 
+               class="flex items-center gap-3 px-4 py-3 rounded-lg transition {{ request()->routeIs('admin.payment-settings.*') ? 'bg-primary text-secondary font-semibold' : 'text-gray-700 hover:bg-gray-100' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                <span>{{ trans('messages.Payment Settings') }}</span>
             </a>
         </nav>
     </div>

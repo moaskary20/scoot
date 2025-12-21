@@ -25,6 +25,14 @@ Route::middleware('auth')->group(function () {
             Route::post('scooters/{scooter}/unlock', [ScooterController::class, 'unlock'])->name('scooters.unlock');
             Route::get('scooters/{scooter}/lock-status', [ScooterController::class, 'getLockStatus'])->name('scooters.lock-status');
             
+            // User routes - must be before resource to avoid conflicts
+            Route::get('users/inactive', [\App\Http\Controllers\Admin\UserController::class, 'inactive'])->name('users.inactive');
+            Route::get('users/active', [\App\Http\Controllers\Admin\UserController::class, 'active'])->name('users.active');
+            Route::post('users/bulk-activate', [\App\Http\Controllers\Admin\UserController::class, 'bulkActivate'])->name('users.bulk-activate');
+            Route::get('users/{user}/quick-preview', [\App\Http\Controllers\Admin\UserController::class, 'quickPreview'])->name('users.quick-preview');
+            Route::get('users/{user}/review-notes', [\App\Http\Controllers\Admin\UserController::class, 'getReviewNotes'])->name('users.review-notes.get');
+            Route::patch('users/{user}/review-notes', [\App\Http\Controllers\Admin\UserController::class, 'updateReviewNotes'])->name('users.review-notes.update');
+            
             Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
             Route::post('users/{user}/toggle-active', [\App\Http\Controllers\Admin\UserController::class, 'toggleActive'])->name('users.toggle-active');
             Route::post('users/{user}/add-wallet-balance', [\App\Http\Controllers\Admin\UserController::class, 'addWalletBalance'])->name('users.add-wallet-balance');
@@ -67,6 +75,9 @@ Route::middleware('auth')->group(function () {
             Route::get('wallet', [\App\Http\Controllers\Admin\WalletController::class, 'index'])->name('wallet.index');
             Route::get('wallet/{walletTransaction}', [\App\Http\Controllers\Admin\WalletController::class, 'show'])->name('wallet.show');
             Route::post('wallet/create-transaction', [\App\Http\Controllers\Admin\WalletController::class, 'createTransaction'])->name('wallet.create-transaction');
+            Route::get('wallet/paymob/payment', [\App\Http\Controllers\Admin\WalletController::class, 'paymobPayment'])->name('wallet.paymob.payment');
+            Route::post('wallet/paymob/callback', [\App\Http\Controllers\Admin\WalletController::class, 'paymobCallback'])->name('wallet.paymob.callback');
+            Route::get('wallet/paymob/return', [\App\Http\Controllers\Admin\WalletController::class, 'paymobReturn'])->name('wallet.paymob.return');
             Route::post('users/{user}/wallet/top-up', [\App\Http\Controllers\Admin\WalletController::class, 'topUp'])->name('users.wallet.top-up');
             Route::post('users/{user}/wallet/refund', [\App\Http\Controllers\Admin\WalletController::class, 'refund'])->name('users.wallet.refund');
             Route::post('users/{user}/wallet/adjust', [\App\Http\Controllers\Admin\WalletController::class, 'adjust'])->name('users.wallet.adjust');
@@ -84,6 +95,10 @@ Route::middleware('auth')->group(function () {
             Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
             Route::resource('permissions', \App\Http\Controllers\Admin\PermissionController::class);
             Route::post('users/{user}/assign-roles', [\App\Http\Controllers\Admin\UserController::class, 'assignRoles'])->name('users.assign-roles');
+            
+            Route::get('payment-settings', [\App\Http\Controllers\Admin\PaymentSettingsController::class, 'index'])->name('payment-settings.index');
+            Route::post('payment-settings', [\App\Http\Controllers\Admin\PaymentSettingsController::class, 'update'])->name('payment-settings.update');
+            Route::post('payment-settings/test-connection', [\App\Http\Controllers\Admin\PaymentSettingsController::class, 'testConnection'])->name('payment-settings.test-connection');
         });
 });
 

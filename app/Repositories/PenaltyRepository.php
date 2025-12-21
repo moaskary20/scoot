@@ -31,7 +31,34 @@ class PenaltyRepository
     {
         $data['applied_at'] = $data['applied_at'] ?? Carbon::now();
         
-        return Penalty::create($data);
+        $penalty = Penalty::create($data);
+        
+        // Deduct penalty amount directly from wallet (allows negative balance)
+        if ($penalty->amount > 0 && $penalty->user) {
+            try {
+                $this->walletRepository->deductPenalty(
+                    $penalty->user,
+                    $penalty->amount,
+                    $penalty->trip,
+                    "Penalty applied: {$penalty->title}",
+                    [
+                        'penalty_id' => $penalty->id,
+                        'penalty_type' => $penalty->type,
+                    ]
+                );
+                
+                // Mark penalty as paid since it's automatically deducted
+                $penalty->update([
+                    'status' => 'paid',
+                    'paid_at' => Carbon::now(),
+                ]);
+            } catch (\Exception $e) {
+                // Log error but don't fail penalty creation
+                \Log::error("Failed to deduct wallet for penalty {$penalty->id}: " . $e->getMessage());
+            }
+        }
+        
+        return $penalty->fresh();
     }
 
     public function update(Penalty $penalty, array $data): Penalty
@@ -48,20 +75,28 @@ class PenaltyRepository
 
     public function markAsPaid(Penalty $penalty, bool $deductFromWallet = true): Penalty
     {
+        // If penalty is already paid (auto-deducted on creation), just return
+        if ($penalty->status === 'paid') {
+            return $penalty->fresh();
+        }
+
         $penalty->update([
             'status' => 'paid',
             'paid_at' => Carbon::now(),
         ]);
 
-        // Deduct from wallet if requested
+        // Deduct from wallet if requested (allows negative balance)
         if ($deductFromWallet && $penalty->amount > 0) {
             try {
-                $this->walletRepository->deduct(
+                $this->walletRepository->deductPenalty(
                     $penalty->user,
                     $penalty->amount,
-                    'penalty',
                     $penalty->trip,
-                    "Penalty payment: {$penalty->title}"
+                    "Penalty payment: {$penalty->title}",
+                    [
+                        'penalty_id' => $penalty->id,
+                        'penalty_type' => $penalty->type,
+                    ]
                 );
             } catch (\Exception $e) {
                 // Log error but don't fail the payment marking

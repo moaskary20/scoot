@@ -30,6 +30,7 @@ class Trip extends Model
         'coupon_id',
         'penalty_id',
         'notes',
+        'end_image',
     ];
 
     protected $casts = [

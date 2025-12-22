@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/api_service.dart';
@@ -39,8 +40,8 @@ class _FreeBalanceScreenState extends State<FreeBalanceScreen> {
         // Show warning if referral code is empty
         if (data.referralCode.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('لم يتم العثور على كود إحالة. يرجى المحاولة مرة أخرى.'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)?.referralCodeNotFound ?? 'لم يتم العثور على كود إحالة. يرجى المحاولة مرة أخرى.'),
               backgroundColor: Colors.orange,
               duration: Duration(seconds: 3),
             ),
@@ -55,7 +56,7 @@ class _FreeBalanceScreenState extends State<FreeBalanceScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ في تحميل البيانات: $e'),
+            content: Text('${AppLocalizations.of(context)?.errorLoadingData ?? 'حدث خطأ في تحميل البيانات'}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -72,8 +73,8 @@ class _FreeBalanceScreenState extends State<FreeBalanceScreen> {
       // Check again after reload
       if (_referralData == null || _referralData!.referralCode.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('لا يوجد كود إحالة متاح. يرجى المحاولة مرة أخرى.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)?.noReferralCodeAvailable ?? 'لا يوجد كود إحالة متاح. يرجى المحاولة مرة أخرى.'),
             backgroundColor: Colors.orange,
             duration: Duration(seconds: 3),
           ),
@@ -112,7 +113,7 @@ ${_referralData!.affiliateLink}
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ في المشاركة: $e'),
+            content: Text('${AppLocalizations.of(context)?.errorSharing ?? 'حدث خطأ في المشاركة'}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -133,9 +134,9 @@ ${_referralData!.affiliateLink}
             icon: const Icon(Icons.arrow_back, color: Colors.black),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
-            'رصيد مجاني',
-            style: TextStyle(
+          title: Text(
+            AppLocalizations.of(context)?.freeBalance ?? 'رصيد مجاني',
+            style: const TextStyle(
               color: Colors.black,
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -165,7 +166,7 @@ ${_referralData!.affiliateLink}
                       const SizedBox(height: 30),
                       // Main Title
                       Text(
-                        'احصل على ${_referralData?.rewardPerReferral ?? 30} ج.م رصيد!',
+                        '${AppLocalizations.of(context)?.getBalanceReward ?? 'احصل على'} ${_referralData?.rewardPerReferral ?? 30} ${AppLocalizations.of(context)?.egp ?? 'ج.م'} ${AppLocalizations.of(context)?.balanceReward ?? 'رصيد!'}',
                         style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
@@ -178,7 +179,7 @@ ${_referralData!.affiliateLink}
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
-                          'رشح بحد أقصي ${_referralData?.maxReferrals ?? 5} من اصدقاءك لتحصل على ${_referralData?.rewardPerReferral ?? 30} ج.م رصيد لما يكملوا رحلتهم الأولى! 🐰 ✌️',
+                          '${AppLocalizations.of(context)?.referFriendsDescription ?? 'رشح بحد أقصي'} ${_referralData?.maxReferrals ?? 5} ${AppLocalizations.of(context)?.fromYourFriends ?? 'من اصدقاءك لتحصل على'} ${_referralData?.rewardPerReferral ?? 30} ${AppLocalizations.of(context)?.balanceWhenComplete ?? 'ج.م رصيد لما يكملوا رحلتهم الأولى!'} 🐰 ✌️',
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey[700],
@@ -200,9 +201,9 @@ ${_referralData!.affiliateLink}
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text(
-                                'كود الإحالة: ',
-                                style: TextStyle(
+                              Text(
+                                '${AppLocalizations.of(context)?.referralCodeLabel ?? 'كود الإحالة:'} ',
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black87,
@@ -228,14 +229,14 @@ ${_referralData!.affiliateLink}
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.orange[200]!),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                              SizedBox(width: 8),
+                              const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                              const SizedBox(width: 8),
                               Text(
-                                'لا يوجد كود إحالة متاح',
-                                style: TextStyle(
+                                AppLocalizations.of(context)?.noReferralCodeAvailable ?? 'لا يوجد كود إحالة متاح',
+                                style: const TextStyle(
                                   fontSize: 16,
                                   color: Colors.orange,
                                 ),
@@ -251,9 +252,9 @@ ${_referralData!.affiliateLink}
                         child: ElevatedButton.icon(
                           onPressed: _shareReferralCode,
                           icon: const Icon(Icons.share, size: 24),
-                          label: const Text(
-                            'شارك الكود بتاعك',
-                            style: TextStyle(
+                          label: Text(
+                            AppLocalizations.of(context)?.shareYourCode ?? 'شارك الكود بتاعك',
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -284,8 +285,8 @@ ${_referralData!.affiliateLink}
                           Expanded(
                             child: _buildStatusCard(
                               icon: Icons.account_balance_wallet,
-                              title: '${(_referralData?.totalEarned ?? 0.0).toStringAsFixed(0)} ج.م',
-                              subtitle: 'تم استلامه بالكامل',
+                              title: '${(_referralData?.totalEarned ?? 0.0).toStringAsFixed(0)} ${AppLocalizations.of(context)?.egp ?? 'ج.م'}',
+                              subtitle: AppLocalizations.of(context)?.receivedInFull ?? 'تم استلامه بالكامل',
                               color: Colors.green,
                             ),
                           ),

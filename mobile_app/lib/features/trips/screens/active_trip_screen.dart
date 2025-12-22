@@ -1,0 +1,591 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import '../../../core/constants/app_constants.dart';
+import '../../../core/services/api_service.dart';
+import '../../../core/services/location_service.dart';
+import '../../../core/l10n/app_localizations.dart';
+
+class ActiveTripScreen extends StatefulWidget {
+  final int tripId;
+  final String scooterCode;
+  final DateTime startTime;
+
+  const ActiveTripScreen({
+    super.key,
+    required this.tripId,
+    required this.scooterCode,
+    required this.startTime,
+  });
+
+  @override
+  State<ActiveTripScreen> createState() => _ActiveTripScreenState();
+}
+
+class _ActiveTripScreenState extends State<ActiveTripScreen> {
+  final ApiService _apiService = ApiService();
+  final LocationService _locationService = LocationService();
+  final ImagePicker _imagePicker = ImagePicker();
+  
+  Timer? _timer;
+  int _durationSeconds = 0;
+  int _durationMinutes = 0;
+  bool _isCompleting = false;
+  Position? _currentPosition;
+  late DateTime _actualStartTime;
+
+  @override
+  void initState() {
+    super.initState();
+    print('🚀 ActiveTripScreen initialized');
+    print('📊 Trip ID: ${widget.tripId}');
+    print('🛴 Scooter Code: ${widget.scooterCode}');
+    print('⏰ Start Time from backend: ${widget.startTime}');
+    
+    // Use current time as actual start time to avoid timezone issues
+    // Or use the backend time if it's recent (within 2 minutes)
+    final now = DateTime.now();
+    final backendTime = widget.startTime.isUtc ? widget.startTime.toLocal() : widget.startTime;
+    final timeDiff = now.difference(backendTime).inMinutes.abs();
+    
+    print('🕐 Current time: $now');
+    print('🕐 Backend time: $backendTime');
+    print('🕐 Time difference: $timeDiff minutes');
+    
+    if (timeDiff > 2 || timeDiff < 0) {
+      // If backend time is more than 2 minutes different or negative, use current time
+      _actualStartTime = now;
+      print('⚠️ Backend time seems incorrect (diff: $timeDiff min), using current time');
+    } else {
+      _actualStartTime = backendTime;
+      print('✅ Using backend start time (diff: $timeDiff min)');
+    }
+    
+    print('⏰ Actual Start Time: $_actualStartTime');
+    _startTimer();
+    _getCurrentLocation();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _updateDuration();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _updateDuration();
+    });
+  }
+
+  void _updateDuration() {
+    final now = DateTime.now();
+    final duration = now.difference(_actualStartTime);
+    final totalSeconds = duration.inSeconds;
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    
+    // Ensure duration is not negative
+    if (totalSeconds < 0) {
+      print('⚠️ Negative duration detected, resetting start time');
+      _actualStartTime = now;
+      setState(() {
+        _durationSeconds = 0;
+        _durationMinutes = 0;
+      });
+      return;
+    }
+    
+    setState(() {
+      _durationSeconds = totalSeconds;
+      _durationMinutes = minutes;
+    });
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      final position = await _locationService.getCurrentLocation();
+      setState(() {
+        _currentPosition = position;
+      });
+    } catch (e) {
+      print('Error getting location: $e');
+    }
+  }
+
+  Future<void> _completeTrip() async {
+    if (_isCompleting) return;
+
+    // Show confirmation dialog
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(AppLocalizations.of(context)?.closeTrip ?? 'إغلاق الرحلة'),
+        content: Text(
+          '${AppLocalizations.of(context)?.confirmCloseTrip ?? 'هل أنت متأكد من إغلاق الرحلة؟'}\n\n'
+          '${AppLocalizations.of(context)?.duration ?? 'المدة'}: $_durationMinutes ${AppLocalizations.of(context)?.minutes ?? 'دقيقة'}\n'
+          '${AppLocalizations.of(context)?.costCalculationMessage ?? 'سيتم حساب التكلفة حسب المنطقة الجغرافية'}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(AppLocalizations.of(context)?.cancel ?? 'إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: Text(AppLocalizations.of(context)?.closeTrip ?? 'إغلاق الرحلة'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    // Stop timer when starting completion
+    _timer?.cancel();
+
+    setState(() {
+      _isCompleting = true;
+    });
+
+    try {
+      // Get current location
+      await _getCurrentLocation();
+      
+      // Take photo
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+
+      if (image == null) {
+        // User cancelled photo, still complete trip
+        await _submitCompletion(null);
+      } else {
+        await _submitCompletion(image.path);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${AppLocalizations.of(context)?.errorOccurred ?? 'حدث خطأ'}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isCompleting = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _submitCompletion(String? imagePath) async {
+    try {
+      final result = await _apiService.completeTrip(
+        widget.tripId,
+        _currentPosition?.latitude,
+        _currentPosition?.longitude,
+        imagePath,
+      );
+
+      // Get cost from backend response
+      final cost = result['cost'] ?? 0.0;
+      final durationMinutes = result['duration_minutes'] ?? _durationMinutes;
+
+      // Reset completing state
+      if (mounted) {
+        setState(() {
+          _isCompleting = false;
+        });
+      }
+
+      // Show completion dialog with cost and return button
+      if (mounted) {
+        // Store navigator before showing dialog
+        final navigator = Navigator.of(context);
+        
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text(
+              'تم إغلاق الرحلة بنجاح',
+              style: TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 10),
+                _buildInfoRow('المدة', '$durationMinutes دقيقة'),
+                const SizedBox(height: 10),
+                _buildInfoRow('التكلفة', '${cost.toStringAsFixed(2)} ج.م'),
+              ],
+            ),
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    // Close dialog first
+                    Navigator.of(dialogContext).pop();
+                    
+                    // Wait a bit to ensure dialog is closed
+                    await Future.delayed(const Duration(milliseconds: 300));
+                    
+                    // Navigate back to home screen using stored navigator
+                    if (mounted) {
+                      try {
+                        // Use stored navigator to pop until home screen
+                        navigator.popUntil((route) {
+                          print('📍 Checking route: ${route.settings.name}, isFirst: ${route.isFirst}');
+                          return route.isFirst;
+                        });
+                        print('✅ Successfully navigated to home screen');
+                      } catch (e) {
+                        print('⚠️ Navigation failed: $e');
+                        // Fallback: try with rootNavigator
+                        if (mounted) {
+                          try {
+                            Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+                            print('✅ Successfully navigated using rootNavigator');
+                          } catch (e2) {
+                            print('⚠️ RootNavigator also failed: $e2');
+                            // Last resort: pop current route multiple times
+                            if (mounted) {
+                              int popCount = 0;
+                              while (navigator.canPop() && popCount < 10) {
+                                navigator.pop();
+                                popCount++;
+                              }
+                              print('⚠️ Popped $popCount routes as last resort');
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(AppConstants.primaryColor),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'العودة إلى الصفحة الرئيسية',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error in _submitCompletion: $e');
+      if (mounted) {
+        // Restart timer if error occurs
+        if (_timer == null || !_timer!.isActive) {
+          _startTimer();
+        }
+        
+        setState(() {
+          _isCompleting = false;
+        });
+        
+        // Show error dialog with option to go back anyway
+        final shouldGoBack = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('خطأ في إغلاق الرحلة'),
+            content: Text(
+              'حدث خطأ أثناء إغلاق الرحلة:\n\n$e\n\n'
+              'هل تريد العودة إلى الصفحة الرئيسية؟',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('البقاء هنا'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                ),
+                child: const Text('العودة للصفحة الرئيسية'),
+              ),
+            ],
+          ),
+        );
+        
+        if (shouldGoBack == true && mounted) {
+          // Navigate back to home screen even if there was an error
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } else {
+          // Show error snackbar
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${AppLocalizations.of(context)?.tripCompletionErrorMessage ?? 'حدث خطأ في إغلاق الرحلة'}: $e'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  String _formatDuration(int totalSeconds) {
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(AppConstants.primaryColor),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: PopScope(
+        canPop: false,
+        onPopInvoked: (didPop) {
+          if (didPop) return;
+          // Show warning when user tries to go back
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text(AppLocalizations.of(context)?.warning ?? 'تحذير'),
+              content: Text(
+                AppLocalizations.of(context)?.cannotCloseTripMessage ?? 'لا يمكنك إغلاق هذه الشاشة أثناء الرحلة. استخدم زر "إغلاق الرحلة" لإتمام الرحلة.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(AppLocalizations.of(context)?.ok ?? 'حسناً'),
+                ),
+              ],
+            ),
+          );
+        },
+        child: Scaffold(
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Color(AppConstants.primaryColor),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(30),
+                      bottomRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            onPressed: () {
+                              // Show warning
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: Text(AppLocalizations.of(context)?.warning ?? 'تحذير'),
+                                  content: Text(
+                                    AppLocalizations.of(context)?.cannotCancelTripMessage ?? 'لا يمكنك إلغاء الرحلة من هنا. يرجى استخدام زر "إغلاق الرحلة" لإتمامها.',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text(AppLocalizations.of(context)?.ok ?? 'حسناً'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          const Spacer(),
+                          const Text(
+                            'رحلة نشطة',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Spacer(),
+                          const SizedBox(width: 48),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      // Scooter code
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.electric_scooter,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'سكوتر ${widget.scooterCode}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Content
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Duration
+                        Container(
+                          padding: const EdgeInsets.all(30),
+                          decoration: BoxDecoration(
+                            color: Color(AppConstants.primaryColor).withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Column(
+                            children: [
+                              const Icon(
+                                Icons.timer,
+                                size: 48,
+                                color: Color(AppConstants.primaryColor),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                _formatDuration(_durationSeconds),
+                                style: TextStyle(
+                                  fontSize: 48,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(AppConstants.primaryColor),
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'مدة الرحلة',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 40),
+
+                        // Complete button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: _isCompleting ? null : _completeTrip,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: _isCompleting
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.stop_circle, size: 24),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'إغلاق الرحلة',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+

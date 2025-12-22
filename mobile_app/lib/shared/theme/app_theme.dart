@@ -1,7 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_constants.dart';
 
 class AppTheme {
+  // Helper method to get Tajawal text style
+  static TextStyle tajawal({
+    double? fontSize,
+    FontWeight? fontWeight,
+    Color? color,
+    double? height,
+  }) {
+    return GoogleFonts.tajawal(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      height: height,
+    );
+  }
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -17,35 +32,37 @@ class AppTheme {
         elevation: 0,
         centerTitle: true,
       ),
-      fontFamily: 'Tajawal',
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(
-          fontSize: 32,
-          fontWeight: FontWeight.bold,
-          color: Color(AppConstants.secondaryColor),
-        ),
-        displayMedium: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-          color: Color(AppConstants.secondaryColor),
-        ),
-        displaySmall: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: Color(AppConstants.secondaryColor),
-        ),
-        headlineMedium: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: Color(AppConstants.secondaryColor),
-        ),
-        bodyLarge: TextStyle(
-          fontSize: 16,
-          color: Color(AppConstants.secondaryColor),
-        ),
-        bodyMedium: TextStyle(
-          fontSize: 14,
-          color: Color(AppConstants.secondaryColor),
+      // Apply Tajawal font to all text in the app using Google Fonts
+      textTheme: GoogleFonts.tajawalTextTheme(
+        TextTheme(
+          displayLarge: GoogleFonts.tajawal(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: const Color(AppConstants.secondaryColor),
+          ),
+          displayMedium: GoogleFonts.tajawal(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: const Color(AppConstants.secondaryColor),
+          ),
+          displaySmall: GoogleFonts.tajawal(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: const Color(AppConstants.secondaryColor),
+          ),
+          headlineMedium: GoogleFonts.tajawal(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: const Color(AppConstants.secondaryColor),
+          ),
+          bodyLarge: GoogleFonts.tajawal(
+            fontSize: 16,
+            color: const Color(AppConstants.secondaryColor),
+          ),
+          bodyMedium: GoogleFonts.tajawal(
+            fontSize: 14,
+            color: const Color(AppConstants.secondaryColor),
+          ),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(

@@ -166,6 +166,10 @@ class ApiService {
   // Get nearby scooters
   Future<List<ScooterModel>> getNearbyScooters(double latitude, double longitude) async {
     try {
+      final url = '${ApiConstants.baseUrl}${ApiConstants.scootersNearby}';
+      print('🛴 Fetching nearby scooters from: $url');
+      print('📍 Location: lat=$latitude, lng=$longitude, radius=${AppConstants.nearbyRadius}');
+      
       final response = await _dio.get(
         ApiConstants.scootersNearby,
         queryParameters: {
@@ -175,29 +179,42 @@ class ApiService {
         },
       );
       
+      print('📦 Scooters API Response Status: ${response.statusCode}');
+      print('📦 Scooters API Response Data: ${response.data}');
+      
       if (response.data != null) {
         // Handle different response formats
         if (response.data['success'] == true && response.data['data'] != null) {
           final List<dynamic> scooters = response.data['data'];
-          return scooters.map((json) => ScooterModel.fromJson(json)).toList();
+          print('✅ Found ${scooters.length} scooters');
+          final result = scooters.map((json) => ScooterModel.fromJson(json)).toList();
+          print('✅ Parsed ${result.length} scooter models');
+          return result;
         } else if (response.data is List) {
           // If response is directly a list
           final List<dynamic> scooters = response.data as List;
+          print('✅ Found ${scooters.length} scooters (direct list)');
           return scooters.map((json) => ScooterModel.fromJson(json)).toList();
+        } else {
+          print('⚠️ Unexpected response format: ${response.data}');
         }
       }
       
+      print('⚠️ No scooters found or empty response');
       return [];
     } on DioException catch (e) {
+      print('❌ DioException fetching scooters: ${e.message}');
+      print('📡 Status Code: ${e.response?.statusCode}');
+      print('📡 Response Data: ${e.response?.data}');
+      
       // Handle 404 or other API errors gracefully
       if (e.response?.statusCode == 404) {
-        print('Scooters endpoint not found (404). Returning empty list.');
+        print('⚠️ Scooters endpoint not found (404). Returning empty list.');
         return [];
       }
-      print('Error fetching scooters: ${e.message}');
       return [];
     } catch (e) {
-      print('Error fetching scooters: $e');
+      print('❌ Error fetching scooters: $e');
       return [];
     }
   }
@@ -430,6 +447,136 @@ class ApiService {
         referredFriendsCount: 0,
         totalEarned: 0.0,
       );
+    }
+  }
+
+  // Start trip by scanning QR code
+  Future<Map<String, dynamic>> startTrip(String qrCode, double? latitude, double? longitude) async {
+    try {
+      print('🚀 Starting trip with QR code: $qrCode');
+      print('📍 Location: lat=$latitude, lng=$longitude');
+      
+      final response = await _dio.post(
+        ApiConstants.startTrip,
+        data: {
+          'qr_code': qrCode,
+          'latitude': latitude,
+          'longitude': longitude,
+        },
+      );
+
+      print('📦 Start trip response: ${response.statusCode}');
+      print('📦 Response data: ${response.data}');
+
+      if (response.data['success'] == true) {
+        return response.data['data'];
+      }
+
+      final errorMessage = response.data['message'] ?? 'فشل بدء الرحلة';
+      print('❌ Start trip failed: $errorMessage');
+      throw Exception(errorMessage);
+    } catch (e) {
+      print('❌ Error starting trip: $e');
+      if (e is DioException) {
+        print('📡 Status Code: ${e.response?.statusCode}');
+        print('📡 Response Data: ${e.response?.data}');
+        if (e.response?.data != null) {
+          final responseData = e.response!.data;
+          if (responseData['message'] != null) {
+            // If there's an active trip, include trip_id in the exception message
+            if (responseData['trip_id'] != null) {
+              throw Exception('${responseData['message']}|trip_id:${responseData['trip_id']}');
+            }
+            throw Exception(responseData['message']);
+          }
+        }
+      }
+      throw _handleError(e);
+    }
+  }
+
+  // Get active trip
+  Future<Map<String, dynamic>?> getActiveTrip() async {
+    try {
+      final response = await _dio.get('${ApiConstants.trips}/active');
+
+      if (response.data['success'] == true) {
+        return response.data['data'];
+      }
+
+      return null;
+    } catch (e) {
+      if (e is DioException && e.response?.statusCode == 404) {
+        return null; // No active trip
+      }
+      print('Error getting active trip: $e');
+      return null;
+    }
+  }
+
+  // Complete trip
+  Future<Map<String, dynamic>> completeTrip(
+    int tripId,
+    double? endLatitude,
+    double? endLongitude,
+    String? imagePath,
+  ) async {
+    try {
+      print('🔄 Completing trip: $tripId');
+      print('📍 End location: lat=$endLatitude, lng=$endLongitude');
+      print('📷 Image path: $imagePath');
+      
+      final formData = FormData.fromMap({
+        'end_latitude': endLatitude,
+        'end_longitude': endLongitude,
+      });
+
+      if (imagePath != null) {
+        try {
+          formData.files.add(
+            MapEntry(
+              'end_image',
+              await MultipartFile.fromFile(
+                imagePath,
+                filename: 'trip_end_${tripId}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+              ),
+            ),
+          );
+          print('✅ Image added to form data');
+        } catch (imageError) {
+          print('⚠️ Error adding image to form: $imageError');
+          // Continue without image if there's an error
+        }
+      }
+
+      final response = await _dio.post(
+        '${ApiConstants.trips}/$tripId/complete',
+        data: formData,
+      );
+
+      print('📦 Complete trip response: ${response.statusCode}');
+      print('📦 Response data: ${response.data}');
+
+      if (response.data['success'] == true) {
+        return response.data['data'];
+      }
+
+      final errorMessage = response.data['message'] ?? 'فشل إغلاق الرحلة';
+      print('❌ Complete trip failed: $errorMessage');
+      throw Exception(errorMessage);
+    } catch (e) {
+      print('❌ Error completing trip: $e');
+      if (e is DioException) {
+        print('📡 Status Code: ${e.response?.statusCode}');
+        print('📡 Response Data: ${e.response?.data}');
+        if (e.response?.data != null && e.response?.data['message'] != null) {
+          throw Exception(e.response!.data['message']);
+        }
+        if (e.response?.data != null && e.response?.data['error'] != null) {
+          throw Exception('${e.response!.data['message'] ?? 'حدث خطأ'}: ${e.response!.data['error']}');
+        }
+      }
+      throw _handleError(e);
     }
   }
 

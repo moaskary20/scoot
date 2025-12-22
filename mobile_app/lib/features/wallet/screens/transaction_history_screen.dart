@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/models/wallet_transaction_model.dart';
+import '../../../core/l10n/app_localizations.dart';
 
 class TransactionHistoryScreen extends StatefulWidget {
   const TransactionHistoryScreen({super.key});
@@ -57,7 +58,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ في تحميل المعاملات: $e'),
+            content: Text('${AppLocalizations.of(context)?.errorLoadingTransactions ?? 'حدث خطأ في تحميل المعاملات'}: $e'),
             backgroundColor: Colors.red,
           ),
         );

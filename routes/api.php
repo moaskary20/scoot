@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\MobileAuthController;
 use App\Http\Controllers\Api\MobileWalletController;
 use App\Http\Controllers\Api\MobileTripController;
 use App\Http\Controllers\Api\MobileReferralController;
+use App\Http\Controllers\Api\MobileScooterController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,9 +26,19 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+// Mobile App Scooters Routes
+Route::prefix('scooters')->group(function () {
+    Route::get('/nearby', [MobileScooterController::class, 'getNearbyScooters']);
+    Route::get('/', [MobileScooterController::class, 'getAllScooters']);
+    Route::get('/{id}', [MobileScooterController::class, 'getScooterDetails']);
+});
+
 // Mobile App Trips Routes
 Route::prefix('trips')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [MobileTripController::class, 'index']);
+    Route::post('/start', [MobileTripController::class, 'start']);
+    Route::get('/active', [MobileTripController::class, 'getActiveTrip']);
+    Route::post('/{id}/complete', [MobileTripController::class, 'complete']);
 });
 
 // Mobile App Wallet Routes

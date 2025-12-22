@@ -10,7 +10,7 @@ class AppConstants {
   
   // Map Settings
   static const double defaultZoom = 15.0;
-  static const double nearbyRadius = 5000; // 5km in meters
+  static const double nearbyRadius = 50000; // 50km in meters (will show all scooters regardless)
   
   // Trip Settings
   static const int maxTripDurationMinutes = 120;

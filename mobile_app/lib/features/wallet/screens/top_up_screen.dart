@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/l10n/app_localizations.dart';
 
 class TopUpScreen extends StatefulWidget {
   const TopUpScreen({super.key});
@@ -30,8 +31,8 @@ class _TopUpScreenState extends State<TopUpScreen> {
     final amount = double.tryParse(_amountController.text.trim());
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('يرجى إدخال مبلغ صحيح'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)?.pleaseEnterValidAmount ?? 'يرجى إدخال مبلغ صحيح'),
           backgroundColor: Colors.red,
         ),
       );
@@ -40,8 +41,8 @@ class _TopUpScreenState extends State<TopUpScreen> {
 
     if (amount < 1) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('الحد الأدنى للشحن هو 1 جنيه'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)?.minimumCharge ?? 'الحد الأدنى للشحن هو 1 جنيه'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -71,14 +72,14 @@ class _TopUpScreenState extends State<TopUpScreen> {
           final shouldProceed = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('تأكيد الدفع'),
+              title: Text(AppLocalizations.of(context)?.confirmPayment ?? 'تأكيد الدفع'),
               content: Text(
-                'سيتم فتح صفحة الدفع لشحن رصيدك بمبلغ ${amount.toStringAsFixed(2)} جنيه',
+                '${AppLocalizations.of(context)?.paymentPageWillOpen ?? 'سيتم فتح صفحة الدفع لشحن رصيدك بمبلغ'} ${amount.toStringAsFixed(2)} ${AppLocalizations.of(context)?.egp ?? 'جنيه'}',
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('إلغاء'),
+                  child: Text(AppLocalizations.of(context)?.cancel ?? 'إلغاء'),
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context, true),
@@ -86,7 +87,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
                     backgroundColor: Color(AppConstants.primaryColor),
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text('متابعة'),
+                  child: Text(AppLocalizations.of(context)?.continueText ?? 'متابعة'),
                 ),
               ],
             ),
@@ -104,8 +105,8 @@ class _TopUpScreenState extends State<TopUpScreen> {
               // Show success message and wait a bit before going back
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('تم فتح صفحة الدفع. بعد إتمام الدفع، سيتم تحديث رصيدك تلقائياً'),
+                  SnackBar(
+                    content: Text(AppLocalizations.of(context)?.paymentPageOpened ?? 'تم فتح صفحة الدفع. بعد إتمام الدفع، سيتم تحديث رصيدك تلقائياً'),
                     backgroundColor: Colors.green,
                     duration: Duration(seconds: 4),
                   ),
@@ -121,8 +122,8 @@ class _TopUpScreenState extends State<TopUpScreen> {
             } else {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('لا يمكن فتح صفحة الدفع'),
+                  SnackBar(
+                    content: Text(AppLocalizations.of(context)?.cannotOpenPaymentPage ?? 'لا يمكن فتح صفحة الدفع'),
                     backgroundColor: Colors.red,
                   ),
                 );
@@ -145,7 +146,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ: $e'),
+            content: Text('${AppLocalizations.of(context)?.errorOccurred ?? 'حدث خطأ'}: $e'),
             backgroundColor: Colors.red,
           ),
         );

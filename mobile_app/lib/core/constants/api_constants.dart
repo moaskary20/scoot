@@ -31,6 +31,7 @@ class ApiConstants {
   static const String startTrip = '/trips/start';
   static const String completeTrip = '/trips/{id}/complete';
   static const String cancelTrip = '/trips/{id}/cancel';
+  static const String activeTrip = '/trips/active';
   
   // Wallet
   static const String wallet = '/wallet';

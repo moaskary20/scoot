@@ -1,7 +1,11 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/models/scooter_model.dart';
@@ -11,7 +15,14 @@ import '../../../core/services/location_service.dart';
 import 'riding_guide_screen.dart';
 import '../../wallet/screens/wallet_screen.dart';
 import '../../wallet/screens/free_balance_screen.dart';
+import '../../wallet/screens/top_up_screen.dart';
+import '../../settings/screens/language_selection_screen.dart';
+import '../../../core/l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
+import '../../../core/services/language_service.dart';
 import '../../trips/screens/trips_screen.dart';
+import '../../trips/screens/qr_scanner_screen.dart';
+import '../../trips/screens/active_trip_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,19 +36,87 @@ class _HomeScreenState extends State<HomeScreen> {
   final LocationService _locationService = LocationService();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   GoogleMapController? _mapController;
-  
+
   Position? _currentPosition;
   List<ScooterModel> _scooters = [];
   bool _isLoading = true;
   Set<Marker> _markers = {};
   UserModel? _currentUser;
   bool _isLoadingUser = false;
+  BitmapDescriptor? _availableScooterIcon;
+  BitmapDescriptor? _unavailableScooterIcon;
 
   @override
   void initState() {
     super.initState();
+    _createCustomMarkers();
     _initializeLocation();
     _loadUserData(); // Load user data on screen init
+    _checkActiveTrip(); // Check for active trip on screen init
+  }
+
+  Future<void> _createCustomMarkers() async {
+    // Create available scooter icon (green)
+    _availableScooterIcon = await _createScooterIcon(Colors.green);
+    // Create unavailable scooter icon (red)
+    _unavailableScooterIcon = await _createScooterIcon(Colors.red);
+  }
+
+  Future<BitmapDescriptor> _createScooterIcon(Color color) async {
+    final pictureRecorder = ui.PictureRecorder();
+    final canvas = Canvas(pictureRecorder);
+    final size = 120.0;
+
+    // Draw background circle with shadow
+    final shadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.3)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    canvas.drawCircle(
+      Offset(size / 2 + 2, size / 2 + 2),
+      size / 2 - 4,
+      shadowPaint,
+    );
+
+    // Draw main circle
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(Offset(size / 2, size / 2), size / 2 - 4, paint);
+
+    // Draw white border
+    final borderPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5.0;
+    canvas.drawCircle(Offset(size / 2, size / 2), size / 2 - 6, borderPaint);
+
+    // Draw scooter emoji/icon using text
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: '🛴', // Scooter emoji
+        style: TextStyle(
+          fontSize: size * 0.45,
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: ui.TextDirection.ltr,
+      textAlign: TextAlign.center,
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(
+        (size - textPainter.width) / 2,
+        (size - textPainter.height) / 2 - 5,
+      ),
+    );
+
+    final picture = pictureRecorder.endRecording();
+    final image = await picture.toImage(size.toInt(), size.toInt());
+    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+
+    return BitmapDescriptor.fromBytes(bytes!.buffer.asUint8List());
   }
 
   Future<void> _initializeLocation() async {
@@ -68,22 +147,29 @@ class _HomeScreenState extends State<HomeScreen> {
           );
           _isLoading = false;
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('تعذر الحصول على موقعك. يتم استخدام موقع افتراضي.\n$e'),
+            content: Text(
+              'تعذر الحصول على موقعك. يتم استخدام موقع افتراضي.\n$e',
+            ),
             backgroundColor: Colors.orange,
             duration: const Duration(seconds: 4),
           ),
         );
-        
+
         await _loadScooters();
       }
     }
   }
 
   Future<void> _loadScooters() async {
-    if (_currentPosition == null || !mounted) return;
+    if (_currentPosition == null || !mounted) {
+      print(
+        '⚠️ Cannot load scooters: _currentPosition is null or widget not mounted',
+      );
+      return;
+    }
 
     if (mounted) {
       setState(() {
@@ -91,11 +177,17 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
 
+    print(
+      '🛴 Loading scooters for location: ${_currentPosition!.latitude}, ${_currentPosition!.longitude}',
+    );
+
     try {
       final scooters = await _apiService.getNearbyScooters(
         _currentPosition!.latitude,
         _currentPosition!.longitude,
       );
+
+      print('✅ Loaded ${scooters.length} scooters');
 
       if (mounted) {
         setState(() {
@@ -103,19 +195,24 @@ class _HomeScreenState extends State<HomeScreen> {
           _updateMarkers();
           _isLoading = false;
         });
-        
+
+        print('📍 Updated ${_markers.length} markers on map');
+
         // Show message if no scooters found (but not an error)
         if (scooters.isEmpty && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('لا توجد سكوترات متاحة في المنطقة القريبة'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)?.noScootersAvailable ?? 'لا توجد سكوترات متاحة في المنطقة القريبة'),
               backgroundColor: Colors.blue,
-              duration: Duration(seconds: 2),
+              duration: const Duration(seconds: 2),
             ),
           );
+        } else if (scooters.isNotEmpty) {
+          print('✅ Successfully displayed ${scooters.length} scooters on map');
         }
       }
     } catch (e) {
+      print('❌ Error loading scooters: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -127,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (!errorMsg.contains('404') && !errorMsg.contains('empty')) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('حدث خطأ في تحميل السكوترات'),
+              content: Text('${AppLocalizations.of(context)?.errorLoadingScooters ?? 'حدث خطأ في تحميل السكوترات'}: $e'),
               backgroundColor: Colors.orange,
               duration: const Duration(seconds: 3),
             ),
@@ -139,6 +236,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _updateMarkers() {
     _markers.clear();
+    print('🗺️ Updating markers...');
 
     // Add current location marker
     if (_currentPosition != null) {
@@ -150,32 +248,49 @@ class _HomeScreenState extends State<HomeScreen> {
             _currentPosition!.longitude,
           ),
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-          infoWindow: const InfoWindow(title: 'موقعك الحالي'),
+          infoWindow: InfoWindow(title: AppLocalizations.of(context)?.yourLocation ?? 'موقعك الحالي'),
         ),
       );
+      print('📍 Added current location marker');
     }
 
     // Add scooter markers
+    print('🛴 Adding ${_scooters.length} scooter markers...');
     for (var scooter in _scooters) {
+      if (scooter.latitude == 0.0 && scooter.longitude == 0.0) {
+        print('⚠️ Skipping scooter ${scooter.code} - invalid coordinates');
+        continue;
+      }
+
+      // Use custom scooter icon if available, otherwise use default
+      final icon = scooter.isAvailable
+          ? (_availableScooterIcon ??
+                BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueGreen,
+                ))
+          : (_unavailableScooterIcon ??
+                BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed));
+
       _markers.add(
         Marker(
           markerId: MarkerId('scooter_${scooter.id}'),
           position: LatLng(scooter.latitude, scooter.longitude),
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            scooter.isAvailable
-                ? BitmapDescriptor.hueGreen
-                : BitmapDescriptor.hueRed,
-          ),
+          icon: icon,
           infoWindow: InfoWindow(
-            title: 'سكوتر ${scooter.code}',
-            snippet: 'البطارية: ${scooter.batteryPercentage}%',
+            title: '${AppLocalizations.of(context)?.scooter ?? 'سكوتر'} ${scooter.code}',
+            snippet: '${AppLocalizations.of(context)?.battery ?? 'البطارية'}: ${scooter.batteryPercentage}%',
           ),
           onTap: () {
             _showScooterDetails(scooter);
           },
         ),
       );
+      print(
+        '✅ Added marker for scooter ${scooter.code} at (${scooter.latitude}, ${scooter.longitude})',
+      );
     }
+
+    print('✅ Total markers: ${_markers.length}');
   }
 
   void _showScooterDetails(ScooterModel scooter) {
@@ -210,9 +325,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       Text(
-                        scooter.isAvailable ? 'متاح' : 'غير متاح',
+                          scooter.isAvailable 
+                              ? (AppLocalizations.of(context)?.available ?? 'متاح')
+                              : (AppLocalizations.of(context)?.unavailable ?? 'غير متاح'),
                         style: TextStyle(
-                          color: scooter.isAvailable ? Colors.green : Colors.red,
+                          color: scooter.isAvailable
+                              ? Colors.green
+                              : Colors.red,
                           fontSize: 14,
                         ),
                       ),
@@ -232,14 +351,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(width: 20),
                 _buildInfoItem(
                   scooter.isLocked ? Icons.lock : Icons.lock_open,
-                  scooter.isLocked ? 'مقفول' : 'مفتوح',
+                  scooter.isLocked 
+                      ? (AppLocalizations.of(context)?.locked ?? 'مقفول')
+                      : (AppLocalizations.of(context)?.unlocked ?? 'مفتوح'),
                   scooter.isLocked ? Colors.orange : Colors.blue,
                 ),
                 if (scooter.distance != null) ...[
                   const SizedBox(width: 20),
                   _buildInfoItem(
                     Icons.location_on,
-                    '${(scooter.distance! / 1000).toStringAsFixed(1)} كم',
+                    '${(scooter.distance! / 1000).toStringAsFixed(1)} ${AppLocalizations.of(context)?.km ?? 'كم'}',
                     Colors.grey,
                   ),
                 ],
@@ -263,13 +384,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  'ابدأ الرحلة',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  child: Text(
+                    AppLocalizations.of(context)?.startTrip ?? 'ابدأ الرحلة',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                ),
               ),
             ),
           ],
@@ -305,24 +423,157 @@ class _HomeScreenState extends State<HomeScreen> {
       leading: Icon(icon, color: color, size: 24),
       title: Text(
         title,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-        ),
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
       ),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
     );
   }
 
-  void _startTrip(ScooterModel scooter) {
-    // TODO: Implement start trip functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('بدء الرحلة مع سكوتر ${scooter.code}'),
-        backgroundColor: Colors.green,
+  Future<void> _startTrip(ScooterModel scooter) async {
+    // Open QR scanner
+    final qrCode = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QRScannerScreen(
+          onQRCodeScanned: (code) {
+            Navigator.pop(context, code);
+          },
+        ),
       ),
     );
+
+    if (qrCode == null || qrCode.isEmpty) {
+      return; // User cancelled
+    }
+
+    // Show loading
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    try {
+      // Get current location
+      final position = await _locationService.getCurrentLocation();
+
+      // Start trip
+      final tripData = await _apiService.startTrip(
+        qrCode,
+        position.latitude,
+        position.longitude,
+      );
+
+      // Close loading dialog safely
+      if (mounted) {
+        await Future.microtask(() {
+          if (mounted) {
+            try {
+              Navigator.of(context, rootNavigator: false).pop();
+            } catch (e) {
+              print('⚠️ Error closing loading dialog: $e');
+            }
+          }
+        });
+      }
+
+      if (mounted) {
+        print('✅ Trip started successfully, navigating to active trip screen');
+        print('📊 Trip data: $tripData');
+
+        // Parse start_time and convert to local timezone
+        final startTimeString = tripData['start_time'];
+        DateTime startTime;
+        try {
+          // Try parsing as ISO 8601 first
+          startTime = DateTime.parse(startTimeString).toLocal();
+        } catch (e) {
+          // If parsing fails, try with different format
+          try {
+            startTime = DateFormat(
+              'yyyy-MM-dd HH:mm:ss',
+            ).parse(startTimeString).toLocal();
+          } catch (e2) {
+            // If all parsing fails, use current time
+            print(
+              '⚠️ Failed to parse start_time: $startTimeString, using current time',
+            );
+            startTime = DateTime.now();
+          }
+        }
+
+        print('📅 Parsed start time: $startTime (local)');
+
+        await _navigateToActiveTrip(
+          tripData['trip_id'],
+          tripData['scooter_code'] ?? scooter.code,
+          startTime,
+        );
+      }
+    } catch (e) {
+      // Close loading if still open
+      if (mounted) {
+        await Future.microtask(() {
+          if (mounted) {
+            try {
+              Navigator.of(context, rootNavigator: false).pop();
+            } catch (popError) {
+              print('⚠️ Error closing loading dialog: $popError');
+            }
+          }
+        });
+      }
+
+      // Check if error is due to active trip
+      final errorMessage = e.toString();
+      if (errorMessage.contains('لديك رحلة نشطة بالفعل') ||
+          errorMessage.contains('active trip')) {
+        // Try to extract trip_id from error message first
+        int? tripId;
+        if (errorMessage.contains('trip_id:')) {
+          try {
+            final tripIdMatch = RegExp(
+              r'trip_id:(\d+)',
+            ).firstMatch(errorMessage);
+            if (tripIdMatch != null) {
+              tripId = int.parse(tripIdMatch.group(1)!);
+              print('📋 Extracted trip_id from error: $tripId');
+            }
+          } catch (parseError) {
+            print('❌ Error parsing trip_id: $parseError');
+          }
+        }
+
+        // Try to get active trip and navigate to it
+        try {
+          final activeTrip = await _apiService.getActiveTrip();
+          if (activeTrip != null && mounted) {
+            print('✅ Found active trip, navigating to active trip screen');
+            await _navigateToActiveTrip(
+              activeTrip['id'],
+              activeTrip['scooter_code'] ?? 'غير معروف',
+              DateTime.parse(activeTrip['start_time']),
+            );
+            return;
+          }
+        } catch (tripError) {
+          print('❌ Error getting active trip: $tripError');
+        }
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('حدث خطأ في بدء الرحلة: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _recenterMap() async {
@@ -340,12 +591,12 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('المساعدة'),
-        content: const Text('كيف يمكننا مساعدتك؟'),
+        title: Text(AppLocalizations.of(context)?.help ?? 'المساعدة'),
+        content: Text(AppLocalizations.of(context)?.howCanWeHelp ?? 'كيف يمكننا مساعدتك؟'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إغلاق'),
+            child: Text(AppLocalizations.of(context)?.close ?? 'إغلاق'),
           ),
         ],
       ),
@@ -356,7 +607,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Load user data first, then open drawer
     await _loadUserData();
     if (mounted) {
-      _scaffoldKey.currentState?.openEndDrawer();
+      _scaffoldKey.currentState?.openDrawer();
     }
   }
 
@@ -381,13 +632,121 @@ class _HomeScreenState extends State<HomeScreen> {
         // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ في تحميل بيانات المستخدم: $e'),
+            content: Text('${AppLocalizations.of(context)?.errorLoadingUserData ?? 'حدث خطأ في تحميل بيانات المستخدم'}: $e'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 2),
           ),
         );
       }
     }
+  }
+
+  Future<void> _checkActiveTrip() async {
+    try {
+      final activeTrip = await _apiService.getActiveTrip();
+      if (activeTrip != null && mounted) {
+        // User has an active trip, navigate to active trip screen
+        print('✅ Found active trip, navigating to active trip screen');
+        print('📊 Active trip data: $activeTrip');
+
+        // Wait a bit for the screen to fully load
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        if (mounted) {
+          await _navigateToActiveTrip(
+            activeTrip['id'],
+            activeTrip['scooter_code'] ?? 'غير معروف',
+            DateTime.parse(activeTrip['start_time']),
+          );
+        }
+      }
+    } catch (e) {
+      print('ℹ️ No active trip found or error: $e');
+      // No active trip, continue normally
+    }
+  }
+
+  Future<void> _navigateToActiveTrip(
+    int tripId,
+    String scooterCode,
+    DateTime startTime,
+  ) async {
+    if (!mounted) return;
+
+    // Small delay to ensure camera is fully closed and Navigator is ready
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (!mounted) return;
+
+    // Use SchedulerBinding to ensure navigation happens after current frame
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      try {
+        final navigator = Navigator.of(context, rootNavigator: false);
+
+        // Try to navigate - use pushReplacement if possible, otherwise push
+        try {
+          if (navigator.canPop()) {
+            // Navigator has routes, use pushReplacement
+            navigator.pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => ActiveTripScreen(
+                  tripId: tripId,
+                  scooterCode: scooterCode,
+                  startTime: startTime,
+                ),
+              ),
+            );
+          } else {
+            // Navigator has no routes, use push
+            navigator.push(
+              MaterialPageRoute(
+                builder: (context) => ActiveTripScreen(
+                  tripId: tripId,
+                  scooterCode: scooterCode,
+                  startTime: startTime,
+                ),
+              ),
+            );
+          }
+        } catch (navError) {
+          print('⚠️ Navigation error: $navError');
+          // Last resort: use push with rootNavigator
+          if (mounted) {
+            Navigator.of(context, rootNavigator: true).push(
+              MaterialPageRoute(
+                builder: (context) => ActiveTripScreen(
+                  tripId: tripId,
+                  scooterCode: scooterCode,
+                  startTime: startTime,
+                ),
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        print('❌ Critical navigation error: $e');
+        // If all else fails, try one more time with a delay
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) {
+            try {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => ActiveTripScreen(
+                    tripId: tripId,
+                    scooterCode: scooterCode,
+                    startTime: startTime,
+                  ),
+                ),
+              );
+            } catch (finalError) {
+              print('❌ Final navigation attempt failed: $finalError');
+            }
+          }
+        });
+      }
+    });
   }
 
   String _getImageUrl(String? imagePath) {
@@ -418,20 +777,134 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _startTripFromGuide() {
-    // TODO: Implement QR scan and start trip
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('بدء مسح QR Code وبدء الرحلة'),
-        backgroundColor: Colors.green,
+  Future<void> _startTripFromGuide() async {
+    // Open QR scanner
+    final qrCode = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QRScannerScreen(
+          onQRCodeScanned: (code) {
+            Navigator.pop(context, code);
+          },
+        ),
       ),
     );
+
+    if (qrCode == null || qrCode.isEmpty) {
+      return; // User cancelled
+    }
+
+    // Show loading
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    try {
+      // Get current location
+      final position = await _locationService.getCurrentLocation();
+
+      // Start trip
+      final tripData = await _apiService.startTrip(
+        qrCode,
+        position.latitude,
+        position.longitude,
+      );
+
+      // Close loading
+      if (mounted) {
+        try {
+          Navigator.pop(context); // Close loading dialog
+        } catch (e) {
+          print('⚠️ Error closing loading dialog: $e');
+        }
+      }
+
+      if (mounted) {
+        print('✅ Trip started successfully, navigating to active trip screen');
+        print('📊 Trip data: $tripData');
+
+        await _navigateToActiveTrip(
+          tripData['trip_id'],
+          tripData['scooter_code'] ?? 'غير معروف',
+          DateTime.parse(tripData['start_time']),
+        );
+      }
+    } catch (e) {
+      // Close loading if still open
+      if (mounted) {
+        await Future.microtask(() {
+          if (mounted) {
+            try {
+              Navigator.of(context, rootNavigator: false).pop();
+            } catch (popError) {
+              print('⚠️ Error closing loading dialog: $popError');
+            }
+          }
+        });
+      }
+
+      // Check if error is due to active trip
+      final errorMessage = e.toString();
+      if (errorMessage.contains('لديك رحلة نشطة بالفعل') ||
+          errorMessage.contains('active trip')) {
+        // Try to extract trip_id from error message first
+        int? tripId;
+        if (errorMessage.contains('trip_id:')) {
+          try {
+            final tripIdMatch = RegExp(
+              r'trip_id:(\d+)',
+            ).firstMatch(errorMessage);
+            if (tripIdMatch != null) {
+              tripId = int.parse(tripIdMatch.group(1)!);
+              print('📋 Extracted trip_id from error: $tripId');
+            }
+          } catch (parseError) {
+            print('❌ Error parsing trip_id: $parseError');
+          }
+        }
+
+        // Try to get active trip and navigate to it
+        try {
+          final activeTrip = await _apiService.getActiveTrip();
+          if (activeTrip != null && mounted) {
+            print('✅ Found active trip, navigating to active trip screen');
+            await _navigateToActiveTrip(
+              activeTrip['id'],
+              activeTrip['scooter_code'] ?? 'غير معروف',
+              DateTime.parse(activeTrip['start_time']),
+            );
+            return;
+          }
+        } catch (tripError) {
+          print('❌ Error getting active trip: $tripError');
+        }
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${AppLocalizations.of(context)?.errorStartingTrip ?? 'حدث خطأ في بدء الرحلة'}: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
+    final languageService = Provider.of<LanguageService>(context);
+    return Directionality(
+      textDirection: languageService.isArabic
+          ? ui.TextDirection.rtl
+          : ui.TextDirection.ltr,
+      child: Scaffold(
+        key: _scaffoldKey,
       body: Stack(
         children: [
           // Map
@@ -510,77 +983,154 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               child: SafeArea(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Re-center Button
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.my_location),
-                        color: Color(AppConstants.primaryColor),
-                        onPressed: _recenterMap,
-                      ),
-                    ),
+                child: Builder(
+                  builder: (context) {
+                    final languageService = Provider.of<LanguageService>(context, listen: false);
+                    final isRTL = languageService.isArabic;
+                    return Row(
+                      textDirection: isRTL ? ui.TextDirection.rtl : ui.TextDirection.ltr,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: isRTL
+                          ? [
+                              // In RTL: Menu Button on the right
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.menu),
+                                  color: Color(AppConstants.secondaryColor),
+                                  onPressed: _openMenu,
+                                ),
+                              ),
 
-                    // Scan and Start Trip Button
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            _showRidingGuide();
-                          },
-                          icon: const Icon(Icons.qr_code_scanner),
-                          label: const Text(
-                            'سكان وابدأ الرحلة',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(AppConstants.primaryColor),
-                            foregroundColor: Color(AppConstants.secondaryColor),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                              // Scan and Start Trip Button
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      _showRidingGuide();
+                                    },
+                                    icon: const Icon(Icons.qr_code_scanner),
+                                    label: const Text(
+                                      'سكان وابدأ الرحلة',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Color(AppConstants.primaryColor),
+                                      foregroundColor: Color(AppConstants.secondaryColor),
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
 
-                    // Menu Button
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.menu),
-                        color: Color(AppConstants.secondaryColor),
-                        onPressed: _openMenu,
-                      ),
-                    ),
-                  ],
+                              // Re-center Button on the left
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.my_location),
+                                  color: Color(AppConstants.primaryColor),
+                                  onPressed: _recenterMap,
+                                ),
+                              ),
+                            ]
+                          : [
+                              // In LTR: Menu Button on the left
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.menu),
+                                  color: Color(AppConstants.secondaryColor),
+                                  onPressed: _openMenu,
+                                ),
+                              ),
+
+                              // Scan and Start Trip Button
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      _showRidingGuide();
+                                    },
+                                    icon: const Icon(Icons.qr_code_scanner),
+                                    label: const Text(
+                                      'سكان وابدأ الرحلة',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Color(AppConstants.primaryColor),
+                                      foregroundColor: Color(AppConstants.secondaryColor),
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              // Re-center Button on the right
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.my_location),
+                                  color: Color(AppConstants.primaryColor),
+                                  onPressed: _recenterMap,
+                                ),
+                              ),
+                            ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -597,27 +1147,31 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
         ],
       ),
-      endDrawer: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Drawer(
-          child: Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                // User Info Header
-                Container(
-                  padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).padding.top + 20,
-                    bottom: 20,
-                    right: 20,
-                    left: 20,
-                  ),
-                  child: _isLoadingUser
-                      ? const Padding(
-                          padding: EdgeInsets.all(20.0),
-                          child: Center(child: CircularProgressIndicator()),
-                        )
-                      : _currentUser == null
+      drawer: Consumer<LanguageService>(
+        builder: (context, languageService, _) {
+          return Directionality(
+            textDirection: languageService.isArabic
+                ? ui.TextDirection.rtl
+                : ui.TextDirection.ltr,
+            child: Drawer(
+              child: Container(
+                color: Colors.white,
+                child: Column(
+                  children: [
+                    // User Info Header
+                    Container(
+                      padding: EdgeInsets.only(
+                        top: MediaQuery.of(context).padding.top + 20,
+                        bottom: 20,
+                        right: 20,
+                        left: 20,
+                      ),
+                      child: _isLoadingUser
+                          ? const Padding(
+                              padding: EdgeInsets.all(20.0),
+                              child: Center(child: CircularProgressIndicator()),
+                            )
+                          : _currentUser == null
                           ? Padding(
                               padding: const EdgeInsets.all(20.0),
                               child: Column(
@@ -641,7 +1195,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       const SizedBox(width: 16),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             const Text(
                                               'مستخدم',
@@ -674,33 +1229,40 @@ class _HomeScreenState extends State<HomeScreen> {
                                   children: [
                                     // User Avatar
                                     ClipOval(
-                                      child: _currentUser!.avatar != null &&
+                                      child:
+                                          _currentUser!.avatar != null &&
                                               _currentUser!.avatar!.isNotEmpty
                                           ? CachedNetworkImage(
-                                              imageUrl: _getImageUrl(_currentUser!.avatar),
+                                              imageUrl: _getImageUrl(
+                                                _currentUser!.avatar,
+                                              ),
                                               width: 70,
                                               height: 70,
                                               fit: BoxFit.cover,
-                                              placeholder: (context, url) => Container(
-                                                width: 70,
-                                                height: 70,
-                                                color: Colors.grey[300],
-                                                child: Icon(
-                                                  Icons.person,
-                                                  size: 40,
-                                                  color: Colors.grey[600],
-                                                ),
-                                              ),
-                                              errorWidget: (context, url, error) => Container(
-                                                width: 70,
-                                                height: 70,
-                                                color: Colors.grey[300],
-                                                child: Icon(
-                                                  Icons.person,
-                                                  size: 40,
-                                                  color: Colors.grey[600],
-                                                ),
-                                              ),
+                                              placeholder: (context, url) =>
+                                                  Container(
+                                                    width: 70,
+                                                    height: 70,
+                                                    color: Colors.grey[300],
+                                                    child: Icon(
+                                                      Icons.person,
+                                                      size: 40,
+                                                      color: Colors.grey[600],
+                                                    ),
+                                                  ),
+                                              errorWidget:
+                                                  (context, url, error) =>
+                                                      Container(
+                                                        width: 70,
+                                                        height: 70,
+                                                        color: Colors.grey[300],
+                                                        child: Icon(
+                                                          Icons.person,
+                                                          size: 40,
+                                                          color:
+                                                              Colors.grey[600],
+                                                        ),
+                                                      ),
                                             )
                                           : Container(
                                               width: 70,
@@ -719,11 +1281,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                     const SizedBox(width: 16),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            _currentUser!.name.isNotEmpty 
-                                                ? _currentUser!.name 
+                                            _currentUser!.name.isNotEmpty
+                                                ? _currentUser!.name
                                                 : 'مستخدم',
                                             style: const TextStyle(
                                               fontSize: 20,
@@ -741,7 +1304,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                               ),
                                               const SizedBox(width: 4),
                                               Text(
-                                                (_currentUser!.phone != null && _currentUser!.phone!.isNotEmpty)
+                                                (_currentUser!.phone != null &&
+                                                        _currentUser!
+                                                            .phone!
+                                                            .isNotEmpty)
                                                     ? _currentUser!.phone!
                                                     : 'لا يوجد رقم هاتف',
                                                 style: TextStyle(
@@ -764,7 +1330,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     gradient: LinearGradient(
                                       colors: [
                                         Color(AppConstants.primaryColor),
-                                        Color(AppConstants.primaryColor).withOpacity(0.8),
+                                        Color(
+                                          AppConstants.primaryColor,
+                                        ).withOpacity(0.8),
                                       ],
                                       begin: Alignment.centerLeft,
                                       end: Alignment.centerRight,
@@ -776,7 +1344,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                     child: InkWell(
                                       onTap: () {
                                         Navigator.pop(context);
-                                        // TODO: Navigate to wallet top-up screen
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const TopUpScreen(),
+                                          ),
+                                        );
                                       },
                                       borderRadius: BorderRadius.circular(25),
                                       child: Padding(
@@ -785,7 +1359,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                           horizontal: 16,
                                         ),
                                         child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
                                             const Icon(
                                               Icons.star,
@@ -809,104 +1384,129 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ],
                             ),
-                ),
-                const Divider(height: 1),
-                // Menu Items
-                Expanded(
-                  child: ListView(
-                    padding: EdgeInsets.zero,
-                    children: [
-                      _buildMenuItem(
-                        icon: Icons.access_time,
-                        title: 'رحلاتي',
-                        color: Color(AppConstants.primaryColor),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const TripsScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildMenuItem(
-                        icon: Icons.account_balance_wallet,
-                        title: 'محفظة',
-                        color: Color(AppConstants.primaryColor),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const WalletScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildMenuItem(
-                        icon: Icons.account_balance,
-                        title: 'رصيد مجاني',
-                        color: Color(AppConstants.primaryColor),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const FreeBalanceScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildMenuItem(
-                        icon: Icons.directions_bike,
-                        title: 'إزاي تركب لينر سكوت',
-                        color: Color(AppConstants.primaryColor),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _showRidingGuide();
-                        },
-                      ),
-                      _buildMenuItem(
-                        icon: Icons.language,
-                        title: 'اللغة',
-                        color: Color(AppConstants.primaryColor),
-                        onTap: () {
-                          Navigator.pop(context);
-                          // TODO: Navigate to language settings screen
-                        },
-                      ),
-                      const Divider(height: 1),
-                      _buildMenuItem(
-                        icon: Icons.logout,
-                        title: 'تسجيل الخروج',
-                        color: Colors.red,
-                        onTap: () async {
-                          Navigator.pop(context);
-                          try {
-                            await _apiService.logout();
-                            if (mounted) {
-                              Navigator.pushReplacementNamed(context, '/login');
-                            }
-                          } catch (e) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('حدث خطأ أثناء تسجيل الخروج: $e'),
-                                  backgroundColor: Colors.red,
+                    ),
+                    const Divider(height: 1),
+                    // Menu Items
+                    Expanded(
+                      child: ListView(
+                        padding: EdgeInsets.zero,
+                        children: [
+                          _buildMenuItem(
+                            icon: Icons.access_time,
+                            title:
+                                AppLocalizations.of(context)?.trips ?? 'رحلاتي',
+                            color: Color(AppConstants.primaryColor),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const TripsScreen(),
                                 ),
                               );
-                            }
-                          }
-                        },
+                            },
+                          ),
+                          _buildMenuItem(
+                            icon: Icons.account_balance_wallet,
+                            title:
+                                AppLocalizations.of(context)?.wallet ?? 'محفظة',
+                            color: Color(AppConstants.primaryColor),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const WalletScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildMenuItem(
+                            icon: Icons.account_balance,
+                            title:
+                                AppLocalizations.of(context)?.freeBalance ??
+                                'رصيد مجاني',
+                            color: Color(AppConstants.primaryColor),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const FreeBalanceScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildMenuItem(
+                            icon: Icons.directions_bike,
+                            title:
+                                AppLocalizations.of(context)?.howToRide ??
+                                'إزاي تركب لينر سكوت',
+                            color: Color(AppConstants.primaryColor),
+                            onTap: () {
+                              Navigator.pop(context);
+                              _showRidingGuide();
+                            },
+                          ),
+                          _buildMenuItem(
+                            icon: Icons.language,
+                            title:
+                                AppLocalizations.of(context)?.language ??
+                                'اللغة',
+                            color: Color(AppConstants.primaryColor),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const LanguageSelectionScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          const Divider(height: 1),
+                          _buildMenuItem(
+                            icon: Icons.logout,
+                            title:
+                                AppLocalizations.of(context)?.logout ??
+                                'تسجيل الخروج',
+                            color: Colors.red,
+                            onTap: () async {
+                              Navigator.pop(context);
+                              try {
+                                await _apiService.logout();
+                                if (mounted) {
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    '/login',
+                                  );
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'حدث خطأ أثناء تسجيل الخروج: $e',
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
+      ),
       ),
     );
   }

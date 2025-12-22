@@ -173,6 +173,22 @@
                 </div>
             </div>
 
+            <!-- End Image -->
+            @if($trip->end_image)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="text-sm font-semibold text-secondary mb-4">{{ trans('messages.End Image') }} / صورة نهاية الرحلة</h3>
+                    <div class="relative">
+                        <img src="{{ asset('storage/' . $trip->end_image) }}" 
+                             alt="Trip End Image" 
+                             class="rounded-lg w-full max-w-md h-auto shadow-md cursor-pointer"
+                             onclick="window.open('{{ asset('storage/' . $trip->end_image) }}', '_blank')">
+                        <div class="mt-2 text-xs text-gray-500">
+                            اضغط على الصورة لعرضها بحجم كامل
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <!-- Cost Breakdown -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <h3 class="text-sm font-semibold text-secondary mb-4">{{ trans('messages.Cost Breakdown') }}</h3>

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/models/trip_model.dart';
+import '../../../core/l10n/app_localizations.dart';
 
 class TripsScreen extends StatefulWidget {
   const TripsScreen({super.key});
@@ -56,7 +57,7 @@ class _TripsScreenState extends State<TripsScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ في تحميل الرحلات: $e'),
+            content: Text('${AppLocalizations.of(context)?.errorLoadingTransactions ?? 'حدث خطأ في تحميل الرحلات'}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -105,13 +106,14 @@ class _TripsScreenState extends State<TripsScreen> {
   }
 
   String _getStatusText(String status) {
+    final localizations = AppLocalizations.of(context);
     switch (status) {
       case 'completed':
-        return 'مكتملة';
+        return localizations?.completed ?? 'مكتملة';
       case 'active':
-        return 'نشطة';
+        return localizations?.active ?? 'نشطة';
       case 'cancelled':
-        return 'ملغاة';
+        return localizations?.cancelled ?? 'ملغاة';
       default:
         return status;
     }
@@ -131,13 +133,14 @@ class _TripsScreenState extends State<TripsScreen> {
   }
 
   String _getPaymentStatusText(String status) {
+    final localizations = AppLocalizations.of(context);
     switch (status) {
       case 'paid':
-        return 'مدفوع';
+        return localizations?.paid ?? 'مدفوع';
       case 'partially_paid':
-        return 'مدفوع جزئياً';
+        return localizations?.partiallyPaid ?? 'مدفوع جزئياً';
       case 'unpaid':
-        return 'غير مدفوع';
+        return localizations?.unpaid ?? 'غير مدفوع';
       default:
         return status;
     }
@@ -156,9 +159,9 @@ class _TripsScreenState extends State<TripsScreen> {
             icon: const Icon(Icons.arrow_back, color: Colors.black),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
-            'رحلاتي',
-            style: TextStyle(
+          title: Text(
+            AppLocalizations.of(context)?.myTrips ?? 'رحلاتي',
+            style: const TextStyle(
               color: Colors.black,
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -182,7 +185,7 @@ class _TripsScreenState extends State<TripsScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'لم تقم بأي رحلات بعد',
+                            AppLocalizations.of(context)?.noTripsYet ?? 'لم تقم بأي رحلات بعد',
                             style: TextStyle(
                               fontSize: 18,
                               color: Colors.grey[600],
@@ -261,8 +264,8 @@ class _TripsScreenState extends State<TripsScreen> {
                       children: [
                         Text(
                           trip.scooterCode != null && trip.scooterCode!.isNotEmpty
-                              ? 'سكوتر ${trip.scooterCode}'
-                              : 'رحلة رقم ${trip.id}',
+                              ? '${AppLocalizations.of(context)?.scooter ?? 'سكوتر'} ${trip.scooterCode}'
+                              : '${AppLocalizations.of(context)?.tripNumber ?? 'رحلة رقم'} ${trip.id}',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -284,7 +287,7 @@ class _TripsScreenState extends State<TripsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '${trip.cost.toStringAsFixed(2)} ج.م',
+                      '${trip.cost.toStringAsFixed(2)} ${AppLocalizations.of(context)?.egp ?? 'ج.م'}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -366,17 +369,17 @@ class _TripsScreenState extends State<TripsScreen> {
                       color: Colors.red.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.warning_amber_rounded,
                           size: 14,
                           color: Colors.red,
                         ),
-                        SizedBox(width: 4),
+                        const SizedBox(width: 4),
                         Text(
-                          'خارج المنطقة',
-                          style: TextStyle(
+                          AppLocalizations.of(context)?.outsideZone ?? 'خارج المنطقة',
+                          style: const TextStyle(
                             fontSize: 12,
                             color: Colors.red,
                             fontWeight: FontWeight.w500,
@@ -397,7 +400,7 @@ class _TripsScreenState extends State<TripsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'المدفوع: ${trip.paidAmount.toStringAsFixed(2)} ج.م',
+                      '${AppLocalizations.of(context)?.paidAmount ?? 'المدفوع'}: ${trip.paidAmount.toStringAsFixed(2)} ${AppLocalizations.of(context)?.egp ?? 'ج.م'}',
                       style: const TextStyle(
                         fontSize: 12,
                         color: Colors.green,
@@ -406,7 +409,7 @@ class _TripsScreenState extends State<TripsScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'المتبقي: ${trip.remainingAmount.toStringAsFixed(2)} ج.م',
+                      '${AppLocalizations.of(context)?.remainingAmount ?? 'المتبقي'}: ${trip.remainingAmount.toStringAsFixed(2)} ${AppLocalizations.of(context)?.egp ?? 'ج.م'}',
                       style: const TextStyle(
                         fontSize: 12,
                         color: Colors.red,
@@ -419,7 +422,7 @@ class _TripsScreenState extends State<TripsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      'الأساسي: ${trip.baseCost.toStringAsFixed(2)} ج.م',
+                      '${AppLocalizations.of(context)?.baseCost ?? 'الأساسي'}: ${trip.baseCost.toStringAsFixed(2)} ${AppLocalizations.of(context)?.egp ?? 'ج.م'}',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[600],
@@ -427,7 +430,7 @@ class _TripsScreenState extends State<TripsScreen> {
                     ),
                     if (trip.discountAmount > 0)
                       Text(
-                        'الخصم: -${trip.discountAmount.toStringAsFixed(2)} ج.م',
+                        '${AppLocalizations.of(context)?.discount ?? 'الخصم'}: -${trip.discountAmount.toStringAsFixed(2)} ${AppLocalizations.of(context)?.egp ?? 'ج.م'}',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.green[700],
@@ -435,7 +438,7 @@ class _TripsScreenState extends State<TripsScreen> {
                       ),
                     if (trip.penaltyAmount > 0)
                       Text(
-                        'الغرامة: +${trip.penaltyAmount.toStringAsFixed(2)} ج.م',
+                        '${AppLocalizations.of(context)?.penalty ?? 'الغرامة'}: +${trip.penaltyAmount.toStringAsFixed(2)} ${AppLocalizations.of(context)?.egp ?? 'ج.م'}',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.red[700],

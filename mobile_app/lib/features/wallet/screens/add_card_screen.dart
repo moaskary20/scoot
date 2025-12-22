@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/api_service.dart';
@@ -85,8 +86,8 @@ class _AddCardScreenState extends State<AddCardScreen> {
 
         if (result['success'] == true) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('تم حفظ الكارت بنجاح'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)?.cardSavedSuccessfully ?? 'تم حفظ الكارت بنجاح'),
               backgroundColor: Colors.green,
             ),
           );
@@ -107,7 +108,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ: $e'),
+            content: Text('${AppLocalizations.of(context)?.errorOccurred ?? 'حدث خطأ'}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -443,7 +444,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
                         _isDefault = value ?? false;
                       });
                     },
-                    title: const Text('استخدام ككارت افتراضي'),
+                    title: Text(AppLocalizations.of(context)?.setAsDefault ?? 'استخدام ككارت افتراضي'),
                     activeColor: Color(AppConstants.primaryColor),
                     contentPadding: EdgeInsets.zero,
                   ),

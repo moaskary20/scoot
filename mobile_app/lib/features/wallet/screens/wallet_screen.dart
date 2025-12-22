@@ -3,6 +3,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/models/user_model.dart';
 import '../../../core/models/wallet_transaction_model.dart';
+import '../../../core/l10n/app_localizations.dart';
 import 'top_up_screen.dart';
 import 'transaction_history_screen.dart';
 import 'add_card_screen.dart';
@@ -51,7 +52,7 @@ class _WalletScreenState extends State<WalletScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ في تحميل بيانات المحفظة: $e'),
+            content: Text('${AppLocalizations.of(context)?.errorLoadingWallet ?? 'حدث خطأ في تحميل بيانات المحفظة'}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -81,8 +82,8 @@ class _WalletScreenState extends State<WalletScreen> {
     final code = _promoCodeController.text.trim();
     if (code.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('يرجى إدخال كود البرومو'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)?.enterPromoCode ?? 'يرجى إدخال كود البرومو'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -125,7 +126,7 @@ class _WalletScreenState extends State<WalletScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ: $e'),
+            content: Text('${AppLocalizations.of(context)?.errorOccurred ?? 'حدث خطأ'}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -154,8 +155,8 @@ class _WalletScreenState extends State<WalletScreen> {
     if (result == true) {
       // Optionally show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تم حفظ الكارت بنجاح'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)?.cardSavedSuccessfully ?? 'تم حفظ الكارت بنجاح'),
           backgroundColor: Colors.green,
         ),
       );

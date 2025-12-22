@@ -4,6 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
 import '../constants/app_constants.dart';
 import '../models/user_model.dart';
+import '../models/scooter_model.dart';
+import '../models/wallet_transaction_model.dart';
+import '../models/trip_model.dart';
+import '../models/card_model.dart';
+import '../models/referral_model.dart';
 
 class ApiService {
   late Dio _dio;
@@ -129,10 +134,19 @@ class ApiService {
   Future<UserModel> getCurrentUser() async {
     try {
       final response = await _dio.get(ApiConstants.user);
+      print('📱 User API Response: ${response.statusCode}');
+      print('📦 Response data: ${response.data}');
+      
       // API returns: { success: true, data: { ... } }
       final userData = response.data['data'] ?? response.data;
-      return UserModel.fromJson(userData);
+      print('👤 Parsed user data: $userData');
+      
+      final user = UserModel.fromJson(userData);
+      print('✅ User model created - Name: ${user.name}, Phone: ${user.phone}');
+      
+      return user;
     } catch (e) {
+      print('❌ Error getting user: $e');
       throw _handleError(e);
     }
   }
@@ -147,6 +161,276 @@ class ApiService {
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(AppConstants.tokenKey);
+  }
+
+  // Get nearby scooters
+  Future<List<ScooterModel>> getNearbyScooters(double latitude, double longitude) async {
+    try {
+      final response = await _dio.get(
+        ApiConstants.scootersNearby,
+        queryParameters: {
+          'latitude': latitude,
+          'longitude': longitude,
+          'radius': AppConstants.nearbyRadius,
+        },
+      );
+      
+      if (response.data != null) {
+        // Handle different response formats
+        if (response.data['success'] == true && response.data['data'] != null) {
+          final List<dynamic> scooters = response.data['data'];
+          return scooters.map((json) => ScooterModel.fromJson(json)).toList();
+        } else if (response.data is List) {
+          // If response is directly a list
+          final List<dynamic> scooters = response.data as List;
+          return scooters.map((json) => ScooterModel.fromJson(json)).toList();
+        }
+      }
+      
+      return [];
+    } on DioException catch (e) {
+      // Handle 404 or other API errors gracefully
+      if (e.response?.statusCode == 404) {
+        print('Scooters endpoint not found (404). Returning empty list.');
+        return [];
+      }
+      print('Error fetching scooters: ${e.message}');
+      return [];
+    } catch (e) {
+      print('Error fetching scooters: $e');
+      return [];
+    }
+  }
+
+  // Get all available scooters
+  Future<List<ScooterModel>> getAvailableScooters() async {
+    try {
+      final response = await _dio.get(ApiConstants.scooters);
+      
+      if (response.data['success'] == true && response.data['data'] != null) {
+        final List<dynamic> scooters = response.data['data'];
+        return scooters
+            .map((json) => ScooterModel.fromJson(json))
+            .where((scooter) => scooter.isAvailable)
+            .toList();
+      }
+      
+      return [];
+    } catch (e) {
+      print('Error fetching scooters: $e');
+      return [];
+    }
+  }
+
+  // Get scooter details
+  Future<ScooterModel> getScooterDetails(int scooterId) async {
+    try {
+      final response = await _dio.get('${ApiConstants.scooters}/$scooterId');
+      return ScooterModel.fromJson(response.data['data'] ?? response.data);
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Get wallet balance (from user data)
+  Future<double> getWalletBalance() async {
+    try {
+      final user = await getCurrentUser();
+      return user.walletBalance;
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Get wallet transactions
+  Future<List<WalletTransactionModel>> getWalletTransactions({
+    int page = 1,
+    int perPage = 20,
+  }) async {
+    try {
+      final response = await _dio.get(
+        ApiConstants.walletTransactions,
+        queryParameters: {
+          'page': page,
+          'per_page': perPage,
+        },
+      );
+      
+      if (response.data['success'] == true && response.data['data'] != null) {
+        final List<dynamic> transactions = response.data['data']['data'] ?? response.data['data'] ?? [];
+        return transactions
+            .map((json) => WalletTransactionModel.fromJson(json))
+            .toList();
+      } else if (response.data is List) {
+        final List<dynamic> transactions = response.data as List;
+        return transactions
+            .map((json) => WalletTransactionModel.fromJson(json))
+            .toList();
+      }
+      
+      return [];
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        print('Wallet transactions endpoint not found (404). Returning empty list.');
+        return [];
+      }
+      print('Error fetching wallet transactions: ${e.message}');
+      return [];
+    } catch (e) {
+      print('Error fetching wallet transactions: $e');
+      return [];
+    }
+  }
+
+  // Get user trips
+  Future<List<TripModel>> getUserTrips({
+    int page = 1,
+    int perPage = 20,
+  }) async {
+    try {
+      final response = await _dio.get(
+        ApiConstants.trips,
+        queryParameters: {
+          'page': page,
+          'per_page': perPage,
+        },
+      );
+
+      if (response.data != null) {
+        final data = response.data['data'];
+        if (data is Map && data['data'] != null) {
+          final List<dynamic> trips = data['data'];
+          return trips.map((json) => TripModel.fromJson(json)).toList();
+        } else if (response.data['success'] == true && response.data['data'] is List) {
+          final List<dynamic> trips = response.data['data'];
+          return trips.map((json) => TripModel.fromJson(json)).toList();
+        } else if (response.data is List) {
+          final List<dynamic> trips = response.data as List;
+          return trips.map((json) => TripModel.fromJson(json)).toList();
+        }
+      }
+
+      return [];
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        print('Trips endpoint not found (404). Returning empty list.');
+        return [];
+      }
+      print('Error fetching trips: ${e.message}');
+      return [];
+    } catch (e) {
+      print('Error fetching trips: $e');
+      return [];
+    }
+  }
+
+  // Top up wallet
+  Future<Map<String, dynamic>> topUpWallet({
+    required double amount,
+    String? paymentMethod,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.walletTopUp,
+        data: {
+          'amount': amount,
+          'payment_method': paymentMethod ?? 'paymob',
+        },
+      );
+      return response.data;
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Validate promo code
+  Future<Map<String, dynamic>> validatePromoCode(String code) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.validateCoupon,
+        data: {'code': code},
+      );
+      return response.data;
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Save card
+  Future<Map<String, dynamic>> saveCard(CardModel card) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.saveCard,
+        data: card.toJson(),
+      );
+      return response.data;
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Get saved cards
+  Future<List<CardModel>> getSavedCards() async {
+    try {
+      final response = await _dio.get(ApiConstants.getCards);
+      
+      if (response.data['success'] == true && response.data['data'] != null) {
+        final List<dynamic> cards = response.data['data'];
+        return cards.map((json) => CardModel.fromJson(json)).toList();
+      }
+      
+      return [];
+    } catch (e) {
+      print('Error fetching cards: $e');
+      return [];
+    }
+  }
+
+  // Delete card
+  Future<void> deleteCard(int cardId) async {
+    try {
+      await _dio.delete('${ApiConstants.getCards}/$cardId');
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Get referral data
+  Future<ReferralModel> getReferralData() async {
+    try {
+      print('🔗 Fetching referral data from: ${ApiConstants.baseUrl}${ApiConstants.referral}');
+      final response = await _dio.get(ApiConstants.referral);
+      
+      print('📦 Referral API Response: ${response.data}');
+      
+      if (response.data['success'] == true && response.data['data'] != null) {
+        final referralData = ReferralModel.fromJson(response.data['data']);
+        print('✅ Referral data loaded: Code=${referralData.referralCode}, Link=${referralData.affiliateLink}');
+        return referralData;
+      }
+      
+      print('⚠️ No referral data in response');
+      // Return default if no data
+      return ReferralModel(
+        referralCode: '',
+        affiliateLink: '',
+        referredFriendsCount: 0,
+        totalEarned: 0.0,
+      );
+    } catch (e) {
+      print('❌ Error fetching referral data: $e');
+      if (e is DioException) {
+        print('📡 Dio Error: ${e.response?.data}');
+        print('📡 Status Code: ${e.response?.statusCode}');
+      }
+      // Return default on error
+      return ReferralModel(
+        referralCode: '',
+        affiliateLink: '',
+        referredFriendsCount: 0,
+        totalEarned: 0.0,
+      );
+    }
   }
 
   // Logout

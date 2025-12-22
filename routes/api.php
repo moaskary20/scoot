@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebSocket\ScooterWebSocketController;
 use App\Http\Controllers\Api\MobileAuthController;
+use App\Http\Controllers\Api\MobileWalletController;
+use App\Http\Controllers\Api\MobileTripController;
+use App\Http\Controllers\Api\MobileReferralController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,6 +23,32 @@ Route::prefix('auth')->group(function () {
         Route::get('/user', [MobileAuthController::class, 'user']);
         Route::post('/logout', [MobileAuthController::class, 'logout']);
     });
+});
+
+// Mobile App Trips Routes
+Route::prefix('trips')->middleware('auth:sanctum')->group(function () {
+    Route::get('/', [MobileTripController::class, 'index']);
+});
+
+// Mobile App Wallet Routes
+Route::prefix('wallet')->middleware('auth:sanctum')->group(function () {
+    Route::get('/', [MobileWalletController::class, 'getBalance']);
+    Route::get('/transactions', [MobileWalletController::class, 'getTransactions']);
+    Route::post('/top-up', [MobileWalletController::class, 'topUp']);
+    Route::post('/validate-promo', [MobileWalletController::class, 'validatePromoCode']);
+    
+    // Cards
+    Route::get('/cards', [MobileWalletController::class, 'getCards']);
+    Route::post('/cards', [MobileWalletController::class, 'saveCard']);
+    Route::delete('/cards/{id}', [MobileWalletController::class, 'deleteCard']);
+});
+
+// Paymob Callback (no auth required - Paymob calls this)
+Route::post('/wallet/paymob/callback', [\App\Http\Controllers\Api\MobileWalletController::class, 'paymobCallback']);
+
+// Mobile App Referral Routes
+Route::prefix('referral')->middleware('auth:sanctum')->group(function () {
+    Route::get('/', [MobileReferralController::class, 'getReferralData']);
 });
 
 // WebSocket Routes for ESP32 Scooter Control

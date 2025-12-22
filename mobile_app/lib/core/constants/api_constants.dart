@@ -42,7 +42,14 @@ class ApiConstants {
   
   // Coupons
   static const String coupons = '/coupons';
-  static const String validateCoupon = '/coupons/validate';
+  static const String validateCoupon = '/wallet/validate-promo';
+  
+  // Cards
+  static const String saveCard = '/wallet/cards';
+  static const String getCards = '/wallet/cards';
+  
+  // Referral
+  static const String referral = '/referral';
   
   // WebSocket
   static const String wsUrl = 'ws://localhost:6001';

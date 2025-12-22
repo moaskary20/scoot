@@ -91,6 +91,18 @@ class User extends Authenticatable
         return $this->hasMany(WalletTransaction::class);
     }
 
+    // Referrals where this user is the referrer
+    public function referrals()
+    {
+        return $this->hasMany(\App\Models\Referral::class, 'referrer_id');
+    }
+
+    // Referral where this user was referred
+    public function referredBy()
+    {
+        return $this->hasOne(\App\Models\Referral::class, 'referred_id');
+    }
+
     public function roles()
     {
         return $this->belongsToMany(Role::class);

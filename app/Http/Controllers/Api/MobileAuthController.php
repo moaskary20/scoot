@@ -118,6 +118,14 @@ class MobileAuthController extends Controller
 
             $user = User::create($userData);
 
+            // Track referral if referral code is provided
+            if ($request->has('referral_code') && !empty($request->referral_code)) {
+                \App\Http\Controllers\Api\MobileReferralController::trackReferral(
+                    $user,
+                    $request->referral_code
+                );
+            }
+
             // Create token
             $token = $user->createToken('mobile-app')->plainTextToken;
 
@@ -162,7 +170,11 @@ class MobileAuthController extends Controller
                     'age' => $user->age,
                     'university_id' => $user->university_id,
                     'national_id_photo' => $user->national_id_photo,
+                    'avatar' => $user->avatar,
                     'is_active' => $user->is_active,
+                    'wallet_balance' => $user->wallet_balance ?? 0,
+                    'loyalty_points' => $user->loyalty_points ?? 0,
+                    'loyalty_level' => $user->loyalty_level ?? 'bronze',
                 ],
             ], 200);
         } catch (\Exception $e) {

@@ -170,6 +170,17 @@ class TripRepository
             }
         }
 
+        // Track referral completion (mark referral as completed when user completes first trip)
+        try {
+            \App\Http\Controllers\Api\MobileReferralController::markReferralCompleted(
+                $trip->user_id,
+                $trip->id
+            );
+        } catch (\Exception $e) {
+            // Log error but don't fail the trip completion
+            \Log::error("Failed to mark referral as completed for trip {$trip->id}: " . $e->getMessage());
+        }
+
         return $trip->fresh();
     }
 

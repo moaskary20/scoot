@@ -9,6 +9,7 @@ import '../models/wallet_transaction_model.dart';
 import '../models/trip_model.dart';
 import '../models/card_model.dart';
 import '../models/referral_model.dart';
+import '../models/loyalty_transaction_model.dart';
 
 class ApiService {
   late Dio _dio;
@@ -216,6 +217,50 @@ class ApiService {
     } catch (e) {
       print('❌ Error fetching scooters: $e');
       return [];
+    }
+  }
+
+  // Get loyalty summary and recent transactions
+  Future<Map<String, dynamic>> getLoyaltyData({int page = 1}) async {
+    try {
+      final response = await _dio.get(
+        '/loyalty',
+        queryParameters: {
+          'page': page,
+        },
+      );
+
+      if (response.data['success'] != true) {
+        throw Exception(response.data['message'] ?? 'فشل في جلب بيانات نقاط الولاء');
+      }
+
+      final data = response.data['data'] as Map<String, dynamic>;
+
+      // Parse transactions list into models
+      final transactionsWrapper =
+          (data['transactions'] as Map<String, dynamic>? ?? {});
+      final List<dynamic> txList =
+          (transactionsWrapper['data'] as List<dynamic>? ?? []);
+
+      final transactions = txList
+          .map((json) => LoyaltyTransactionModel.fromJson(json))
+          .toList();
+
+      return {
+        'points': data['points'] ?? 0,
+        'level': data['level'] ?? 'bronze',
+        'thresholds': data['thresholds'] ?? const {},
+        'redeem_settings': data['redeem_settings'] ?? const {},
+        'transactions': transactions,
+        'pagination': {
+          'current_page': transactionsWrapper['current_page'] ?? 1,
+          'last_page': transactionsWrapper['last_page'] ?? 1,
+          'per_page': transactionsWrapper['per_page'] ?? txList.length,
+          'total': transactionsWrapper['total'] ?? txList.length,
+        },
+      };
+    } catch (e) {
+      throw _handleError(e);
     }
   }
 

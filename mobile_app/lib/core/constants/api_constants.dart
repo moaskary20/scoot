@@ -1,17 +1,11 @@
 class ApiConstants {
-  // Base URL - Update this with your Laravel backend URL
-  // IMPORTANT: For Android emulator, use: http://10.0.2.2:8000/api
-  // For Android device on same network, use your computer's IP: http://192.168.x.x:8000/api
-  // To find your IP: On Linux/Mac run: ip addr show | grep "inet " | grep -v 127.0.0.1
-  // On Windows run: ipconfig and look for IPv4 Address
-  // For production, use: static const String baseUrl = 'https://your-domain.com/api';
+  // Base URL - Production server
+  // For development/testing, you can use:
+  // - Android Emulator: http://10.0.2.2:8000/api
+  // - Android Device on same network: http://192.168.x.x:8000/api
   
-  // TODO: Replace with your actual server IP address
-  // For Android Emulator, use: http://10.0.2.2:8000/api
-  // For Android Device on same network, use your computer's IP: http://192.168.x.x:8000/api
-  // Current server IP: 192.168.1.44
-  // static const String baseUrl = 'http://10.0.2.2:8000/api'; // Android Emulator
-  static const String baseUrl = 'http://192.168.1.44:8000/api'; // Android Device (replace with your IP)
+  // Production server
+  static const String baseUrl = 'https://linerscoot.com/api';
   
   // API Endpoints
   static const String login = '/auth/login';
@@ -52,8 +46,8 @@ class ApiConstants {
   // Referral
   static const String referral = '/referral';
   
-  // WebSocket
-  static const String wsUrl = 'ws://localhost:6001';
-  // For production, use: static const String wsUrl = 'wss://your-domain.com/ws';
+  // WebSocket - Production server
+  // Note: Update port if your WebSocket server uses a different port
+  static const String wsUrl = 'wss://linerscoot.com:8080';
 }
 

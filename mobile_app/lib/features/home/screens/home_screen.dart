@@ -18,6 +18,7 @@ import '../../wallet/screens/free_balance_screen.dart';
 import '../../wallet/screens/top_up_screen.dart';
 import '../../settings/screens/language_selection_screen.dart';
 import '../../../core/l10n/app_localizations.dart';
+import '../../loyalty/screens/loyalty_points_screen.dart';
 import 'package:provider/provider.dart';
 import '../../../core/services/language_service.dart';
 import '../../trips/screens/trips_screen.dart';
@@ -1417,6 +1418,23 @@ class _HomeScreenState extends State<HomeScreen> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => const WalletScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildMenuItem(
+                            icon: Icons.stars_rounded,
+                            title: AppLocalizations.of(context)
+                                    ?.loyaltyPoints ??
+                                'نقاط الولاء',
+                            color: Color(AppConstants.primaryColor),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const LoyaltyPointsScreen(),
                                 ),
                               );
                             },

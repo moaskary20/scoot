@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\MobileWalletController;
 use App\Http\Controllers\Api\MobileTripController;
 use App\Http\Controllers\Api\MobileReferralController;
 use App\Http\Controllers\Api\MobileScooterController;
+use App\Http\Controllers\Api\MobileLoyaltyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -60,6 +61,11 @@ Route::post('/wallet/paymob/callback', [\App\Http\Controllers\Api\MobileWalletCo
 // Mobile App Referral Routes
 Route::prefix('referral')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [MobileReferralController::class, 'getReferralData']);
+});
+
+// Mobile App Loyalty Routes
+Route::prefix('loyalty')->middleware('auth:sanctum')->group(function () {
+    Route::get('/', [MobileLoyaltyController::class, 'index']);
 });
 
 // WebSocket Routes for ESP32 Scooter Control

@@ -154,6 +154,28 @@ class AppLocalizations {
   String get cannotCloseTripMessage => _localizedValues[locale.languageCode]?['cannotCloseTripMessage'] ?? 'لا يمكنك إغلاق هذه الشاشة أثناء الرحلة. استخدم زر "إغلاق الرحلة" لإتمام الرحلة.';
   String get cannotCancelTripMessage => _localizedValues[locale.languageCode]?['cannotCancelTripMessage'] ?? 'لا يمكنك إلغاء الرحلة من هنا. يرجى استخدام زر "إغلاق الرحلة" لإتمامها.';
 
+  // Loyalty
+  String get loyaltyPoints => _localizedValues[locale.languageCode]?['loyaltyPoints'] ?? 'نقاط الولاء';
+  String get loyaltyLevel => _localizedValues[locale.languageCode]?['loyaltyLevel'] ?? 'مستوى الولاء';
+  String get loyaltyTransactions => _localizedValues[locale.languageCode]?['loyaltyTransactions'] ?? 'معاملات نقاط الولاء';
+  String get noLoyaltyTransactionsYet => _localizedValues[locale.languageCode]?['noLoyaltyTransactionsYet'] ?? 'لا توجد معاملات نقاط حتى الآن';
+  String get pointsLabel => _localizedValues[locale.languageCode]?['pointsLabel'] ?? 'نقاط';
+  String get currentLevel => _localizedValues[locale.languageCode]?['currentLevel'] ?? 'المستوى الحالي';
+  String get maxLevelReached => _localizedValues[locale.languageCode]?['maxLevelReached'] ?? 'أعلى مستوى ولاء 🎉';
+  String get loyaltyProgressDescription => _localizedValues[locale.languageCode]?['loyaltyProgressDescription'] ?? 'كل ما تكمل رحلات أكتر، تجمع نقاط أكتر وتطلع لمستوى أعلى.';
+  String get loyaltyEarned => _localizedValues[locale.languageCode]?['loyaltyEarned'] ?? 'نقاط مكتسبة';
+  String get loyaltyRedeemed => _localizedValues[locale.languageCode]?['loyaltyRedeemed'] ?? 'نقاط مستخدمة';
+  String get loyaltyAdjusted => _localizedValues[locale.languageCode]?['loyaltyAdjusted'] ?? 'تعديل نقاط';
+  String get loyaltyExpired => _localizedValues[locale.languageCode]?['loyaltyExpired'] ?? 'نقاط منتهية';
+  String get balanceAfter => _localizedValues[locale.languageCode]?['balanceAfter'] ?? 'الرصيد بعد';
+  String get bronze => _localizedValues[locale.languageCode]?['bronze'] ?? 'برونزي';
+  String get silver => _localizedValues[locale.languageCode]?['silver'] ?? 'فضي';
+  String get gold => _localizedValues[locale.languageCode]?['gold'] ?? 'ذهبي';
+
+  String pointsToNextLevel(int points) =>
+      _localizedValues[locale.languageCode]?['pointsToNextLevel']?.replaceFirst('{points}', points.toString()) ??
+      'متبقي $points نقطة للمستوى التالي';
+
   static final Map<String, Map<String, String>> _localizedValues = {
     'ar': {
       'appName': 'لينر سكوت',
@@ -162,6 +184,23 @@ class AppLocalizations {
       'trips': 'رحلاتي',
       'freeBalance': 'رصيد مجاني',
       'chargeBalance': 'اشحن رصيدك',
+      'loyaltyPoints': 'نقاط الولاء',
+      'loyaltyLevel': 'مستوى الولاء',
+      'loyaltyTransactions': 'معاملات نقاط الولاء',
+      'noLoyaltyTransactionsYet': 'لا توجد معاملات نقاط حتى الآن',
+      'pointsLabel': 'نقاط',
+      'currentLevel': 'المستوى الحالي',
+      'maxLevelReached': 'أعلى مستوى ولاء 🎉',
+      'loyaltyProgressDescription': 'كل ما تكمل رحلات أكتر، تجمع نقاط أكتر وتطلع لمستوى أعلى.',
+      'loyaltyEarned': 'نقاط مكتسبة',
+      'loyaltyRedeemed': 'نقاط مستخدمة',
+      'loyaltyAdjusted': 'تعديل نقاط',
+      'loyaltyExpired': 'نقاط منتهية',
+      'balanceAfter': 'الرصيد بعد',
+      'bronze': 'برونزي',
+      'silver': 'فضي',
+      'gold': 'ذهبي',
+      'pointsToNextLevel': 'متبقي {points} نقطة للمستوى التالي',
       'howToRide': 'إزاي تركب لينر سكوت',
       'language': 'اللغة',
       'selectLanguage': 'اختر اللغة',
@@ -278,6 +317,23 @@ class AppLocalizations {
       'trips': 'My Trips',
       'freeBalance': 'Free Balance',
       'chargeBalance': 'Charge Balance',
+      'loyaltyPoints': 'Loyalty Points',
+      'loyaltyLevel': 'Loyalty Level',
+      'loyaltyTransactions': 'Loyalty Transactions',
+      'noLoyaltyTransactionsYet': 'No loyalty transactions yet',
+      'pointsLabel': 'Points',
+      'currentLevel': 'Current level',
+      'maxLevelReached': 'Highest loyalty level 🎉',
+      'loyaltyProgressDescription': 'The more you ride, the more points you earn and unlock higher levels.',
+      'loyaltyEarned': 'Points earned',
+      'loyaltyRedeemed': 'Points redeemed',
+      'loyaltyAdjusted': 'Points adjusted',
+      'loyaltyExpired': 'Points expired',
+      'balanceAfter': 'Balance after',
+      'bronze': 'Bronze',
+      'silver': 'Silver',
+      'gold': 'Gold',
+      'pointsToNextLevel': '{points} points to the next level',
       'howToRide': 'How to Ride Liner Scoot',
       'language': 'Language',
       'selectLanguage': 'Select Language',

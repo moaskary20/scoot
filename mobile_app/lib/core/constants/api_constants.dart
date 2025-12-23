@@ -46,6 +46,9 @@ class ApiConstants {
   // Referral
   static const String referral = '/referral';
   
+  // Geo Zones
+  static const String geoZones = '/geo-zones';
+  
   // WebSocket - Production server
   // Note: Update port if your WebSocket server uses a different port
   static const String wsUrl = 'wss://linerscoot.com:8080';

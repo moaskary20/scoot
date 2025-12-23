@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\MobileTripController;
 use App\Http\Controllers\Api\MobileReferralController;
 use App\Http\Controllers\Api\MobileScooterController;
 use App\Http\Controllers\Api\MobileLoyaltyController;
+use App\Http\Controllers\Api\MobileGeoZoneController;
 
 /*
 |--------------------------------------------------------------------------
@@ -67,6 +68,9 @@ Route::prefix('referral')->middleware('auth:sanctum')->group(function () {
 Route::prefix('loyalty')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [MobileLoyaltyController::class, 'index']);
 });
+
+// Mobile App Geo Zones Routes (no auth required - public map data)
+Route::get('/geo-zones', [MobileGeoZoneController::class, 'index']);
 
 // WebSocket Routes for ESP32 Scooter Control
 Route::prefix('v1/scooter')->group(function () {

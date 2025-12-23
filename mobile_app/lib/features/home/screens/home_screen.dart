@@ -42,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<ScooterModel> _scooters = [];
   bool _isLoading = true;
   Set<Marker> _markers = {};
+  Set<Polygon> _polygons = {};
   UserModel? _currentUser;
   bool _isLoadingUser = false;
   BitmapDescriptor? _availableScooterIcon;
@@ -129,6 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _isLoading = false;
         });
         await _loadScooters();
+        await _loadGeoZones();
       }
     } catch (e) {
       // Use default location (Cairo, Egypt) if location access fails
@@ -160,6 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
         );
 
         await _loadScooters();
+        await _loadGeoZones();
       }
     }
   }
@@ -232,6 +235,51 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
       }
+    }
+  }
+
+  Future<void> _loadGeoZones() async {
+    try {
+      final zones = await _apiService.getGeoZones();
+      final Set<Polygon> polygons = {};
+
+      for (final zone in zones) {
+        if (zone.polygon.isEmpty) continue;
+
+        // Use zone color if provided, otherwise default green
+        Color color;
+        try {
+          final hex = zone.color.replaceFirst('#', '');
+          if (hex.length == 6) {
+            color = Color(int.parse('0xFF$hex'));
+          } else {
+            color = const Color(0xFF00C853);
+          }
+        } catch (_) {
+          color = const Color(0xFF00C853);
+        }
+
+        polygons.add(
+          Polygon(
+            polygonId: PolygonId('zone_${zone.id}'),
+            points: zone.polygon,
+            strokeColor: color,
+            strokeWidth: 2,
+            fillColor: color.withOpacity(0.25),
+          ),
+        );
+      }
+
+      if (mounted) {
+        setState(() {
+          _polygons
+            ..clear()
+            ..addAll(polygons);
+        });
+      }
+    } catch (e) {
+      print('❌ Error loading geo zones: $e');
+      // لا نعرض SnackBar هنا حتى لا نزعج المستخدم؛ فقط لوج
     }
   }
 
@@ -919,6 +967,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 zoom: 15.0,
               ),
               markers: _markers,
+              polygons: _polygons,
               myLocationEnabled: true,
               myLocationButtonEnabled: false,
               mapType: MapType.normal,

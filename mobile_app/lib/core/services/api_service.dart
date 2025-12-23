@@ -10,6 +10,7 @@ import '../models/trip_model.dart';
 import '../models/card_model.dart';
 import '../models/referral_model.dart';
 import '../models/loyalty_transaction_model.dart';
+import '../models/geo_zone_model.dart';
 
 class ApiService {
   late Dio _dio;
@@ -261,6 +262,24 @@ class ApiService {
       };
     } catch (e) {
       throw _handleError(e);
+    }
+  }
+
+  // Get active allowed geo zones
+  Future<List<GeoZoneModel>> getGeoZones() async {
+    try {
+      final response = await _dio.get(ApiConstants.geoZones);
+
+      if (response.data['success'] == true &&
+          response.data['data'] != null) {
+        final List<dynamic> zones = response.data['data'];
+        return zones.map((j) => GeoZoneModel.fromJson(j)).toList();
+      }
+
+      return [];
+    } catch (e) {
+      print('❌ Error fetching geo zones: $e');
+      return [];
     }
   }
 

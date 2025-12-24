@@ -129,21 +129,45 @@ void subscribeToChannel() {
 }
 
 void handleWebSocketMessage(String message) {
+    Serial.println("Received: " + message); // للـ debugging
+    
     DynamicJsonDocument doc(1024);
-    deserializeJson(doc, message);
+    DeserializationError error = deserializeJson(doc, message);
     
-    String event = doc["event"];
+    if (error) {
+        Serial.print("JSON parse error: ");
+        Serial.println(error.c_str());
+        return;
+    }
     
-    if (event == "command" || (event == "App\\Events\\ScooterCommand")) {
-        // Handle command from server
-        JsonObject data = doc["data"];
-        JsonObject commands = data["commands"];
-        bool lock = commands["lock"];
-        bool unlock = commands["unlock"];
+    String event = doc["event"].as<String>();
+    
+    // معالجة رسالة الاشتراك الناجح
+    if (event == "pusher_internal:subscription_succeeded") {
+        Serial.println("Successfully subscribed to channel!");
+        return;
+    }
+    
+    // معالجة ping من السيرفر (يجب الرد بـ pong)
+    if (event == "pusher:ping") {
+        Serial.println("Received ping, sending pong");
+        webSocket.sendTXT("{\"event\":\"pusher:pong\",\"data\":{}}");
+        return;
+    }
+    
+    // معالجة الأوامر من السيرفر
+    if (event == "command") {
+        JsonObject data = doc["data"].as<JsonObject>();
+        JsonObject commands = data["commands"].as<JsonObject>();
+        
+        bool lock = commands["lock"] | false;
+        bool unlock = commands["unlock"] | false;
         
         if (lock) {
+            Serial.println("Executing LOCK command");
             lockScooter();
         } else if (unlock) {
+            Serial.println("Executing UNLOCK command");
             unlockScooter();
         }
     }
@@ -216,6 +240,9 @@ void loop() {
         updateLocation(30.0444, 31.2357, 85, true);
         lastUpdate = millis();
     }
+    
+    // Note: ping/pong يتم التعامل معه تلقائياً في handleWebSocketMessage
+    // عند استقبال pusher:ping، يتم إرسال pusher:pong تلقائياً
 }
 ```
 
@@ -413,10 +440,17 @@ Content-Type: application/json
 - تحقق من أن IMEI صحيح في قاعدة البيانات
 - راجع logs في Laravel
 
-### الاتصال ينقطع
-- أضف آلية إعادة الاتصال التلقائي
-- استخدم heartbeat/ping pong
-- تحقق من استقرار الشبكة
+### الاتصال ينقطع (Pong reply not received in time)
+- **السبب:** السيرفر يرسل ping messages كل 60 ثانية ويتوقع pong response
+- **الحل:** تأكد من معالجة `pusher:ping` وإرسال `pusher:pong` في `handleWebSocketMessage`
+- **الكود المطلوب:**
+  ```cpp
+  if (event == "pusher:ping") {
+      webSocket.sendTXT("{\"event\":\"pusher:pong\",\"data\":{}}");
+      return;
+  }
+  ```
+- إذا استمرت المشكلة، يمكن زيادة `REVERB_APP_ACTIVITY_TIMEOUT` في `.env` إلى 120 ثانية
 
 ---
 

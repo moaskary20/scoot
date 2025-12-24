@@ -336,6 +336,18 @@ POST https://linerscoot.com/api/v1/scooter/message
 php artisan reverb:start --host=0.0.0.0 --port=8080
 ```
 
+### المشكلة 5: "Pong reply not received in time" أو "1006 Abnormal Closure"
+**السبب:** السيرفر يرسل ping messages ويتوقع pong response  
+**الحل:** 
+- في Postman: لا يمكن إرسال pong تلقائياً، لكن يمكن تجربة الاتصال مرة أخرى
+- في ESP32: تأكد من معالجة `pusher:ping` وإرسال `pusher:pong`:
+  ```cpp
+  if (event == "pusher:ping") {
+      webSocket.sendTXT("{\"event\":\"pusher:pong\",\"data\":{}}");
+  }
+  ```
+- يمكن زيادة `REVERB_APP_ACTIVITY_TIMEOUT` في `.env` إلى 120 ثانية
+
 ---
 
 ## 📞 للدعم

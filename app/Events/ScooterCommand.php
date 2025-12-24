@@ -12,6 +12,11 @@ class ScooterCommand implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    /**
+     * The name of the queue the event should be sent to.
+     */
+    public $broadcastQueue = 'default';
+
     public function __construct(
         public string $imei,
         public array $command

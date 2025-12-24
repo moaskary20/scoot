@@ -203,7 +203,22 @@ class WebSocketService
 
         // Broadcast command to scooter channel
         try {
-            broadcast(new \App\Events\ScooterCommand($scooter->device_imei, $command));
+            Log::info('Attempting to broadcast command', [
+                'channel' => $channel,
+                'command' => $command,
+                'broadcast_driver' => config('broadcasting.default'),
+            ]);
+            
+            $event = new \App\Events\ScooterCommand($scooter->device_imei, $command);
+            
+            Log::info('Event created, calling broadcast()', [
+                'event_class' => get_class($event),
+                'channel' => $event->broadcastOn()->name,
+                'event_name' => $event->broadcastAs(),
+            ]);
+            
+            broadcast($event);
+            
             Log::info('Command broadcasted successfully', [
                 'channel' => $channel,
                 'command' => $command,
@@ -213,6 +228,9 @@ class WebSocketService
                 'channel' => $channel,
                 'command' => $command,
                 'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }

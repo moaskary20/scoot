@@ -174,12 +174,47 @@ class WebSocketService
      */
     public function sendCommandToScooter(Scooter $scooter, array $command): void
     {
+        Log::info('🔍 sendCommandToScooter called', [
+            'scooter_id' => $scooter->id,
+            'scooter_code' => $scooter->code,
+            'device_imei_raw' => $scooter->device_imei,
+            'device_imei_type' => gettype($scooter->device_imei),
+            'device_imei_empty' => empty($scooter->device_imei),
+            'device_imei_null' => is_null($scooter->device_imei),
+        ]);
+
         if (!$scooter->device_imei) {
+            Log::warning('❌ Cannot send command: Scooter has no device_imei', [
+                'scooter_id' => $scooter->id,
+                'scooter_code' => $scooter->code,
+            ]);
             return;
         }
 
+        $channel = 'scooter.' . $scooter->device_imei;
+        
+        Log::info('📡 Sending command to scooter via WebSocket', [
+            'scooter_id' => $scooter->id,
+            'scooter_code' => $scooter->code,
+            'device_imei' => $scooter->device_imei,
+            'channel' => $channel,
+            'command' => $command,
+        ]);
+
         // Broadcast command to scooter channel
-        broadcast(new \App\Events\ScooterCommand($scooter->device_imei, $command));
+        try {
+            broadcast(new \App\Events\ScooterCommand($scooter->device_imei, $command));
+            Log::info('Command broadcasted successfully', [
+                'channel' => $channel,
+                'command' => $command,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to broadcast command', [
+                'channel' => $channel,
+                'command' => $command,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }
 

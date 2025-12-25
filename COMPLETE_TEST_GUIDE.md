@@ -71,10 +71,48 @@ tail -f storage/logs/laravel.log
       "lock": true,
       "unlock": false
     },
-    "timestamp": "2025-12-24T22:16:30+00:00"
+    "timestamp": "2025-12-25T12:37:33+00:00",
+    "timeout": 120,
+    "ping_interval": 60
   }
 }
 ```
+
+**ملاحظة:** البيانات الآن تُرسل كـ JSON object مباشر (بدون escape)، مما يسهل التعامل معها في ESP32:
+
+```cpp
+// في ESP32، استقبل الرسالة مباشرة:
+DynamicJsonDocument doc(1024);
+deserializeJson(doc, message); // message هو الرسالة الكاملة
+
+String event = doc["event"] | "";
+JsonObject data = doc["data"];
+
+if (event == "command") {
+    bool lock = data["commands"]["lock"] | false;
+    bool unlock = data["commands"]["unlock"] | false;
+    int timeout = data["timeout"] | 120; // ثواني
+    int pingInterval = data["ping_interval"] | 60; // ثواني
+    String timestamp = data["timestamp"] | "";
+    
+    // تنفيذ الأوامر
+    if (lock) {
+        lockScooter();
+    }
+    if (unlock) {
+        unlockScooter();
+    }
+}
+```
+
+**معلومات Timeout و Ping Interval:**
+- `timeout` (activity_timeout): الوقت بالثواني قبل قطع الاتصال إذا لم يكن هناك نشاط (افتراضي: 120 ثانية)
+- `ping_interval`: الفترة بين رسائل ping بالثواني (افتراضي: 60 ثانية)
+- يمكن تعديلها في `.env`:
+  ```env
+  REVERB_APP_ACTIVITY_TIMEOUT=120
+  REVERB_APP_PING_INTERVAL=60
+  ```
 
 ---
 
@@ -153,4 +191,6 @@ ps aux | grep reverb | grep -v grep
 - ✅ Postman يستقبل رسالة `command` فوراً
 
 إذا حدث هذا، كل شيء يعمل بشكل صحيح! ✅
+
+
 

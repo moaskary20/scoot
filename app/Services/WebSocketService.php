@@ -170,7 +170,7 @@ class WebSocketService
     }
 
     /**
-     * Send command to ESP32 via WebSocket
+     * Send command to ESP32 via MQTT
      */
     public function sendCommandToScooter(Scooter $scooter, array $command): void
     {
@@ -191,41 +191,25 @@ class WebSocketService
             return;
         }
 
-        $channel = 'scooter.' . $scooter->device_imei;
-        
-        Log::info('📡 Sending command to scooter via WebSocket', [
+        Log::info('📡 Sending command to scooter via MQTT', [
             'scooter_id' => $scooter->id,
             'scooter_code' => $scooter->code,
             'device_imei' => $scooter->device_imei,
-            'channel' => $channel,
             'command' => $command,
         ]);
 
-        // Broadcast command to scooter channel
+        // Send command via MQTT
         try {
-            Log::info('Attempting to broadcast command', [
-                'channel' => $channel,
-                'command' => $command,
-                'broadcast_driver' => config('broadcasting.default'),
-            ]);
+            $mqttService = app(MqttService::class);
+            $mqttService->publishCommand($scooter->device_imei, $command);
             
-            $event = new \App\Events\ScooterCommand($scooter->device_imei, $command);
-            
-            Log::info('Event created, calling broadcast()', [
-                'event_class' => get_class($event),
-                'channel' => $event->broadcastOn()->name,
-                'event_name' => $event->broadcastAs(),
-            ]);
-            
-            broadcast($event);
-            
-            Log::info('Command broadcasted successfully', [
-                'channel' => $channel,
+            Log::info('✅ Command sent via MQTT successfully', [
+                'imei' => $scooter->device_imei,
                 'command' => $command,
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to broadcast command', [
-                'channel' => $channel,
+            Log::error('❌ Failed to send command via MQTT', [
+                'imei' => $scooter->device_imei,
                 'command' => $command,
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),

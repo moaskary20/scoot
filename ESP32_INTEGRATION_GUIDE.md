@@ -2,15 +2,25 @@
 
 ## 📡 معلومات الاتصال
 
-### WebSocket URL (للاستماع للأوامر)
+### MQTT Broker (للاستماع للأوامر) - **مستحسن**
 ```
-ws://linerscoot.com:8080/app/m1k6cr5egrbe0p2eycaw
+Host: linerscoot.com (أو IP السيرفر)
+Port: 1883
+Topic: scooter/{IMEI}/commands
 ```
+
+**راجع:** [ESP32_MQTT_GUIDE.md](./ESP32_MQTT_GUIDE.md) للتفاصيل الكاملة
 
 ### HTTP Endpoint (لإرسال البيانات)
 ```
 POST https://linerscoot.com/api/v1/scooter/message
 ```
+
+### WebSocket (Legacy - تم استبداله بـ MQTT)
+```
+ws://linerscoot.com:8080/app/m1k6cr5egrbe0p2eycaw
+```
+**ملاحظة:** تم استبدال WebSocket بـ MQTT للحصول على JSON object مباشر. استخدم MQTT للحصول على أفضل تجربة.
 
 ---
 

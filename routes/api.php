@@ -76,5 +76,8 @@ Route::get('/geo-zones', [MobileGeoZoneController::class, 'index']);
 Route::prefix('v1/scooter')->group(function () {
     // WebSocket message handler (HTTP fallback)
     Route::post('message', [ScooterWebSocketController::class, 'handleMessage']);
+    
+    // Get commands in WebSocket format (JSON object, not string)
+    Route::post('commands', [ScooterWebSocketController::class, 'getCommandsWebSocketFormat']);
 });
 

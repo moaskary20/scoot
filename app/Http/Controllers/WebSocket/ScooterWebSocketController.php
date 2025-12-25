@@ -159,5 +159,51 @@ class ScooterWebSocketController extends Controller
             'current_lock_status' => $scooter->is_locked,
         ]);
     }
+
+    /**
+     * Get commands in WebSocket format (with JSON object data, not string)
+     * This endpoint returns commands in the format ESP32 expects
+     */
+    public function getCommandsWebSocketFormat(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'imei' => ['required', 'string'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid request',
+                'errors' => $validator->errors(),
+            ], 400);
+        }
+
+        $imei = $request->input('imei');
+        $scooter = \App\Models\Scooter::where('device_imei', $imei)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$scooter) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Scooter not found',
+            ], 404);
+        }
+
+        $reverbConfig = config('reverb.apps.apps.0', []);
+        $commands = $this->webSocketService->getCommandsForScooter($scooter);
+
+        // Return in WebSocket format with JSON object (not string)
+        return response()->json([
+            'event' => 'command',
+            'data' => [
+                'commands' => $commands,
+                'timestamp' => now()->toIso8601String(),
+                'timeout' => $reverbConfig['activity_timeout'] ?? env('REVERB_APP_ACTIVITY_TIMEOUT', 120),
+                'ping_interval' => $reverbConfig['ping_interval'] ?? env('REVERB_APP_PING_INTERVAL', 60),
+            ],
+            'channel' => 'scooter.' . $imei,
+        ]);
+    }
 }
 

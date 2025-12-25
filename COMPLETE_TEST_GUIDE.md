@@ -66,34 +66,34 @@ tail -f storage/logs/laravel.log
 {
   "event": "command",
   "channel": "scooter.ESP32_IMEI_001",
-  "data": {
-    "commands": {
-      "lock": true,
-      "unlock": false
-    },
-    "timestamp": "2025-12-25T12:37:33+00:00",
-    "timeout": 120,
-    "ping_interval": 60
-  }
+  "data": "{\"commands\":{\"lock\":true,\"unlock\":false},\"timestamp\":\"2025-12-25T12:37:33+00:00\",\"timeout\":120,\"ping_interval\":60}"
 }
 ```
 
-**ملاحظة:** البيانات الآن تُرسل كـ JSON object مباشر (بدون escape)، مما يسهل التعامل معها في ESP32:
+**⚠️ ملاحظة مهمة:** Laravel Reverb يستخدم بروتوكول Pusher الذي يتطلب `data` كـ JSON string (مشفر). هذا جزء من مواصفات Pusher protocol ولا يمكن تغييره.
+
+**في ESP32، يجب فك تشفير JSON string من `data`:**
 
 ```cpp
-// في ESP32، استقبل الرسالة مباشرة:
+// في ESP32، استقبل الرسالة ثم فك التشفير:
 DynamicJsonDocument doc(1024);
 deserializeJson(doc, message); // message هو الرسالة الكاملة
 
 String event = doc["event"] | "";
-JsonObject data = doc["data"];
 
 if (event == "command") {
-    bool lock = data["commands"]["lock"] | false;
-    bool unlock = data["commands"]["unlock"] | false;
-    int timeout = data["timeout"] | 120; // ثواني
-    int pingInterval = data["ping_interval"] | 60; // ثواني
-    String timestamp = data["timestamp"] | "";
+    // data هو JSON string، يجب فك تشفيره
+    String dataString = doc["data"] | "";
+    
+    // فك تشفير data (JSON string)
+    DynamicJsonDocument dataDoc(512);
+    deserializeJson(dataDoc, dataString);
+    
+    bool lock = dataDoc["commands"]["lock"] | false;
+    bool unlock = dataDoc["commands"]["unlock"] | false;
+    int timeout = dataDoc["timeout"] | 120; // ثواني
+    int pingInterval = dataDoc["ping_interval"] | 60; // ثواني
+    String timestamp = dataDoc["timestamp"] | "";
     
     // تنفيذ الأوامر
     if (lock) {

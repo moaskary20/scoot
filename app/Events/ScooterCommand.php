@@ -43,25 +43,20 @@ class ScooterCommand implements ShouldBroadcast
     }
 
     /**
-     * Customize the broadcast message to send data as JSON object instead of JSON string.
-     * This method overrides the default behavior to send data as object directly.
+     * Get the data to broadcast.
+     * Note: Laravel Reverb uses Pusher protocol which requires data to be JSON string.
+     * ESP32 must decode the JSON string from the 'data' field.
      */
-    public function toBroadcast($notifiable = null): BroadcastMessage
+    public function broadcastWith(): array
     {
         $reverbConfig = config('reverb.apps.apps.0', []);
         
-        $data = [
+        return [
             'commands' => $this->command,
             'timestamp' => now()->toIso8601String(),
             'timeout' => $reverbConfig['activity_timeout'] ?? env('REVERB_APP_ACTIVITY_TIMEOUT', 120),
             'ping_interval' => $reverbConfig['ping_interval'] ?? env('REVERB_APP_PING_INTERVAL', 60),
         ];
-
-        return new BroadcastMessage([
-            'event' => $this->broadcastAs(),
-            'data' => $data, // Send as object, not string - ESP32 expects JSON object directly
-            'channel' => 'scooter.' . $this->imei,
-        ]);
     }
 }
 

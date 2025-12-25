@@ -1,32 +1,26 @@
 # 📋 تنسيق JSON في WebSocket Messages
 
-## ✅ التنسيق الحالي
+## ⚠️ التنسيق الحالي (Pusher Protocol)
 
 عند استقبال رسالة `command` من Laravel Reverb في Postman، البيانات تأتي بهذا الشكل:
 
 ```json
 {
   "event": "command",
-  "data": {
-    "commands": {
-      "lock": true,
-      "unlock": false
-    },
-    "timestamp": "2025-12-25T12:37:33+00:00",
-    "timeout": 120,
-    "ping_interval": 60
-  },
+  "data": "{\"commands\":{\"lock\":true,\"unlock\":false},\"timestamp\":\"2025-12-25T12:37:33+00:00\",\"timeout\":120,\"ping_interval\":60}",
   "channel": "scooter.ESP32_IMEI_001"
 }
 ```
 
-**ملاحظة:** `data` الآن هو JSON object مباشر (بدون escape)، مما يسهل التعامل معه في ESP32.
+**⚠️ ملاحظة مهمة:** Laravel Reverb يستخدم **بروتوكول Pusher** الذي يتطلب `data` كـ **JSON string** (مشفر). هذا جزء من مواصفات Pusher protocol ولا يمكن تغييره.
+
+**لماذا؟** لأن Pusher protocol مصمم بهذه الطريقة لأسباب أمنية وأداء. جميع broadcasters التي تستخدم Pusher protocol (مثل Laravel Reverb, Pusher.com, Ably) تتبع نفس القاعدة.
 
 ---
 
 ## ✅ الاستخدام في ESP32
 
-في ESP32، يمكن التعامل مع البيانات مباشرة:
+في ESP32، **يجب فك تشفير JSON string من `data`**:
 
 ```cpp
 #include <ArduinoJson.h>
@@ -43,15 +37,24 @@ void handleWebSocketMessage(String message) {
     String event = doc["event"] | "";
     
     if (event == "command") {
-        // البيانات مباشرة كـ object
-        JsonObject data = doc["data"];
+        // data هو JSON string، يجب فك تشفيره
+        String dataString = doc["data"] | "";
+        
+        // فك تشفير data (JSON string)
+        DynamicJsonDocument dataDoc(512);
+        DeserializationError dataError = deserializeJson(dataDoc, dataString);
+        
+        if (dataError) {
+            Serial.println("Failed to parse data JSON");
+            return;
+        }
         
         // استخراج البيانات
-        bool lock = data["commands"]["lock"] | false;
-        bool unlock = data["commands"]["unlock"] | false;
-        int timeout = data["timeout"] | 120; // ثواني
-        int pingInterval = data["ping_interval"] | 60; // ثواني
-        String timestamp = data["timestamp"] | "";
+        bool lock = dataDoc["commands"]["lock"] | false;
+        bool unlock = dataDoc["commands"]["unlock"] | false;
+        int timeout = dataDoc["timeout"] | 120; // ثواني
+        int pingInterval = dataDoc["ping_interval"] | 60; // ثواني
+        String timestamp = dataDoc["timestamp"] | "";
         
         // تنفيذ الأوامر
         if (lock) {

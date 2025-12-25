@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\ScooterCommand;
 use App\Models\Scooter;
 use App\Repositories\ScooterLogRepository;
 use Illuminate\Support\Facades\Broadcast;
@@ -170,7 +171,7 @@ class WebSocketService
     }
 
     /**
-     * Send command to ESP32 via MQTT
+     * Send command to ESP32 via both WebSocket (for Postman/testing) and MQTT (for ESP32)
      */
     public function sendCommandToScooter(Scooter $scooter, array $command): void
     {
@@ -191,14 +192,31 @@ class WebSocketService
             return;
         }
 
-        Log::info('📡 Sending command to scooter via MQTT', [
+        Log::info('📡 Sending command to scooter via WebSocket and MQTT', [
             'scooter_id' => $scooter->id,
             'scooter_code' => $scooter->code,
             'device_imei' => $scooter->device_imei,
             'command' => $command,
         ]);
 
-        // Send command via MQTT
+        // Send command via WebSocket (for Postman/testing)
+        try {
+            event(new ScooterCommand($scooter->device_imei, $command));
+            Log::info('✅ Command sent via WebSocket successfully', [
+                'imei' => $scooter->device_imei,
+                'command' => $command,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ Failed to send command via WebSocket', [
+                'imei' => $scooter->device_imei,
+                'command' => $command,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+        }
+
+        // Send command via MQTT (for ESP32)
         try {
             $mqttService = app(MqttService::class);
             $mqttService->publishCommand($scooter->device_imei, $command);

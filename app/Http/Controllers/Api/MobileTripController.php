@@ -279,7 +279,22 @@ class MobileTripController extends Controller
                 ], 404);
             }
 
-            $startTime = Carbon::parse($trip->start_time);
+            // Safely parse start_time
+            $startTime = null;
+            if ($trip->start_time instanceof Carbon) {
+                $startTime = $trip->start_time;
+            } elseif (is_string($trip->start_time)) {
+                $startTime = Carbon::parse($trip->start_time);
+            } else {
+                // Fallback to current time if start_time is invalid
+                \Log::warning('Invalid start_time for trip', [
+                    'trip_id' => $trip->id,
+                    'start_time' => $trip->start_time,
+                    'start_time_type' => gettype($trip->start_time),
+                ]);
+                $startTime = Carbon::now();
+            }
+            
             // Calculate duration in minutes with decimals (fractional minutes)
             $durationSeconds = $startTime->diffInSeconds(Carbon::now());
             $durationMinutes = $durationSeconds / 60.0; // Convert to minutes with decimals
@@ -334,16 +349,32 @@ class MobileTripController extends Controller
             // Calculate current cost based on duration and geo zone pricing
             $currentCost = 0.0;
             if ($trip->start_latitude && $trip->start_longitude) {
-                $geoZone = \App\Models\GeoZone::where('type', 'allowed')
-                    ->where('is_active', true)
-                    ->get()
-                    ->first(function ($zone) use ($trip) {
-                        return $this->isPointInPolygon(
-                            $trip->start_latitude,
-                            $trip->start_longitude,
-                            $zone->polygon ?? []
-                        );
-                    });
+                try {
+                    $geoZone = \App\Models\GeoZone::where('type', 'allowed')
+                        ->where('is_active', true)
+                        ->get()
+                        ->first(function ($zone) use ($trip) {
+                            try {
+                                return $this->isPointInPolygon(
+                                    (float) $trip->start_latitude,
+                                    (float) $trip->start_longitude,
+                                    $zone->polygon ?? []
+                                );
+                            } catch (\Exception $e) {
+                                \Log::warning('Error checking point in polygon', [
+                                    'zone_id' => $zone->id,
+                                    'error' => $e->getMessage(),
+                                ]);
+                                return false;
+                            }
+                        });
+                } catch (\Exception $e) {
+                    \Log::error('Error fetching geo zones', [
+                        'trip_id' => $trip->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    $geoZone = null;
+                }
                 
                 if ($geoZone && $geoZone->price_per_minute) {
                     $tripStartFee = (float) ($geoZone->trip_start_fee ?? 0);
@@ -380,7 +411,7 @@ class MobileTripController extends Controller
                 'data' => [
                     'id' => $trip->id,
                     'scooter_code' => $trip->scooter?->code,
-                    'start_time' => $trip->start_time->toDateTimeString(),
+                    'start_time' => $startTime->toDateTimeString(),
                     'duration_minutes' => round($durationMinutes, 2), // Round to 2 decimals
                     'status' => $trip->status,
                     'current_cost' => round($currentCost, 2), // Current cost based on duration
@@ -397,11 +428,90 @@ class MobileTripController extends Controller
             
             return response()->json($responseData, 200);
         } catch (\Exception $e) {
+            \Log::error('❌ Error in getActiveTrip', [
+                'user_id' => $request->user()?->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'حدث خطأ في جلب الرحلة النشطة',
                 'error' => $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Check if a point is inside a polygon
+     * Uses ray casting algorithm
+     */
+    private function isPointInPolygon(float $latitude, float $longitude, array $polygon): bool
+    {
+        try {
+            // If polygon is empty or invalid, return false
+            if (empty($polygon) || !is_array($polygon)) {
+                return false;
+            }
+
+            // Handle different polygon formats
+            $points = [];
+            if (isset($polygon[0]) && is_array($polygon[0])) {
+                // Format: [[lat, lng], [lat, lng], ...]
+                $points = $polygon;
+            } elseif (isset($polygon['coordinates']) && is_array($polygon['coordinates'])) {
+                // Format: {'coordinates': [[lat, lng], [lat, lng], ...]}
+                $points = $polygon['coordinates'];
+            } else {
+                // Try to parse as flat array [lat1, lng1, lat2, lng2, ...]
+                if (count($polygon) >= 4 && count($polygon) % 2 == 0) {
+                    for ($i = 0; $i < count($polygon); $i += 2) {
+                        if (isset($polygon[$i]) && isset($polygon[$i + 1])) {
+                            $points[] = [$polygon[$i], $polygon[$i + 1]];
+                        }
+                    }
+                }
+            }
+
+            // Need at least 3 points to form a polygon
+            if (count($points) < 3) {
+                return false;
+            }
+
+            $n = count($points);
+            $inside = false;
+
+            // Ray casting algorithm
+            for ($i = 0, $j = $n - 1; $i < $n; $j = $i++) {
+                $xi = is_array($points[$i]) ? (float) $points[$i][0] : (float) $points[$i];
+                $yi = is_array($points[$i]) ? (float) $points[$i][1] : (float) ($points[$i + 1] ?? 0);
+                $xj = is_array($points[$j]) ? (float) $points[$j][0] : (float) $points[$j];
+                $yj = is_array($points[$j]) ? (float) $points[$j][1] : (float) ($points[$j + 1] ?? 0);
+
+                // Check if point is on the edge
+                if (($yi == $longitude && $yj == $longitude && 
+                     (($xi <= $latitude && $latitude <= $xj) || ($xj <= $latitude && $latitude <= $xi)))) {
+                    return true;
+                }
+
+                // Check intersection
+                $intersect = (($yi > $longitude) != ($yj > $longitude)) &&
+                             ($latitude < ($xj - $xi) * ($longitude - $yi) / ($yj - $yi) + $xi);
+                
+                if ($intersect) {
+                    $inside = !$inside;
+                }
+            }
+
+            return $inside;
+        } catch (\Exception $e) {
+            \Log::error('Error in isPointInPolygon', [
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+                'polygon' => $polygon,
+                'error' => $e->getMessage(),
+            ]);
+            return false; // Default to false on error
         }
     }
 

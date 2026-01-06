@@ -123,14 +123,18 @@ class MobileAuthController extends Controller
             // Handle national ID photos upload (front & back)
             if ($request->hasFile('national_id_front')) {
                 $front = $request->file('national_id_front');
-                $frontName = time() . '_front_' . $front->getClientOriginalName();
+                // Remove 'national_id_front' from original name to avoid duplication
+                $originalName = str_replace(['national_id_front', '_'], '', $front->getClientOriginalName());
+                $frontName = time() . '_front_' . $originalName;
                 $front->storeAs('public/national_ids', $frontName);
                 $userData['national_id_front_photo'] = 'national_ids/' . $frontName;
             }
 
             if ($request->hasFile('national_id_back')) {
                 $back = $request->file('national_id_back');
-                $backName = time() . '_back_' . $back->getClientOriginalName();
+                // Remove 'national_id_back' from original name to avoid duplication
+                $originalName = str_replace(['national_id_back', '_'], '', $back->getClientOriginalName());
+                $backName = time() . '_back_' . $originalName;
                 $back->storeAs('public/national_ids', $backName);
                 $userData['national_id_back_photo'] = 'national_ids/' . $backName;
             }

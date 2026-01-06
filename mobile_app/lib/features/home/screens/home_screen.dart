@@ -663,12 +663,43 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
 
+      // Extract and display user-friendly error message
+      String errorMessage = 'حدث خطأ في بدء الرحلة';
+      final errorStr = e.toString();
+      
+      // Try to extract message from exception
+      if (errorStr.contains('Exception: ')) {
+        final parts = errorStr.split('Exception: ');
+        if (parts.length > 1) {
+          final message = parts[1].split('|')[0].trim(); // Remove any additional info after |
+          errorMessage = message;
+        }
+      } else if (errorStr.contains('message')) {
+        // Try to extract from JSON-like string
+        final match = RegExp(r'"message"\s*:\s*"([^"]+)"').firstMatch(errorStr);
+        if (match != null) {
+          errorMessage = match.group(1)!;
+        }
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ في بدء الرحلة: $e'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
+            duration: const Duration(seconds: 5),
+            action: errorMessage.contains('مستأجر') || 
+                    errorMessage.contains('الصيانة') ||
+                    errorMessage.contains('غير متاح')
+                ? SnackBarAction(
+                    label: 'بحث عن سكوتر',
+                    textColor: Colors.white,
+                    onPressed: () {
+                      // Refresh scooters list
+                      _loadScooters();
+                    },
+                  )
+                : null,
           ),
         );
       }
@@ -1032,11 +1063,42 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       if (mounted) {
+        // Extract and display user-friendly error message
+        String errorMessage = AppLocalizations.of(context)?.errorStartingTrip ?? 'حدث خطأ في بدء الرحلة';
+        final errorStr = e.toString();
+        
+        // Try to extract message from exception
+        if (errorStr.contains('Exception: ')) {
+          final parts = errorStr.split('Exception: ');
+          if (parts.length > 1) {
+            final message = parts[1].split('|')[0].trim(); // Remove any additional info after |
+            errorMessage = message;
+          }
+        } else if (errorStr.contains('message')) {
+          // Try to extract from JSON-like string
+          final match = RegExp(r'"message"\s*:\s*"([^"]+)"').firstMatch(errorStr);
+          if (match != null) {
+            errorMessage = match.group(1)!;
+          }
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${AppLocalizations.of(context)?.errorStartingTrip ?? 'حدث خطأ في بدء الرحلة'}: $e'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
+            duration: const Duration(seconds: 5),
+            action: errorMessage.contains('مستأجر') || 
+                    errorMessage.contains('الصيانة') ||
+                    errorMessage.contains('غير متاح')
+                ? SnackBarAction(
+                    label: 'بحث عن سكوتر',
+                    textColor: Colors.white,
+                    onPressed: () {
+                      // Refresh scooters list
+                      _loadScooters();
+                    },
+                  )
+                : null,
           ),
         );
       }

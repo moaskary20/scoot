@@ -616,11 +616,16 @@ class ApiService {
         if (e.response?.data != null) {
           final responseData = e.response!.data;
           if (responseData['message'] != null) {
+            final message = responseData['message'] as String;
             // If there's an active trip, include trip_id in the exception message
             if (responseData['trip_id'] != null) {
-              throw Exception('${responseData['message']}|trip_id:${responseData['trip_id']}');
+              throw Exception('$message|trip_id:${responseData['trip_id']}');
             }
-            throw Exception(responseData['message']);
+            // Include error_code if available for better error handling
+            if (responseData['error_code'] != null) {
+              throw Exception('$message|error_code:${responseData['error_code']}');
+            }
+            throw Exception(message);
           }
         }
       }

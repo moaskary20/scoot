@@ -147,6 +147,21 @@ class MobileTripController extends Controller
                 ], 404);
             }
 
+            // Check if scooter is locked
+            if ($scooter->is_locked) {
+                \Log::warning('Scooter is locked', [
+                    'scooter_id' => $scooter->id,
+                    'scooter_code' => $scooter->code,
+                    'user_id' => $user->id,
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'السكوتر مقفول حالياً. يرجى المحاولة لاحقاً.',
+                    'error_code' => 'SCOOTER_LOCKED',
+                ], 400);
+            }
+
             // Check if scooter is available
             // Allow if status is 'available' or 'charging' (charging scooters can still be used)
             if (!in_array($scooter->status, ['available', 'charging'])) {
@@ -158,16 +173,20 @@ class MobileTripController extends Controller
                 ]);
                 
                 $statusMessages = [
-                    'rented' => 'السكوتر مستأجر حالياً',
-                    'maintenance' => 'السكوتر قيد الصيانة',
-                    'inactive' => 'السكوتر غير نشط',
+                    'rented' => 'السكوتر مستأجر حالياً من مستخدم آخر. يرجى البحث عن سكوتر آخر.',
+                    'maintenance' => 'السكوتر قيد الصيانة حالياً. يرجى البحث عن سكوتر آخر.',
+                    'inactive' => 'السكوتر غير نشط. يرجى البحث عن سكوتر آخر.',
+                    'damaged' => 'السكوتر معطل. يرجى البحث عن سكوتر آخر.',
+                    'lost' => 'السكوتر مفقود. يرجى البحث عن سكوتر آخر.',
                 ];
                 
-                $message = $statusMessages[$scooter->status] ?? 'السكوتر غير متاح حالياً';
+                $message = $statusMessages[$scooter->status] ?? 'السكوتر غير متاح حالياً. يرجى البحث عن سكوتر آخر.';
                 
                 return response()->json([
                     'success' => false,
                     'message' => $message,
+                    'error_code' => 'SCOOTER_NOT_AVAILABLE',
+                    'scooter_status' => $scooter->status,
                 ], 400);
             }
 

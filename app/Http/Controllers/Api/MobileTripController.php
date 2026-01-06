@@ -258,6 +258,11 @@ class MobileTripController extends Controller
                     'start_time' => $trip->start_time->toDateTimeString(),
                     'duration_minutes' => $durationMinutes,
                     'status' => $trip->status,
+                    'scooter' => $trip->scooter ? [
+                        'id' => $trip->scooter->id,
+                        'code' => $trip->scooter->code,
+                        'battery_percentage' => $trip->scooter->battery_percentage ?? 0,
+                    ] : null,
                 ],
             ], 200);
         } catch (\Exception $e) {

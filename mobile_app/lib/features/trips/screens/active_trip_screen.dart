@@ -31,11 +31,16 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
   final ImagePicker _imagePicker = ImagePicker();
   
   Timer? _timer;
+  Timer? _locationTimer;
   int _durationSeconds = 0;
   int _durationMinutes = 0;
   bool _isCompleting = false;
   Position? _currentPosition;
+  Position? _previousPosition;
   late DateTime _actualStartTime;
+  int _batteryPercentage = 0;
+  double _currentSpeed = 0.0; // Speed in m/s
+  bool _isLoadingBattery = true;
 
   @override
   void initState() {
@@ -66,12 +71,14 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     
     print('⏰ Actual Start Time: $_actualStartTime');
     _startTimer();
-    _getCurrentLocation();
+    _startLocationUpdates();
+    _loadScooterBattery();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _locationTimer?.cancel();
     super.dispose();
   }
 
@@ -106,14 +113,67 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     });
   }
 
+  void _startLocationUpdates() {
+    _getCurrentLocation();
+    // Update location every 3 seconds to get speed
+    _locationTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      _getCurrentLocation();
+    });
+  }
+
   Future<void> _getCurrentLocation() async {
     try {
       final position = await _locationService.getCurrentLocation();
+      
+      // Calculate speed if we have previous position
+      double speed = 0.0;
+      if (_previousPosition != null && position.speed > 0) {
+        // Use GPS speed if available and valid
+        speed = position.speed; // Speed in m/s
+      } else if (_previousPosition != null) {
+        // Calculate speed from distance and time
+        final distance = Geolocator.distanceBetween(
+          _previousPosition!.latitude,
+          _previousPosition!.longitude,
+          position.latitude,
+          position.longitude,
+        );
+        final timeDiff = position.timestamp.difference(_previousPosition!.timestamp).inSeconds;
+        if (timeDiff > 0) {
+          speed = distance / timeDiff; // m/s
+        }
+      }
+      
       setState(() {
+        _previousPosition = _currentPosition;
         _currentPosition = position;
+        _currentSpeed = speed;
       });
     } catch (e) {
       print('Error getting location: $e');
+    }
+  }
+
+  Future<void> _loadScooterBattery() async {
+    try {
+      final activeTrip = await _apiService.getActiveTrip();
+      if (activeTrip != null && activeTrip['scooter'] != null) {
+        final battery = activeTrip['scooter']['battery_percentage'] ?? 0;
+        setState(() {
+          _batteryPercentage = battery;
+          _isLoadingBattery = false;
+        });
+      } else {
+        // Try to get scooter by code
+        setState(() {
+          _isLoadingBattery = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading battery: $e');
+      setState(() {
+        _isLoadingBattery = false;
+      });
     }
   }
 
@@ -380,6 +440,105 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     );
   }
 
+  Widget _buildInfoCard({
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+    String? subtitle,
+    Widget? child,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            size: 32,
+            color: color,
+          ),
+          const SizedBox(height: 12),
+          if (child != null)
+            child
+          else
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: color,
+                height: 1.2,
+              ),
+            ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle ?? label,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBatteryIndicator(int percentage) {
+    Color batteryColor = _getBatteryColor(percentage);
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        SizedBox(
+          width: 60,
+          height: 30,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: percentage / 100,
+              backgroundColor: Colors.grey[200],
+              valueColor: AlwaysStoppedAnimation<Color>(batteryColor),
+              minHeight: 30,
+            ),
+          ),
+        ),
+        Text(
+          '$percentage%',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: percentage > 50 ? Colors.white : Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _getBatteryColor(int percentage) {
+    if (percentage >= 50) {
+      return Colors.green;
+    } else if (percentage >= 20) {
+      return Colors.orange;
+    } else {
+      return Colors.red;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -495,22 +654,33 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
 
                 // Content
                 Expanded(
-                  child: Padding(
+                  child: SingleChildScrollView(
                     padding: const EdgeInsets.all(20),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Duration
+                        // Duration Card
                         Container(
-                          padding: const EdgeInsets.all(30),
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: Color(AppConstants.primaryColor).withOpacity(0.1),
-                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [
+                                Color(AppConstants.primaryColor).withOpacity(0.1),
+                                Color(AppConstants.primaryColor).withOpacity(0.05),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Color(AppConstants.primaryColor).withOpacity(0.2),
+                              width: 1,
+                            ),
                           ),
                           child: Column(
                             children: [
                               const Icon(
-                                Icons.timer,
+                                Icons.timer_outlined,
                                 size: 48,
                                 color: Color(AppConstants.primaryColor),
                               ),
@@ -518,10 +688,11 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                               Text(
                                 _formatDuration(_durationSeconds),
                                 style: TextStyle(
-                                  fontSize: 48,
+                                  fontSize: 56,
                                   fontWeight: FontWeight.bold,
                                   color: Color(AppConstants.primaryColor),
                                   letterSpacing: 2,
+                                  height: 1.2,
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -530,13 +701,49 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   color: Colors.grey,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
                           ),
                         ),
 
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 20),
+
+                        // Battery and Speed Row
+                        Row(
+                          children: [
+                            // Battery Card
+                            Expanded(
+                              child: _buildInfoCard(
+                                icon: Icons.battery_charging_full,
+                                value: _isLoadingBattery ? '--' : '$_batteryPercentage%',
+                                label: 'البطارية',
+                                color: _getBatteryColor(_batteryPercentage),
+                                child: _isLoadingBattery
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : _buildBatteryIndicator(_batteryPercentage),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            // Speed Card
+                            Expanded(
+                              child: _buildInfoCard(
+                                icon: Icons.speed,
+                                value: '${(_currentSpeed * 3.6).toStringAsFixed(0)}',
+                                label: 'كم/س',
+                                color: Colors.blue,
+                                subtitle: 'السرعة',
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 30),
 
                         // Complete button
                         SizedBox(
@@ -547,6 +754,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red,
                               foregroundColor: Colors.white,
+                              elevation: 4,
+                              shadowColor: Colors.red.withOpacity(0.4),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),

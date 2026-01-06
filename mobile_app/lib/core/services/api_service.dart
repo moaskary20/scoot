@@ -168,6 +168,60 @@ class ApiService {
     }
   }
 
+  // Update password
+  Future<void> updatePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/auth/update-password',
+        data: {
+          'current_password': currentPassword,
+          'new_password': newPassword,
+          'new_password_confirmation': newPassword,
+        },
+      );
+
+      if (response.data['success'] != true) {
+        throw Exception(response.data['message'] ?? 'فشل تحديث كلمة المرور');
+      }
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Update avatar
+  Future<UserModel> updateAvatar(File avatarFile) async {
+    try {
+      final formData = FormData.fromMap({});
+
+      formData.files.add(
+        MapEntry(
+          'avatar',
+          await MultipartFile.fromFile(
+            avatarFile.path,
+            filename: 'avatar.jpg',
+          ),
+        ),
+      );
+
+      final response = await _dio.post(
+        '/auth/update-avatar',
+        data: formData,
+      );
+
+      if (response.data['success'] == true) {
+        final userData = response.data['data'] ?? response.data;
+        return UserModel.fromJson(userData);
+      }
+
+      throw Exception(response.data['message'] ?? 'فشل تحديث الصورة الشخصية');
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // Save token
   Future<void> saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();

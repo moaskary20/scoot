@@ -24,6 +24,7 @@ import '../../../core/services/language_service.dart';
 import '../../trips/screens/trips_screen.dart';
 import '../../trips/screens/qr_scanner_screen.dart';
 import '../../trips/screens/active_trip_screen.dart';
+import '../../profile/screens/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -37,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final LocationService _locationService = LocationService();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   GoogleMapController? _mapController;
+  MapType _currentMapType = MapType.normal;
 
   Position? _currentPosition;
   List<ScooterModel> _scooters = [];
@@ -480,6 +482,54 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _startTrip(ScooterModel scooter) async {
+    // Check if user account is active
+    // Refresh user data first to get latest status
+    await _loadUserData();
+    
+    if (_currentUser != null && !_currentUser!.isActive) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'حسابك غير مفعل. يرجى الانتظار حتى يتم تفعيله من قبل الإدارة',
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Check if user has negative wallet balance (debt)
+    if (_currentUser != null && _currentUser!.walletBalance < 0) {
+      final debtAmount = _currentUser!.walletBalance.abs();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'لا يمكنك بدء رحلة جديدة. لديك حساب مستحق بقيمة ${debtAmount.toStringAsFixed(2)} جنيه. يرجى تسديد المبلغ المستحق أولاً.',
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'المحفظة',
+              textColor: Colors.white,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const WalletScreen(),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
     // Open QR scanner
     final qrCode = await Navigator.push<String>(
       context,
@@ -827,6 +877,54 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _startTripFromGuide() async {
+    // Check if user account is active
+    // Refresh user data first to get latest status
+    await _loadUserData();
+    
+    if (_currentUser != null && !_currentUser!.isActive) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'حسابك غير مفعل. يرجى الانتظار حتى يتم تفعيله من قبل الإدارة',
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Check if user has negative wallet balance (debt)
+    if (_currentUser != null && _currentUser!.walletBalance < 0) {
+      final debtAmount = _currentUser!.walletBalance.abs();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'لا يمكنك بدء رحلة جديدة. لديك حساب مستحق بقيمة ${debtAmount.toStringAsFixed(2)} جنيه. يرجى تسديد المبلغ المستحق أولاً.',
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'المحفظة',
+              textColor: Colors.white,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const WalletScreen(),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
     // Open QR scanner
     final qrCode = await Navigator.push<String>(
       context,
@@ -970,7 +1068,7 @@ class _HomeScreenState extends State<HomeScreen> {
               polygons: _polygons,
               myLocationEnabled: true,
               myLocationButtonEnabled: false,
-              mapType: MapType.normal,
+              mapType: _currentMapType,
               onMapCreated: (controller) {
                 _mapController = controller;
               },
@@ -1011,6 +1109,43 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: const Icon(Icons.help_outline),
                 color: Color(AppConstants.secondaryColor),
                 onPressed: _openHelp,
+              ),
+            ),
+          ),
+
+          // Map type toggle (Normal / Satellite)
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 10,
+            right: 10,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: Icon(
+                  _currentMapType == MapType.normal
+                      ? Icons.satellite_alt
+                      : Icons.map,
+                ),
+                tooltip: _currentMapType == MapType.normal
+                    ? 'عرض القمر الصناعي'
+                    : 'عرض الخريطة العادية',
+                color: Color(AppConstants.secondaryColor),
+                onPressed: () {
+                  setState(() {
+                    _currentMapType = _currentMapType == MapType.normal
+                        ? MapType.hybrid
+                        : MapType.normal;
+                  });
+                },
               ),
             ),
           ),
@@ -1529,6 +1664,21 @@ class _HomeScreenState extends State<HomeScreen> {
                                 MaterialPageRoute(
                                   builder: (context) =>
                                       const LanguageSelectionScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildMenuItem(
+                            icon: Icons.person,
+                            title: 'الملف الشخصي',
+                            color: Color(AppConstants.primaryColor),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const ProfileScreen(),
                                 ),
                               );
                             },

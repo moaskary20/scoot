@@ -14,14 +14,13 @@ class MobileGeoZoneController extends Controller
     }
 
     /**
-     * Get active allowed geo zones for mobile map.
+     * Get all active geo zones for mobile map (allowed, forbidden, parking, ...).
      */
     public function index()
     {
         try {
-            $zones = $this->repository->allActive()
-                ->where('type', 'allowed')
-                ->values();
+            // Get all active zones of all types
+            $zones = $this->repository->allActive();
 
             return response()->json([
                 'success' => true,

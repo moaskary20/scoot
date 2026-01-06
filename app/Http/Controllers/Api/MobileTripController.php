@@ -91,6 +91,25 @@ class MobileTripController extends Controller
 
             $user = $request->user();
 
+            // Check if user account is active
+            if (!$user->is_active) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'حسابك غير مفعل. يرجى الانتظار حتى يتم تفعيله من قبل الإدارة',
+                ], 403);
+            }
+
+            // Check if user has negative wallet balance (debt)
+            $walletBalance = (float) ($user->wallet_balance ?? 0);
+            if ($walletBalance < 0) {
+                $debtAmount = abs($walletBalance);
+                return response()->json([
+                    'success' => false,
+                    'message' => "لا يمكنك بدء رحلة جديدة. لديك حساب مستحق بقيمة {$debtAmount} جنيه. يرجى تسديد المبلغ المستحق أولاً.",
+                    'debt_amount' => $debtAmount,
+                ], 400);
+            }
+
             // Check if user has an active trip
             $activeTrip = Trip::where('user_id', $user->id)
                 ->where('status', 'active')

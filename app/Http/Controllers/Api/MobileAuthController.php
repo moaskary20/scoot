@@ -49,7 +49,11 @@ class MobileAuthController extends Controller
                 ], 403);
             }
 
-            // Create token
+            // Delete all existing tokens to prevent multiple device login
+            // This ensures only one device can be logged in at a time
+            $user->tokens()->delete();
+
+            // Create new token
             $token = $user->createToken('mobile-app')->plainTextToken;
 
             return response()->json([
@@ -217,6 +221,114 @@ class MobileAuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'حدث خطأ في تسجيل الخروج',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Update user password
+     */
+    public function updatePassword(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'current_password' => 'required|string',
+                'new_password' => 'required|string|min:8|confirmed',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'البيانات غير صحيحة',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $user = $request->user();
+
+            // Verify current password
+            if (!Hash::check($request->current_password, $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'كلمة المرور الحالية غير صحيحة',
+                ], 400);
+            }
+
+            // Update password
+            $user->update([
+                'password' => Hash::make($request->new_password),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم تحديث كلمة المرور بنجاح',
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'حدث خطأ في تحديث كلمة المرور',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Update user avatar
+     */
+    public function updateAvatar(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'avatar' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'البيانات غير صحيحة',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $user = $request->user();
+
+            // Delete old avatar if exists
+            if ($user->avatar && \Storage::disk('public')->exists($user->avatar)) {
+                \Storage::disk('public')->delete($user->avatar);
+            }
+
+            // Upload new avatar
+            $avatar = $request->file('avatar');
+            $avatarName = 'avatar_' . $user->id . '_' . time() . '.' . $avatar->getClientOriginalExtension();
+            $avatar->storeAs('public/avatars', $avatarName);
+            $avatarPath = 'avatars/' . $avatarName;
+
+            // Update user
+            $user->update(['avatar' => $avatarPath]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم تحديث الصورة الشخصية بنجاح',
+                'data' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'age' => $user->age,
+                    'university_id' => $user->university_id,
+                    'national_id_photo' => $user->national_id_photo,
+                    'avatar' => $user->avatar,
+                    'is_active' => $user->is_active,
+                    'wallet_balance' => $user->wallet_balance ?? 0,
+                    'loyalty_points' => $user->loyalty_points ?? 0,
+                    'loyalty_level' => $user->loyalty_level ?? 'bronze',
+                ],
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'حدث خطأ في تحديث الصورة الشخصية',
                 'error' => $e->getMessage(),
             ], 500);
         }

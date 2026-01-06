@@ -25,6 +25,8 @@ Route::prefix('auth')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/user', [MobileAuthController::class, 'user']);
         Route::post('/logout', [MobileAuthController::class, 'logout']);
+        Route::post('/update-password', [MobileAuthController::class, 'updatePassword']);
+        Route::post('/update-avatar', [MobileAuthController::class, 'updateAvatar']);
     });
 });
 

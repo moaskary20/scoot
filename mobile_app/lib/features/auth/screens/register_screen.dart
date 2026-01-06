@@ -228,12 +228,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 16),
 
-                // Email Field
+                // Email Field (University Email)
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
-                    labelText: 'البريد الإلكتروني',
+                    labelText: 'الإيميل الجامعي',
+                    hintText: 'example@university.edu',
                     prefixIcon: const Icon(Icons.email),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -241,10 +242,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'يرجى إدخال البريد الإلكتروني';
+                      return 'يرجى إدخال الإيميل الجامعي';
                     }
                     if (!EmailValidator.validate(value)) {
-                      return 'البريد الإلكتروني غير صحيح';
+                      return 'الإيميل الجامعي غير صحيح';
                     }
                     return null;
                   },

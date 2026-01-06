@@ -204,51 +204,87 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
 
   Future<void> _loadScooterBattery() async {
     try {
-      print('🔋 Loading scooter battery and cost from backend...');
+      print('🔋 [${DateTime.now()}] Loading scooter battery and cost from backend...');
       final activeTrip = await _apiService.getActiveTrip();
       
       if (activeTrip != null) {
-        print('📦 Active trip data: $activeTrip');
-        print('📦 Full response keys: ${activeTrip.keys.toList()}');
+        print('📦 [${DateTime.now()}] Active trip data received');
+        print('📦 Full response: $activeTrip');
+        print('📦 Response keys: ${activeTrip.keys.toList()}');
         
-        // Get current cost
-        final currentCost = (activeTrip['current_cost'] ?? 0.0).toDouble();
+        // Get current cost - handle different types
+        double currentCost = 0.0;
+        if (activeTrip['current_cost'] != null) {
+          final costValue = activeTrip['current_cost'];
+          if (costValue is num) {
+            currentCost = costValue.toDouble();
+          } else if (costValue is String) {
+            currentCost = double.tryParse(costValue) ?? 0.0;
+          }
+        }
+        print('💰 Current cost from backend: $currentCost');
         
         // Check if scooter data exists
         if (activeTrip['scooter'] != null) {
           final scooterData = activeTrip['scooter'];
-          print('📦 Scooter data: $scooterData');
-          print('📦 Scooter data keys: ${scooterData.keys.toList()}');
+          print('📦 Scooter data found: $scooterData');
+          print('📦 Scooter data type: ${scooterData.runtimeType}');
           
-          final battery = scooterData['battery_percentage'] ?? 0;
-          final scooterId = scooterData['id'];
-          final scooterCode = scooterData['code'];
-          
-          print('✅ Battery and cost data from backend:');
-          print('   - Scooter ID: $scooterId');
-          print('   - Scooter Code: $scooterCode');
-          print('   - Battery Percentage: $battery% (type: ${battery.runtimeType})');
-          print('   - Current Cost: $currentCost ج.م');
-          
-          if (mounted) {
-            setState(() {
-              _batteryPercentage = battery is int ? battery : (battery is String ? int.tryParse(battery) ?? 0 : 0);
-              _currentCost = currentCost;
-              _isLoadingBattery = false;
-            });
+          if (scooterData is Map) {
+            print('📦 Scooter data keys: ${scooterData.keys.toList()}');
+            
+            // Extract battery percentage - handle different types
+            int battery = 0;
+            final batteryValue = scooterData['battery_percentage'];
+            if (batteryValue != null) {
+              if (batteryValue is int) {
+                battery = batteryValue;
+              } else if (batteryValue is num) {
+                battery = batteryValue.toInt();
+              } else if (batteryValue is String) {
+                battery = int.tryParse(batteryValue) ?? 0;
+              }
+            }
+            
+            final scooterId = scooterData['id'];
+            final scooterCode = scooterData['code'];
+            
+            print('✅ Battery and cost data extracted:');
+            print('   - Scooter ID: $scooterId');
+            print('   - Scooter Code: $scooterCode');
+            print('   - Battery Percentage: $battery% (raw: $batteryValue, type: ${batteryValue.runtimeType})');
+            print('   - Current Cost: $currentCost ج.م');
+            
+            if (mounted) {
+              setState(() {
+                _batteryPercentage = battery;
+                _currentCost = currentCost;
+                _isLoadingBattery = false;
+              });
+              print('✅ State updated: Battery=$_batteryPercentage%, Cost=$_currentCost ج.م');
+            }
+          } else {
+            print('⚠️ Scooter data is not a Map, type: ${scooterData.runtimeType}');
+            if (mounted) {
+              setState(() {
+                _currentCost = currentCost;
+                _isLoadingBattery = false;
+              });
+            }
           }
         } else {
-          print('⚠️ Scooter data not found in active trip response');
+          print('⚠️ Scooter data is null in active trip response');
           print('⚠️ Available keys in activeTrip: ${activeTrip.keys.toList()}');
           if (mounted) {
             setState(() {
               _currentCost = currentCost;
               _isLoadingBattery = false;
             });
+            print('✅ Cost updated: $_currentCost ج.م (battery remains at $_batteryPercentage%)');
           }
         }
       } else {
-        print('⚠️ No active trip found');
+        print('⚠️ No active trip found (getActiveTrip returned null)');
         if (mounted) {
           setState(() {
             _isLoadingBattery = false;
@@ -257,6 +293,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
       }
     } catch (e, stackTrace) {
       print('❌ Error loading battery and cost from backend: $e');
+      print('❌ Error type: ${e.runtimeType}');
       print('❌ Stack trace: $stackTrace');
       if (mounted) {
         setState(() {

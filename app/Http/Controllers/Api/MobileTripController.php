@@ -321,6 +321,15 @@ class MobileTripController extends Controller
                     'scooter_id' => $trip->scooter_id,
                 ]);
             }
+            
+            // Always include scooter data in response (even if null) for consistency
+            if ($scooterData === null) {
+                $scooterData = [
+                    'id' => null,
+                    'code' => null,
+                    'battery_percentage' => 0,
+                ];
+            }
 
             // Calculate current cost based on duration and geo zone pricing
             $currentCost = 0.0;
@@ -340,24 +349,53 @@ class MobileTripController extends Controller
                     $tripStartFee = (float) ($geoZone->trip_start_fee ?? 0);
                     $pricePerMinute = (float) ($geoZone->price_per_minute ?? 0);
                     $currentCost = $tripStartFee + ($durationMinutes * $pricePerMinute);
+                    
+                    \Log::info('💰 Cost calculation', [
+                        'trip_id' => $trip->id,
+                        'duration_minutes' => $durationMinutes,
+                        'trip_start_fee' => $tripStartFee,
+                        'price_per_minute' => $pricePerMinute,
+                        'calculated_cost' => $currentCost,
+                    ]);
+                } else {
+                    \Log::warning('⚠️ No geo zone or pricing found for trip', [
+                        'trip_id' => $trip->id,
+                        'start_latitude' => $trip->start_latitude,
+                        'start_longitude' => $trip->start_longitude,
+                    ]);
                 }
+            } else {
+                \Log::warning('⚠️ Trip missing start coordinates', [
+                    'trip_id' => $trip->id,
+                    'start_latitude' => $trip->start_latitude,
+                    'start_longitude' => $trip->start_longitude,
+                ]);
             }
             
             // Ensure cost is not negative
             $currentCost = max(0, $currentCost);
 
-            return response()->json([
+            $responseData = [
                 'success' => true,
                 'data' => [
                     'id' => $trip->id,
                     'scooter_code' => $trip->scooter?->code,
                     'start_time' => $trip->start_time->toDateTimeString(),
-                    'duration_minutes' => $durationMinutes,
+                    'duration_minutes' => round($durationMinutes, 2), // Round to 2 decimals
                     'status' => $trip->status,
                     'current_cost' => round($currentCost, 2), // Current cost based on duration
-                    'scooter' => $scooterData, // Always include scooter data if exists
+                    'scooter' => $scooterData, // Always include scooter data
                 ],
-            ], 200);
+            ];
+            
+            \Log::info('📤 Sending active trip response', [
+                'trip_id' => $trip->id,
+                'battery_percentage' => $scooterData['battery_percentage'] ?? 0,
+                'current_cost' => $responseData['data']['current_cost'],
+                'duration_minutes' => $responseData['data']['duration_minutes'],
+            ]);
+            
+            return response()->json($responseData, 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

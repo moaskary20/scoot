@@ -37,11 +37,13 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
   bool _isCompleting = false;
   Position? _currentPosition;
   Position? _previousPosition;
-  late DateTime _actualStartTime;
+  DateTime _actualStartTime = DateTime.now(); // Initialize with current time to prevent errors
   int _batteryPercentage = 0;
   double _currentSpeed = 0.0; // Speed in m/s
   bool _isLoadingBattery = true;
   double _currentCost = 0.0; // Current trip cost
+  bool _hasError = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -107,7 +109,17 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
       print('Stack trace: $stackTrace');
       // Set default values to prevent black screen
       _actualStartTime = DateTime.now();
-      _startTimer();
+      _hasError = true;
+      _errorMessage = e.toString();
+      try {
+        _startTimer();
+      } catch (timerError) {
+        print('⚠️ Error starting timer: $timerError');
+      }
+      // Force rebuild to show error or content
+      if (mounted) {
+        setState(() {});
+      }
     }
   }
 
@@ -612,6 +624,57 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Show error widget if there's a critical error
+    if (_hasError && _errorMessage != null) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.orange,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'تحذير: حدث خطأ في التهيئة',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _errorMessage!,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Try to continue anyway
+                      setState(() {
+                        _hasError = false;
+                      });
+                    },
+                    child: const Text('المحاولة مرة أخرى'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     try {
       return Directionality(
         textDirection: TextDirection.rtl,
@@ -620,21 +683,25 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           onPopInvoked: (didPop) {
             if (didPop) return;
             // Show warning when user tries to go back
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: Text(AppLocalizations.of(context)?.warning ?? 'تحذير'),
-                content: Text(
-                  AppLocalizations.of(context)?.cannotCloseTripMessage ?? 'لا يمكنك إغلاق هذه الشاشة أثناء الرحلة. استخدم زر "إغلاق الرحلة" لإتمام الرحلة.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(AppLocalizations.of(context)?.ok ?? 'حسناً'),
+            try {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text(AppLocalizations.of(context)?.warning ?? 'تحذير'),
+                  content: Text(
+                    AppLocalizations.of(context)?.cannotCloseTripMessage ?? 'لا يمكنك إغلاق هذه الشاشة أثناء الرحلة. استخدم زر "إغلاق الرحلة" لإتمام الرحلة.',
                   ),
-                ],
-              ),
-            );
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(AppLocalizations.of(context)?.ok ?? 'حسناً'),
+                    ),
+                  ],
+                ),
+              );
+            } catch (e) {
+              print('⚠️ Error showing dialog: $e');
+            }
           },
           child: Scaffold(
             backgroundColor: Colors.white,

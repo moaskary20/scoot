@@ -163,6 +163,37 @@ class MobileTripController extends Controller
                 ], 400);
             }
 
+            // Check if scooter has an active trip (rented by another user)
+            $activeTripForScooter = Trip::where('scooter_id', $scooter->id)
+                ->where('status', 'active')
+                ->first();
+            
+            if ($activeTripForScooter) {
+                \Log::warning('Scooter already has active trip', [
+                    'scooter_id' => $scooter->id,
+                    'scooter_code' => $scooter->code,
+                    'active_trip_id' => $activeTripForScooter->id,
+                    'active_trip_user_id' => $activeTripForScooter->user_id,
+                    'current_user_id' => $user->id,
+                ]);
+                
+                // If the active trip belongs to current user, return that trip
+                if ($activeTripForScooter->user_id === $user->id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'لديك رحلة نشطة بالفعل على هذا السكوتر',
+                        'trip_id' => $activeTripForScooter->id,
+                    ], 400);
+                }
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'السكوتر مستأجر حالياً من مستخدم آخر. يرجى البحث عن سكوتر آخر.',
+                    'error_code' => 'SCOOTER_RENTED',
+                    'scooter_status' => 'rented',
+                ], 400);
+            }
+
             // Check if scooter is available
             // Allow if status is 'available' or 'charging' (charging scooters can still be used)
             if (!in_array($scooter->status, ['available', 'charging'])) {
@@ -262,6 +293,13 @@ class MobileTripController extends Controller
                 $trip->scooter->refresh();
                 $batteryPercentage = (int) ($trip->scooter->battery_percentage ?? 0);
                 
+                // Ensure battery is valid (0-100)
+                if ($batteryPercentage < 0) {
+                    $batteryPercentage = 0;
+                } elseif ($batteryPercentage > 100) {
+                    $batteryPercentage = 100;
+                }
+                
                 $scooterData = [
                     'id' => $trip->scooter->id,
                     'code' => $trip->scooter->code,
@@ -273,6 +311,12 @@ class MobileTripController extends Controller
                     'scooter_id' => $trip->scooter->id,
                     'scooter_code' => $trip->scooter->code,
                     'battery_percentage' => $batteryPercentage,
+                    'raw_battery' => $trip->scooter->battery_percentage,
+                ]);
+            } else {
+                \Log::warning('⚠️ No scooter found for active trip', [
+                    'trip_id' => $trip->id,
+                    'scooter_id' => $trip->scooter_id,
                 ]);
             }
 

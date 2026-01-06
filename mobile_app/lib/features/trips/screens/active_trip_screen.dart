@@ -92,13 +92,13 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
         print('⚠️ Error loading battery: $e');
       }
       
-      // Update battery periodically (every 30 seconds)
-      Timer.periodic(const Duration(seconds: 30), (timer) {
+      // Update battery and cost periodically (every 10 seconds for real-time updates)
+      Timer.periodic(const Duration(seconds: 10), (timer) {
         if (mounted) {
           try {
             _loadScooterBattery();
           } catch (e) {
-            print('⚠️ Error in periodic battery update: $e');
+            print('⚠️ Error in periodic battery/cost update: $e');
           }
         } else {
           timer.cancel();
@@ -209,6 +209,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
       
       if (activeTrip != null) {
         print('📦 Active trip data: $activeTrip');
+        print('📦 Full response keys: ${activeTrip.keys.toList()}');
         
         // Get current cost
         final currentCost = (activeTrip['current_cost'] ?? 0.0).toDouble();
@@ -216,6 +217,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
         // Check if scooter data exists
         if (activeTrip['scooter'] != null) {
           final scooterData = activeTrip['scooter'];
+          print('📦 Scooter data: $scooterData');
+          print('📦 Scooter data keys: ${scooterData.keys.toList()}');
+          
           final battery = scooterData['battery_percentage'] ?? 0;
           final scooterId = scooterData['id'];
           final scooterCode = scooterData['code'];
@@ -223,18 +227,19 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           print('✅ Battery and cost data from backend:');
           print('   - Scooter ID: $scooterId');
           print('   - Scooter Code: $scooterCode');
-          print('   - Battery Percentage: $battery%');
+          print('   - Battery Percentage: $battery% (type: ${battery.runtimeType})');
           print('   - Current Cost: $currentCost ج.م');
           
           if (mounted) {
             setState(() {
-              _batteryPercentage = battery;
+              _batteryPercentage = battery is int ? battery : (battery is String ? int.tryParse(battery) ?? 0 : 0);
               _currentCost = currentCost;
               _isLoadingBattery = false;
             });
           }
         } else {
           print('⚠️ Scooter data not found in active trip response');
+          print('⚠️ Available keys in activeTrip: ${activeTrip.keys.toList()}');
           if (mounted) {
             setState(() {
               _currentCost = currentCost;
@@ -250,8 +255,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           });
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('❌ Error loading battery and cost from backend: $e');
+      print('❌ Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _isLoadingBattery = false;

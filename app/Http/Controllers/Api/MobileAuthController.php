@@ -123,20 +123,44 @@ class MobileAuthController extends Controller
             // Handle national ID photos upload (front & back)
             if ($request->hasFile('national_id_front')) {
                 $front = $request->file('national_id_front');
-                // Remove 'national_id_front' from original name to avoid duplication
-                $originalName = str_replace(['national_id_front', '_'], '', $front->getClientOriginalName());
-                $frontName = time() . '_front_' . $originalName;
-                $front->storeAs('public/national_ids', $frontName);
-                $userData['national_id_front_photo'] = 'national_ids/' . $frontName;
+                // Generate unique filename with extension
+                $extension = $front->getClientOriginalExtension();
+                $frontName = time() . '_front_' . uniqid() . '.' . $extension;
+                
+                // Store file and get the path
+                $storedPath = $front->storeAs('public/national_ids', $frontName);
+                
+                if ($storedPath) {
+                    $userData['national_id_front_photo'] = 'national_ids/' . $frontName;
+                    \Log::info('✅ National ID front photo saved', [
+                        'path' => $storedPath,
+                        'filename' => $frontName,
+                        'full_path' => storage_path('app/' . $storedPath),
+                    ]);
+                } else {
+                    \Log::error('❌ Failed to save national ID front photo');
+                }
             }
 
             if ($request->hasFile('national_id_back')) {
                 $back = $request->file('national_id_back');
-                // Remove 'national_id_back' from original name to avoid duplication
-                $originalName = str_replace(['national_id_back', '_'], '', $back->getClientOriginalName());
-                $backName = time() . '_back_' . $originalName;
-                $back->storeAs('public/national_ids', $backName);
-                $userData['national_id_back_photo'] = 'national_ids/' . $backName;
+                // Generate unique filename with extension
+                $extension = $back->getClientOriginalExtension();
+                $backName = time() . '_back_' . uniqid() . '.' . $extension;
+                
+                // Store file and get the path
+                $storedPath = $back->storeAs('public/national_ids', $backName);
+                
+                if ($storedPath) {
+                    $userData['national_id_back_photo'] = 'national_ids/' . $backName;
+                    \Log::info('✅ National ID back photo saved', [
+                        'path' => $storedPath,
+                        'filename' => $backName,
+                        'full_path' => storage_path('app/' . $storedPath),
+                    ]);
+                } else {
+                    \Log::error('❌ Failed to save national ID back photo');
+                }
             }
 
             $user = User::create($userData);

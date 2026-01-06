@@ -71,9 +71,14 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _navigateToNext() async {
-    // Remove listener to prevent multiple calls
+    // Remove listener and pause video to prevent multiple calls
     if (_controller != null) {
-      _controller!.removeListener(_videoListener);
+      try {
+        _controller!.removeListener(_videoListener);
+        _controller!.pause();
+      } catch (e) {
+        print('⚠️ Error stopping video: $e');
+      }
     }
 
     // Check if user is logged in (has valid token)
@@ -122,9 +127,24 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   void dispose() {
+    // Properly stop and dispose video controller
     if (_controller != null) {
-      _controller!.removeListener(_videoListener);
-      _controller!.dispose();
+      try {
+        _controller!.removeListener(_videoListener);
+      } catch (e) {
+        print('⚠️ Error removing video listener: $e');
+      }
+      try {
+        _controller!.pause();
+      } catch (e) {
+        print('⚠️ Error pausing video: $e');
+      }
+      try {
+        _controller!.dispose();
+      } catch (e) {
+        print('⚠️ Error disposing video: $e');
+      }
+      _controller = null;
     }
     super.dispose();
   }

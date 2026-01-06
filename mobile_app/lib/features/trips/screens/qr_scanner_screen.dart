@@ -46,7 +46,20 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
 
   @override
   void dispose() {
-    _controller?.dispose();
+    // Properly stop and dispose camera controller
+    if (_controller != null) {
+      try {
+        _controller!.stop();
+      } catch (e) {
+        print('⚠️ Error stopping camera: $e');
+      }
+      try {
+        _controller!.dispose();
+      } catch (e) {
+        print('⚠️ Error disposing camera: $e');
+      }
+      _controller = null;
+    }
     super.dispose();
   }
 
@@ -63,10 +76,20 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
       _isProcessing = true;
     });
 
-    // Stop and dispose scanner
-    await _controller?.stop();
-    await _controller?.dispose();
-    _controller = null;
+    // Stop and dispose scanner properly
+    if (_controller != null) {
+      try {
+        await _controller!.stop();
+      } catch (e) {
+        print('⚠️ Error stopping scanner: $e');
+      }
+      try {
+        await _controller!.dispose();
+      } catch (e) {
+        print('⚠️ Error disposing scanner: $e');
+      }
+      _controller = null;
+    }
 
     // Return QR code
     widget.onQRCodeScanned(qrCode);

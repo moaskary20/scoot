@@ -26,6 +26,8 @@ class User extends Authenticatable
         'age',
         'university_id',
         'national_id_photo',
+        'national_id_front_photo',
+        'national_id_back_photo',
         'wallet_balance',
         'loyalty_points',
         'loyalty_level',

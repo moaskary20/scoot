@@ -76,14 +76,16 @@ class ApiService {
   }
 
   // Register new user
+  // age هنا هو تاريخ الميلاد بصيغة YYYY/MM/DD
   Future<Map<String, dynamic>> register({
     required String name,
     required String phone,
     required String email,
     required String password,
-    required int age,
+    required String age,
     required String universityId,
-    required File? nationalIdPhoto,
+    required File? nationalIdFrontPhoto,
+    required File? nationalIdBackPhoto,
   }) async {
     try {
       final formData = FormData.fromMap({
@@ -92,18 +94,31 @@ class ApiService {
         'email': email,
         'password': password,
         'password_confirmation': password,
+        // تاريخ الميلاد بصيغة YYYY/MM/DD
         'age': age,
         'university_id': universityId,
         'is_active': false, // All mobile accounts are inactive by default
       });
 
-      if (nationalIdPhoto != null) {
+      if (nationalIdFrontPhoto != null) {
         formData.files.add(
           MapEntry(
-            'national_id_photo',
+            'national_id_front',
             await MultipartFile.fromFile(
-              nationalIdPhoto.path,
-              filename: 'national_id_photo.jpg',
+              nationalIdFrontPhoto.path,
+              filename: 'national_id_front.jpg',
+            ),
+          ),
+        );
+      }
+
+      if (nationalIdBackPhoto != null) {
+        formData.files.add(
+          MapEntry(
+            'national_id_back',
+            await MultipartFile.fromFile(
+              nationalIdBackPhoto.path,
+              filename: 'national_id_back.jpg',
             ),
           ),
         );

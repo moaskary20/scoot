@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -85,9 +86,12 @@ class MobileAuthController extends Controller
                 'phone' => 'required|string|unique:users,phone',
                 'email' => 'required|string|email|max:255|unique:users,email',
                 'password' => 'required|string|min:8|confirmed',
-                'age' => 'required|integer|min:18',
+                // تاريخ الميلاد بصيغة YYYY/MM/DD
+                'age' => 'required|date_format:Y/m/d',
                 'university_id' => 'required|string',
-                'national_id_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                // صورة البطاقة الشخصية - وجه أمامي وخلفي
+                'national_id_front' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+                'national_id_back' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             ]);
 
             if ($validator->fails()) {
@@ -98,22 +102,33 @@ class MobileAuthController extends Controller
                 ], 422);
             }
 
+            // حساب السن من تاريخ الميلاد
+            $birthDate = Carbon::createFromFormat('Y/m/d', $request->age);
+            $calculatedAge = $birthDate->age;
+
             $userData = [
                 'name' => $request->name,
                 'phone' => $request->phone,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
-                'age' => $request->age,
+                'age' => $calculatedAge,
                 'university_id' => $request->university_id,
                 'is_active' => $request->is_active ?? false, // Mobile accounts are inactive by default
             ];
 
-            // Handle national ID photo upload
-            if ($request->hasFile('national_id_photo')) {
-                $photo = $request->file('national_id_photo');
-                $photoName = time() . '_' . $photo->getClientOriginalName();
-                $photo->storeAs('public/national_ids', $photoName);
-                $userData['national_id_photo'] = 'national_ids/' . $photoName;
+            // Handle national ID photos upload (front & back)
+            if ($request->hasFile('national_id_front')) {
+                $front = $request->file('national_id_front');
+                $frontName = time() . '_front_' . $front->getClientOriginalName();
+                $front->storeAs('public/national_ids', $frontName);
+                $userData['national_id_front_photo'] = 'national_ids/' . $frontName;
+            }
+
+            if ($request->hasFile('national_id_back')) {
+                $back = $request->file('national_id_back');
+                $backName = time() . '_back_' . $back->getClientOriginalName();
+                $back->storeAs('public/national_ids', $backName);
+                $userData['national_id_back_photo'] = 'national_ids/' . $backName;
             }
 
             $user = User::create($userData);

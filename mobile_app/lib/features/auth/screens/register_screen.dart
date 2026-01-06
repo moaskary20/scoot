@@ -27,7 +27,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  File? _nationalIdPhoto;
+  // صور البطاقة الشخصية (الوجه الأمامي والخلفي)
+  File? _nationalIdFrontPhoto;
+  File? _nationalIdBackPhoto;
 
   @override
   void dispose() {
@@ -41,7 +43,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickNationalIdImage({required bool isFront}) async {
     try {
       final XFile? image = await _imagePicker.pickImage(
         source: ImageSource.gallery,
@@ -52,7 +54,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (image != null) {
         setState(() {
-          _nationalIdPhoto = File(image.path);
+          if (isFront) {
+            _nationalIdFrontPhoto = File(image.path);
+          } else {
+            _nationalIdBackPhoto = File(image.path);
+          }
         });
       }
     } catch (e) {
@@ -71,10 +77,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    if (_nationalIdPhoto == null) {
+    if (_nationalIdFrontPhoto == null || _nationalIdBackPhoto == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('يرجى رفع صورة البطاقة الشخصية'),
+          content: Text('يرجى رفع صورة البطاقة الشخصية (الوجه الأمامي والخلفي)'),
           backgroundColor: Colors.red,
         ),
       );
@@ -91,9 +97,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         phone: _phoneController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        age: int.parse(_ageController.text.trim()),
+        // نرسل تاريخ الميلاد كما هو بصيغة YYYY/MM/DD
+        age: _ageController.text.trim(),
         universityId: _universityIdController.text.trim(),
-        nationalIdPhoto: _nationalIdPhoto,
+        nationalIdFrontPhoto: _nationalIdFrontPhoto,
+        nationalIdBackPhoto: _nationalIdBackPhoto,
       );
 
       if (!mounted) return;
@@ -244,12 +252,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 16),
 
-                // Age Field
+                // Date of Birth Field (YYYY/MM/DD)
                 TextFormField(
                   controller: _ageController,
-                  keyboardType: TextInputType.number,
+                  keyboardType: TextInputType.datetime,
                   decoration: InputDecoration(
-                    labelText: 'السن',
+                    labelText: 'تاريخ الميلاد (YYYY/MM/DD)',
+                    hintText: 'مثال: 2000/05/15',
                     prefixIcon: const Icon(Icons.calendar_today),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -257,11 +266,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'يرجى إدخال السن';
+                      return 'يرجى إدخال تاريخ الميلاد';
                     }
-                    final age = int.tryParse(value);
-                    if (age == null || age < 16 || age > 100) {
-                      return 'السن يجب أن يكون بين 16 و 100';
+                    // التحقق من الصيغة YYYY/MM/DD
+                    final regex = RegExp(r'^\\d{4}/\\d{2}/\\d{2}$');
+                    if (!regex.hasMatch(value.trim())) {
+                      return 'صيغة التاريخ يجب أن تكون YYYY/MM/DD';
                     }
                     return null;
                   },
@@ -357,55 +367,104 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 24),
 
-                // National ID Photo
+                // National ID Photos (Front & Back)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'صورة البطاقة الشخصية',
+                      'صورة البطاقة الشخصية (الوجهين)',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    GestureDetector(
-                      onTap: _pickImage,
-                      child: Container(
-                        height: 150,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Colors.grey,
-                            width: 2,
-                            style: BorderStyle.solid,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: _nationalIdPhoto == null
-                            ? const Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.add_photo_alternate,
-                                    size: 48,
-                                    color: Colors.grey,
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    'اضغط لاختيار الصورة',
-                                    style: TextStyle(color: Colors.grey),
-                                  ),
-                                ],
-                              )
-                            : ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: Image.file(
-                                  _nationalIdPhoto!,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => _pickNationalIdImage(isFront: true),
+                            child: Container(
+                              height: 150,
+                              margin: const EdgeInsets.only(right: 4),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: Colors.grey,
+                                  width: 2,
+                                  style: BorderStyle.solid,
                                 ),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                      ),
+                              child: _nationalIdFrontPhoto == null
+                                  ? const Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.credit_card,
+                                          size: 38,
+                                          color: Colors.grey,
+                                        ),
+                                        SizedBox(height: 8),
+                                        Text(
+                                          'الوجه الأمامي',
+                                          style: TextStyle(color: Colors.grey),
+                                        ),
+                                      ],
+                                    )
+                                  : ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Image.file(
+                                        _nationalIdFrontPhoto!,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => _pickNationalIdImage(isFront: false),
+                            child: Container(
+                              height: 150,
+                              margin: const EdgeInsets.only(left: 4),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: Colors.grey,
+                                  width: 2,
+                                  style: BorderStyle.solid,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: _nationalIdBackPhoto == null
+                                  ? const Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.credit_card,
+                                          size: 38,
+                                          color: Colors.grey,
+                                        ),
+                                        SizedBox(height: 8),
+                                        Text(
+                                          'الوجه الخلفي',
+                                          style: TextStyle(color: Colors.grey),
+                                        ),
+                                      ],
+                                    )
+                                  : ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Image.file(
+                                        _nationalIdBackPhoto!,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

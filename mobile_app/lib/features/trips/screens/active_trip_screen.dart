@@ -46,42 +46,69 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
   @override
   void initState() {
     super.initState();
-    print('🚀 ActiveTripScreen initialized');
-    print('📊 Trip ID: ${widget.tripId}');
-    print('🛴 Scooter Code: ${widget.scooterCode}');
-    print('⏰ Start Time from backend: ${widget.startTime}');
-    
-    // Use current time as actual start time to avoid timezone issues
-    // Or use the backend time if it's recent (within 2 minutes)
-    final now = DateTime.now();
-    final backendTime = widget.startTime.isUtc ? widget.startTime.toLocal() : widget.startTime;
-    final timeDiff = now.difference(backendTime).inMinutes.abs();
-    
-    print('🕐 Current time: $now');
-    print('🕐 Backend time: $backendTime');
-    print('🕐 Time difference: $timeDiff minutes');
-    
-    if (timeDiff > 2 || timeDiff < 0) {
-      // If backend time is more than 2 minutes different or negative, use current time
-      _actualStartTime = now;
-      print('⚠️ Backend time seems incorrect (diff: $timeDiff min), using current time');
-    } else {
-      _actualStartTime = backendTime;
-      print('✅ Using backend start time (diff: $timeDiff min)');
-    }
-    
-    print('⏰ Actual Start Time: $_actualStartTime');
-    _startTimer();
-    _startLocationUpdates();
-    _loadScooterBattery();
-    // Update battery periodically (every 30 seconds)
-    Timer.periodic(const Duration(seconds: 30), (timer) {
-      if (mounted) {
-        _loadScooterBattery();
+    try {
+      print('🚀 ActiveTripScreen initialized');
+      print('📊 Trip ID: ${widget.tripId}');
+      print('🛴 Scooter Code: ${widget.scooterCode}');
+      print('⏰ Start Time from backend: ${widget.startTime}');
+      
+      // Use current time as actual start time to avoid timezone issues
+      // Or use the backend time if it's recent (within 2 minutes)
+      final now = DateTime.now();
+      final backendTime = widget.startTime.isUtc ? widget.startTime.toLocal() : widget.startTime;
+      final timeDiff = now.difference(backendTime).inMinutes.abs();
+      
+      print('🕐 Current time: $now');
+      print('🕐 Backend time: $backendTime');
+      print('🕐 Time difference: $timeDiff minutes');
+      
+      if (timeDiff > 2 || timeDiff < 0) {
+        // If backend time is more than 2 minutes different or negative, use current time
+        _actualStartTime = now;
+        print('⚠️ Backend time seems incorrect (diff: $timeDiff min), using current time');
       } else {
-        timer.cancel();
+        _actualStartTime = backendTime;
+        print('✅ Using backend start time (diff: $timeDiff min)');
       }
-    });
+      
+      print('⏰ Actual Start Time: $_actualStartTime');
+      
+      // Initialize safely
+      _startTimer();
+      
+      // Start location updates with error handling
+      try {
+        _startLocationUpdates();
+      } catch (e) {
+        print('⚠️ Error starting location updates: $e');
+      }
+      
+      // Load battery with error handling
+      try {
+        _loadScooterBattery();
+      } catch (e) {
+        print('⚠️ Error loading battery: $e');
+      }
+      
+      // Update battery periodically (every 30 seconds)
+      Timer.periodic(const Duration(seconds: 30), (timer) {
+        if (mounted) {
+          try {
+            _loadScooterBattery();
+          } catch (e) {
+            print('⚠️ Error in periodic battery update: $e');
+          }
+        } else {
+          timer.cancel();
+        }
+      });
+    } catch (e, stackTrace) {
+      print('❌ Error in initState: $e');
+      print('Stack trace: $stackTrace');
+      // Set default values to prevent black screen
+      _actualStartTime = DateTime.now();
+      _startTimer();
+    }
   }
 
   @override
@@ -585,34 +612,35 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: PopScope(
-        canPop: false,
-        onPopInvoked: (didPop) {
-          if (didPop) return;
-          // Show warning when user tries to go back
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Text(AppLocalizations.of(context)?.warning ?? 'تحذير'),
-              content: Text(
-                AppLocalizations.of(context)?.cannotCloseTripMessage ?? 'لا يمكنك إغلاق هذه الشاشة أثناء الرحلة. استخدم زر "إغلاق الرحلة" لإتمام الرحلة.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(AppLocalizations.of(context)?.ok ?? 'حسناً'),
+    try {
+      return Directionality(
+        textDirection: TextDirection.rtl,
+        child: PopScope(
+          canPop: false,
+          onPopInvoked: (didPop) {
+            if (didPop) return;
+            // Show warning when user tries to go back
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text(AppLocalizations.of(context)?.warning ?? 'تحذير'),
+                content: Text(
+                  AppLocalizations.of(context)?.cannotCloseTripMessage ?? 'لا يمكنك إغلاق هذه الشاشة أثناء الرحلة. استخدم زر "إغلاق الرحلة" لإتمام الرحلة.',
                 ),
-              ],
-            ),
-          );
-        },
-        child: Scaffold(
-          backgroundColor: Colors.white,
-          body: SafeArea(
-            child: Column(
-              children: [
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(AppLocalizations.of(context)?.ok ?? 'حسناً'),
+                  ),
+                ],
+              ),
+            );
+          },
+          child: Scaffold(
+            backgroundColor: Colors.white,
+            body: SafeArea(
+              child: Column(
+                children: [
                 // Header
                 Container(
                   padding: const EdgeInsets.all(20),

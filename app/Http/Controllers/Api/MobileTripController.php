@@ -250,6 +250,24 @@ class MobileTripController extends Controller
             $startTime = Carbon::parse($trip->start_time);
             $durationMinutes = $startTime->diffInMinutes(Carbon::now());
 
+            // Ensure scooter relationship is loaded and battery is from database
+            $trip->load('scooter');
+            
+            // Get fresh battery data from database
+            $batteryPercentage = 0;
+            if ($trip->scooter) {
+                // Refresh scooter to get latest battery data
+                $trip->scooter->refresh();
+                $batteryPercentage = (int) ($trip->scooter->battery_percentage ?? 0);
+                
+                \Log::info('🔋 Active trip battery data', [
+                    'trip_id' => $trip->id,
+                    'scooter_id' => $trip->scooter->id,
+                    'scooter_code' => $trip->scooter->code,
+                    'battery_percentage' => $batteryPercentage,
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -261,7 +279,7 @@ class MobileTripController extends Controller
                     'scooter' => $trip->scooter ? [
                         'id' => $trip->scooter->id,
                         'code' => $trip->scooter->code,
-                        'battery_percentage' => $trip->scooter->battery_percentage ?? 0,
+                        'battery_percentage' => $batteryPercentage, // From database
                     ] : null,
                 ],
             ], 200);

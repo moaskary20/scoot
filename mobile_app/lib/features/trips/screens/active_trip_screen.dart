@@ -73,6 +73,14 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     _startTimer();
     _startLocationUpdates();
     _loadScooterBattery();
+    // Update battery periodically (every 30 seconds)
+    Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted) {
+        _loadScooterBattery();
+      } else {
+        timer.cancel();
+      }
+    });
   }
 
   @override
@@ -156,24 +164,53 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
 
   Future<void> _loadScooterBattery() async {
     try {
+      print('🔋 Loading scooter battery from backend...');
       final activeTrip = await _apiService.getActiveTrip();
-      if (activeTrip != null && activeTrip['scooter'] != null) {
-        final battery = activeTrip['scooter']['battery_percentage'] ?? 0;
-        setState(() {
-          _batteryPercentage = battery;
-          _isLoadingBattery = false;
-        });
+      
+      if (activeTrip != null) {
+        print('📦 Active trip data: $activeTrip');
+        
+        // Check if scooter data exists
+        if (activeTrip['scooter'] != null) {
+          final scooterData = activeTrip['scooter'];
+          final battery = scooterData['battery_percentage'] ?? 0;
+          final scooterId = scooterData['id'];
+          final scooterCode = scooterData['code'];
+          
+          print('✅ Battery data from backend:');
+          print('   - Scooter ID: $scooterId');
+          print('   - Scooter Code: $scooterCode');
+          print('   - Battery Percentage: $battery%');
+          
+          if (mounted) {
+            setState(() {
+              _batteryPercentage = battery;
+              _isLoadingBattery = false;
+            });
+          }
+        } else {
+          print('⚠️ Scooter data not found in active trip response');
+          if (mounted) {
+            setState(() {
+              _isLoadingBattery = false;
+            });
+          }
+        }
       } else {
-        // Try to get scooter by code
+        print('⚠️ No active trip found');
+        if (mounted) {
+          setState(() {
+            _isLoadingBattery = false;
+          });
+        }
+      }
+    } catch (e) {
+      print('❌ Error loading battery from backend: $e');
+      if (mounted) {
         setState(() {
           _isLoadingBattery = false;
         });
       }
-    } catch (e) {
-      print('Error loading battery: $e');
-      setState(() {
-        _isLoadingBattery = false;
-      });
     }
   }
 

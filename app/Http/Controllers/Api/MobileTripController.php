@@ -381,30 +381,54 @@ class MobileTripController extends Controller
                     $pricePerMinute = (float) ($geoZone->price_per_minute ?? 0);
                     $currentCost = $tripStartFee + ($durationMinutes * $pricePerMinute);
                     
-                    \Log::info('💰 Cost calculation', [
+                    \Log::info('💰 Cost calculation (from geo zone)', [
                         'trip_id' => $trip->id,
+                        'geo_zone_id' => $geoZone->id,
                         'duration_minutes' => $durationMinutes,
                         'trip_start_fee' => $tripStartFee,
                         'price_per_minute' => $pricePerMinute,
                         'calculated_cost' => $currentCost,
                     ]);
                 } else {
-                    \Log::warning('⚠️ No geo zone or pricing found for trip', [
+                    // Fallback to default pricing if no geo zone found
+                    $defaultTripStartFee = 5.0; // Default base cost
+                    $defaultPricePerMinute = 0.5; // Default cost per minute
+                    $currentCost = $defaultTripStartFee + ($durationMinutes * $defaultPricePerMinute);
+                    
+                    \Log::warning('⚠️ No geo zone or pricing found, using default pricing', [
                         'trip_id' => $trip->id,
                         'start_latitude' => $trip->start_latitude,
                         'start_longitude' => $trip->start_longitude,
+                        'duration_minutes' => $durationMinutes,
+                        'default_trip_start_fee' => $defaultTripStartFee,
+                        'default_price_per_minute' => $defaultPricePerMinute,
+                        'calculated_cost' => $currentCost,
                     ]);
                 }
             } else {
-                \Log::warning('⚠️ Trip missing start coordinates', [
+                // If no coordinates, use default pricing based on duration only
+                $defaultPricePerMinute = 0.5; // Default cost per minute
+                $currentCost = $durationMinutes * $defaultPricePerMinute;
+                
+                \Log::warning('⚠️ Trip missing start coordinates, using default per-minute pricing', [
                     'trip_id' => $trip->id,
                     'start_latitude' => $trip->start_latitude,
                     'start_longitude' => $trip->start_longitude,
+                    'duration_minutes' => $durationMinutes,
+                    'default_price_per_minute' => $defaultPricePerMinute,
+                    'calculated_cost' => $currentCost,
                 ]);
             }
             
-            // Ensure cost is not negative
+            // Ensure cost is not negative and has minimum value
             $currentCost = max(0, $currentCost);
+            
+            // Log final cost
+            \Log::info('💰 Final cost calculation', [
+                'trip_id' => $trip->id,
+                'duration_minutes' => $durationMinutes,
+                'final_cost' => $currentCost,
+            ]);
 
             $responseData = [
                 'success' => true,

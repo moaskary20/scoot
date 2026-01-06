@@ -931,6 +931,55 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
         ),
       ),
     );
+    } catch (e, stackTrace) {
+      print('❌ Error in build method: $e');
+      print('Stack trace: $stackTrace');
+      // Return error widget instead of black screen
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: Colors.red,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'حدث خطأ في تحميل الشاشة',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    e.toString(),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('العودة'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
   }
 }
 

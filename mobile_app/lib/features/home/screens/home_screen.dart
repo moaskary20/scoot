@@ -1000,12 +1000,23 @@ class _HomeScreenState extends State<HomeScreen> {
         position.longitude,
       );
 
-      // Close loading
+      // Close loading dialog safely
       if (mounted) {
         try {
-          Navigator.pop(context); // Close loading dialog
+          // Use rootNavigator if regular pop fails
+          if (Navigator.of(context, rootNavigator: false).canPop()) {
+            Navigator.of(context, rootNavigator: false).pop();
+          } else if (Navigator.of(context, rootNavigator: true).canPop()) {
+            Navigator.of(context, rootNavigator: true).pop();
+          }
         } catch (e) {
           print('⚠️ Error closing loading dialog: $e');
+          // Try alternative method
+          try {
+            Navigator.of(context).pop();
+          } catch (e2) {
+            print('⚠️ Alternative pop also failed: $e2');
+          }
         }
       }
 
@@ -1013,11 +1024,38 @@ class _HomeScreenState extends State<HomeScreen> {
         print('✅ Trip started successfully, navigating to active trip screen');
         print('📊 Trip data: $tripData');
 
-        await _navigateToActiveTrip(
-          tripData['trip_id'],
-          tripData['scooter_code'] ?? 'غير معروف',
-          DateTime.parse(tripData['start_time']),
-        );
+        // Validate trip data before navigation
+        if (tripData['trip_id'] != null && tripData['start_time'] != null) {
+          try {
+            await _navigateToActiveTrip(
+              tripData['trip_id'],
+              tripData['scooter_code'] ?? 'غير معروف',
+              DateTime.parse(tripData['start_time']),
+            );
+          } catch (navError) {
+            print('❌ Navigation error: $navError');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('حدث خطأ في الانتقال إلى شاشة الرحلة: $navError'),
+                  backgroundColor: Colors.orange,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            }
+          }
+        } else {
+          print('⚠️ Invalid trip data: missing trip_id or start_time');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('حدث خطأ: بيانات الرحلة غير صحيحة'),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        }
       }
     } catch (e) {
       // Close loading if still open

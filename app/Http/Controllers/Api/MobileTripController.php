@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Trip;
 use App\Models\Scooter;
+use App\Models\GeoZone;
 use App\Repositories\TripRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -255,10 +256,17 @@ class MobileTripController extends Controller
             
             // Get fresh battery data from database
             $batteryPercentage = 0;
+            $scooterData = null;
             if ($trip->scooter) {
                 // Refresh scooter to get latest battery data
                 $trip->scooter->refresh();
                 $batteryPercentage = (int) ($trip->scooter->battery_percentage ?? 0);
+                
+                $scooterData = [
+                    'id' => $trip->scooter->id,
+                    'code' => $trip->scooter->code,
+                    'battery_percentage' => $batteryPercentage, // From database
+                ];
                 
                 \Log::info('🔋 Active trip battery data', [
                     'trip_id' => $trip->id,
@@ -268,6 +276,30 @@ class MobileTripController extends Controller
                 ]);
             }
 
+            // Calculate current cost based on duration and geo zone pricing
+            $currentCost = 0.0;
+            if ($trip->start_latitude && $trip->start_longitude) {
+                $geoZone = \App\Models\GeoZone::where('type', 'allowed')
+                    ->where('is_active', true)
+                    ->get()
+                    ->first(function ($zone) use ($trip) {
+                        return $this->isPointInPolygon(
+                            $trip->start_latitude,
+                            $trip->start_longitude,
+                            $zone->polygon ?? []
+                        );
+                    });
+                
+                if ($geoZone && $geoZone->price_per_minute) {
+                    $tripStartFee = (float) ($geoZone->trip_start_fee ?? 0);
+                    $pricePerMinute = (float) ($geoZone->price_per_minute ?? 0);
+                    $currentCost = $tripStartFee + ($durationMinutes * $pricePerMinute);
+                }
+            }
+            
+            // Ensure cost is not negative
+            $currentCost = max(0, $currentCost);
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -276,11 +308,8 @@ class MobileTripController extends Controller
                     'start_time' => $trip->start_time->toDateTimeString(),
                     'duration_minutes' => $durationMinutes,
                     'status' => $trip->status,
-                    'scooter' => $trip->scooter ? [
-                        'id' => $trip->scooter->id,
-                        'code' => $trip->scooter->code,
-                        'battery_percentage' => $batteryPercentage, // From database
-                    ] : null,
+                    'current_cost' => round($currentCost, 2), // Current cost based on duration
+                    'scooter' => $scooterData, // Always include scooter data if exists
                 ],
             ], 200);
         } catch (\Exception $e) {

@@ -41,6 +41,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
   int _batteryPercentage = 0;
   double _currentSpeed = 0.0; // Speed in m/s
   bool _isLoadingBattery = true;
+  double _currentCost = 0.0; // Current trip cost
 
   @override
   void initState() {
@@ -164,11 +165,14 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
 
   Future<void> _loadScooterBattery() async {
     try {
-      print('🔋 Loading scooter battery from backend...');
+      print('🔋 Loading scooter battery and cost from backend...');
       final activeTrip = await _apiService.getActiveTrip();
       
       if (activeTrip != null) {
         print('📦 Active trip data: $activeTrip');
+        
+        // Get current cost
+        final currentCost = (activeTrip['current_cost'] ?? 0.0).toDouble();
         
         // Check if scooter data exists
         if (activeTrip['scooter'] != null) {
@@ -177,14 +181,16 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           final scooterId = scooterData['id'];
           final scooterCode = scooterData['code'];
           
-          print('✅ Battery data from backend:');
+          print('✅ Battery and cost data from backend:');
           print('   - Scooter ID: $scooterId');
           print('   - Scooter Code: $scooterCode');
           print('   - Battery Percentage: $battery%');
+          print('   - Current Cost: $currentCost ج.م');
           
           if (mounted) {
             setState(() {
               _batteryPercentage = battery;
+              _currentCost = currentCost;
               _isLoadingBattery = false;
             });
           }
@@ -192,6 +198,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           print('⚠️ Scooter data not found in active trip response');
           if (mounted) {
             setState(() {
+              _currentCost = currentCost;
               _isLoadingBattery = false;
             });
           }
@@ -205,7 +212,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
         }
       }
     } catch (e) {
-      print('❌ Error loading battery from backend: $e');
+      print('❌ Error loading battery and cost from backend: $e');
       if (mounted) {
         setState(() {
           _isLoadingBattery = false;
@@ -747,7 +754,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
 
                         const SizedBox(height: 20),
 
-                        // Battery and Speed Row
+                        // Battery, Speed, and Cost Row
                         Row(
                           children: [
                             // Battery Card
@@ -778,6 +785,70 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                               ),
                             ),
                           ],
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Cost Card
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.green.withOpacity(0.1),
+                                Colors.green.withOpacity(0.05),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.green.withOpacity(0.3),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.green.withOpacity(0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.attach_money,
+                                size: 32,
+                                color: Colors.green,
+                              ),
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'التكلفة الحالية',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${_currentCost.toStringAsFixed(2)} ج.م',
+                                    style: const TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
 
                         const SizedBox(height: 30),

@@ -682,14 +682,23 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       if (mounted) {
+        // Check if error message indicates scooter is unavailable (rented, maintenance, locked, etc.)
+        final isScooterUnavailable = errorMessage.contains('مستأجر') || 
+                                     errorMessage.contains('الصيانة') ||
+                                     errorMessage.contains('غير متاح') ||
+                                     errorMessage.contains('مقفول') ||
+                                     errorMessage.contains('LOCKED') ||
+                                     errorStr.contains('SCOOTER_LOCKED') ||
+                                     errorStr.contains('SCOOTER_NOT_AVAILABLE') ||
+                                     errorStr.contains('SCOOTER_RENTED') ||
+                                     errorStr.contains('SCOOTER_MAINTENANCE');
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 5),
-            action: errorMessage.contains('مستأجر') || 
-                    errorMessage.contains('الصيانة') ||
-                    errorMessage.contains('غير متاح')
+            action: isScooterUnavailable
                 ? SnackBarAction(
                     label: 'بحث عن سكوتر',
                     textColor: Colors.white,

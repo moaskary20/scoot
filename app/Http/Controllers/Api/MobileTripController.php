@@ -280,7 +280,9 @@ class MobileTripController extends Controller
             }
 
             $startTime = Carbon::parse($trip->start_time);
-            $durationMinutes = $startTime->diffInMinutes(Carbon::now());
+            // Calculate duration in minutes with decimals (fractional minutes)
+            $durationSeconds = $startTime->diffInSeconds(Carbon::now());
+            $durationMinutes = $durationSeconds / 60.0; // Convert to minutes with decimals
 
             // Ensure scooter relationship is loaded and battery is from database
             $trip->load('scooter');
@@ -401,7 +403,9 @@ class MobileTripController extends Controller
 
             $endTime = Carbon::now();
             $startTime = Carbon::parse($trip->start_time);
-            $durationMinutes = $startTime->diffInMinutes($endTime);
+            // Calculate duration in minutes with decimals (fractional minutes)
+            $durationSeconds = $startTime->diffInSeconds($endTime);
+            $durationMinutes = $durationSeconds / 60.0; // Convert to minutes with decimals
 
             // Calculate cost (simplified - you can add pricing logic here)
             $baseCost = 5.0; // Base cost

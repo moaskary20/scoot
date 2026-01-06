@@ -107,7 +107,9 @@ class TripRepository
     {
         $endTime = Carbon::now();
         $startTime = Carbon::parse($trip->start_time);
-        $durationMinutes = $startTime->diffInMinutes($endTime);
+        // Calculate duration in minutes with decimals (fractional minutes)
+        $durationSeconds = $startTime->diffInSeconds($endTime);
+        $durationMinutes = $durationSeconds / 60.0; // Convert to minutes with decimals
 
         // Calculate cost - use provided cost or calculate from base_cost, discount, and penalty
         $cost = $endData['cost'] ?? $trip->cost ?? ($trip->base_cost - $trip->discount_amount + $trip->penalty_amount);

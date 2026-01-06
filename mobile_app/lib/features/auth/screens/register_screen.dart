@@ -159,15 +159,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       if (!mounted) return;
       
+      print('❌ Registration error caught: $e');
+      print('❌ Error type: ${e.runtimeType}');
+      
       // Extract user-friendly error message
       String errorMessage = 'حدث خطأ في إنشاء الحساب';
       final errorStr = e.toString();
+      
+      print('📝 Error string: $errorStr');
       
       // Try to extract message from exception
       if (errorStr.contains('Exception: ')) {
         final parts = errorStr.split('Exception: ');
         if (parts.length > 1) {
           errorMessage = parts[1].trim();
+          // Remove any pipe-separated additional info
+          if (errorMessage.contains('|')) {
+            errorMessage = errorMessage.split('|')[0].trim();
+          }
+          // Remove newlines and clean up
+          errorMessage = errorMessage.replaceAll('\n', ' ').trim();
         }
       } else if (errorStr.contains('message')) {
         // Try to extract from JSON-like string
@@ -188,14 +199,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
       
       // Check for specific error types
-      if (errorStr.contains('email') && errorStr.contains('already')) {
+      if (errorStr.contains('email') && (errorStr.contains('already') || errorStr.contains('مستخدم') || errorStr.contains('unique'))) {
         errorMessage = 'البريد الإلكتروني مستخدم بالفعل';
-      } else if (errorStr.contains('phone') && errorStr.contains('already')) {
+      } else if (errorStr.contains('phone') && (errorStr.contains('already') || errorStr.contains('مستخدم') || errorStr.contains('unique'))) {
         errorMessage = 'رقم الهاتف مستخدم بالفعل';
       } else if (errorStr.contains('validation') || errorStr.contains('البيانات غير صحيحة')) {
         errorMessage = 'البيانات المدخلة غير صحيحة. يرجى التحقق من جميع الحقول.';
+      } else if (errorStr.contains('SQLSTATE') || errorStr.contains('Duplicate entry')) {
+        if (errorStr.contains('email')) {
+          errorMessage = 'البريد الإلكتروني مستخدم بالفعل';
+        } else if (errorStr.contains('phone')) {
+          errorMessage = 'رقم الهاتف مستخدم بالفعل';
+        } else {
+          errorMessage = 'البيانات المدخلة مستخدمة بالفعل. يرجى التحقق من البيانات.';
+        }
+      } else if (errorStr.contains('storage') || errorStr.contains('file') || errorStr.contains('upload')) {
+        errorMessage = 'خطأ في رفع الصور. يرجى المحاولة مرة أخرى';
       }
       
+      print('✅ Final error message: $errorMessage');
+      
+      // Show error in a dialog for better visibility
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('خطأ في إنشاء الحساب'),
+          content: Text(errorMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('حسناً'),
+            ),
+          ],
+        ),
+      );
+      
+      // Also show snackbar
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMessage),

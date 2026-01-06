@@ -54,3 +54,7 @@ echo 'Broadcast sent';
 
 خطأ "Authentication signature invalid" يظهر فقط عند استخدام curl مباشرة. Laravel Broadcast يتعامل مع هذا تلقائياً، لذلك لا مشكلة!
 
+
+
+
+

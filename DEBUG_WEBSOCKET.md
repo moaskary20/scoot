@@ -123,3 +123,7 @@ php artisan reverb:start --host=0.0.0.0 --port=8080
 3. تأكد من أن `device_imei` موجود ومطابق في Postman
 4. تأكد من أن Reverb Server يعمل
 
+
+
+
+

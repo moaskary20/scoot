@@ -78,3 +78,7 @@ echo "2. Press Lock/Unlock from Admin Panel"
 echo "3. Check if 'command' message arrives in Postman"
 echo "4. Check Reverb logs for any errors"
 
+
+
+
+

@@ -135,3 +135,7 @@ curl -X POST http://localhost:8080/apps/672193/events \
 2. هل تظهر رسائل عن التطبيقات المسجلة؟
 3. محتوى `storage/logs/reverb.log` (آخر 50 سطر)
 
+
+
+
+

@@ -28,3 +28,7 @@ chmod +x check_error.sh
 1. آخر خطأ كامل (مع stack trace)
 2. أي رسائل متعلقة بـ broadcast أو command
 
+
+
+
+

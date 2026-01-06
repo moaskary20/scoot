@@ -117,7 +117,7 @@ class MobileAuthController extends Controller
                 'password' => Hash::make($request->password),
                 'age' => $calculatedAge,
                 'university_id' => $request->university_id,
-                'is_active' => $request->is_active ?? false, // Mobile accounts are inactive by default
+                'is_active' => false, // Mobile accounts are always inactive by default
             ];
 
             // Handle national ID photos upload (front & back)
@@ -163,9 +163,30 @@ class MobileAuthController extends Controller
                 ],
             ], 201);
         } catch (\Exception $e) {
+            \Log::error('Registration error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            // Return more detailed error message
+            $errorMessage = 'حدث خطأ في إنشاء الحساب';
+            if (str_contains($e->getMessage(), 'SQLSTATE')) {
+                if (str_contains($e->getMessage(), 'Duplicate entry')) {
+                    if (str_contains($e->getMessage(), 'email')) {
+                        $errorMessage = 'البريد الإلكتروني مستخدم بالفعل';
+                    } elseif (str_contains($e->getMessage(), 'phone')) {
+                        $errorMessage = 'رقم الهاتف مستخدم بالفعل';
+                    }
+                } else {
+                    $errorMessage = 'خطأ في قاعدة البيانات. يرجى المحاولة لاحقاً';
+                }
+            } elseif (str_contains($e->getMessage(), 'storage') || str_contains($e->getMessage(), 'file')) {
+                $errorMessage = 'خطأ في رفع الصور. يرجى المحاولة مرة أخرى';
+            }
+            
             return response()->json([
                 'success' => false,
-                'message' => 'حدث خطأ في إنشاء الحساب',
+                'message' => $errorMessage,
                 'error' => $e->getMessage(),
             ], 500);
         }

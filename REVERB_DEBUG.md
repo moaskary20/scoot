@@ -129,3 +129,7 @@ php artisan queue:work
 2. نتيجة `ps aux | grep reverb`
 3. هل Postman متصل ومشترك قبل الاختبار؟
 
+
+
+
+

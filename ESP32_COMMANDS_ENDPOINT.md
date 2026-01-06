@@ -4,6 +4,8 @@
 
 هذا الـ endpoint يرسل الأوامر كـ **JSON object مباشر** (بدون escape) في نفس التنسيق الذي يتوقعه ESP32.
 
+**⚠️ مهم:** إذا كنت تستخدم WebSocket، البيانات ستصل كـ JSON string (Pusher protocol). استخدم هذا الـ endpoint بدلاً من WebSocket للحصول على JSON object مباشر.
+
 ---
 
 ## 🔗 Endpoint
@@ -221,14 +223,19 @@ void unlockScooter() {
 
 ## ✅ متى تستخدمه؟
 
-استخدم `/api/v1/scooter/commands` إذا كنت تريد:
-- نفس تنسيق WebSocket (للتطوير والاختبار)
-- JSON object مباشر في `data` (بدون escape)
-- معلومات `timeout` و `ping_interval`
+**استخدم `/api/v1/scooter/commands` إذا كنت تريد:**
+- ✅ نفس تنسيق WebSocket (للتطوير والاختبار)
+- ✅ JSON object مباشر في `data` (بدون escape) - **هذا هو الفرق الرئيسي**
+- ✅ معلومات `timeout` و `ping_interval`
+- ✅ **بديل لـ WebSocket** إذا كنت لا تريد التعامل مع JSON string
 
-استخدم `/api/v1/scooter/get-commands` إذا كنت تريد:
+**استخدم `/api/v1/scooter/get-commands` إذا كنت تريد:**
 - تنسيق أبسط
 - معلومات إضافية مثل `scooter_status` و `current_lock_status`
+
+**⚠️ ملاحظة مهمة:**
+- **WebSocket:** `data` هو JSON string (Pusher protocol) - لا يمكن تغييره
+- **HTTP Endpoint `/api/v1/scooter/commands`:** `data` هو JSON object مباشر - **استخدم هذا للحصول على التنسيق المطلوب**
 
 ---
 
@@ -238,6 +245,9 @@ void unlockScooter() {
 2. **JSON Object:** `data` هو JSON object مباشر (ليس string) - لا حاجة لفك التشفير
 3. **Timeout & Ping Interval:** متوفران في البيانات للمرجع
 4. **WebSocket Alternative:** هذا endpoint بديل لـ WebSocket إذا كنت تفضل HTTP polling
+5. **⚠️ مهم جداً:** 
+   - **WebSocket:** `data` سيصل كـ JSON string دائماً (Pusher protocol) - لا يمكن تغييره
+   - **HTTP Endpoint `/api/v1/scooter/commands`:** `data` يصل كـ JSON object مباشر - **استخدم هذا للحصول على التنسيق المطلوب**
 
 ---
 

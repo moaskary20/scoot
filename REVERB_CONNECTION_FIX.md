@@ -168,3 +168,7 @@ iptables -L
 3. نتيجة `netstat -tuln | grep 8080`
 4. هل Postman متصل ومشترك قبل الاختبار؟
 
+
+
+
+

@@ -83,3 +83,7 @@ grep -E "REVERB_APP_KEY|REVERB_APP_SECRET|REVERB_HOST|REVERB_PORT" .env
 5. يجب أن ترى في logs: `Sending command to scooter via WebSocket`
 6. يجب أن ترى في Postman: رسالة `command`
 
+
+
+
+

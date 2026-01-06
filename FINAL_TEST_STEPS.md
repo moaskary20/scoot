@@ -121,3 +121,7 @@ nohup php artisan reverb:start --host=0.0.0.0 --port=8080 > storage/logs/reverb.
 3. آخر 20 سطر من `laravel.log` بعد الضغط على Lock/Unlock
 4. هل تصل رسالة `command` في Postman؟
 
+
+
+
+

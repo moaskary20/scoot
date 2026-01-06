@@ -97,7 +97,7 @@ class ApiService {
         // تاريخ الميلاد بصيغة YYYY/MM/DD
         'age': age,
         'university_id': universityId,
-        'is_active': false, // All mobile accounts are inactive by default
+        // Note: is_active is handled in backend, don't send it as it might cause SQL errors
       });
 
       if (nationalIdFrontPhoto != null) {
@@ -137,10 +137,63 @@ class ApiService {
       final errorMessage = response.data['message'] ?? 'فشل إنشاء الحساب';
       throw Exception(errorMessage);
     } catch (e) {
+      print('❌ Register error: $e');
+      print('❌ Error type: ${e.runtimeType}');
+      
+      // Handle DioException specifically
+      if (e is DioException) {
+        print('📡 DioException - Status: ${e.response?.statusCode}');
+        print('📡 Response data: ${e.response?.data}');
+        
+        if (e.response?.data != null) {
+          final responseData = e.response!.data;
+          
+          // Extract message from response
+          if (responseData is Map) {
+            // First, try to get detailed error message
+            if (responseData['error'] != null) {
+              final errorDetail = responseData['error'] as String;
+              // Use error detail if it's more specific than generic message
+              if (errorDetail.isNotEmpty && 
+                  !errorDetail.contains('حدث خطأ في إنشاء الحساب') &&
+                  !errorDetail.contains('An error occurred')) {
+                throw Exception(errorDetail);
+              }
+            }
+            
+            // Then try message
+            if (responseData['message'] != null) {
+              final message = responseData['message'] as String;
+              // Combine with error if available
+              if (responseData['error'] != null && 
+                  responseData['error'] != responseData['message']) {
+                throw Exception('$message\n${responseData['error']}');
+              }
+              throw Exception(message);
+            }
+            
+            // Handle validation errors
+            if (responseData['errors'] != null) {
+              final errors = responseData['errors'] as Map<String, dynamic>;
+              if (errors.isNotEmpty) {
+                final firstError = errors.values.first;
+                if (firstError is List && firstError.isNotEmpty) {
+                  throw Exception(firstError.first as String);
+                } else if (firstError is String) {
+                  throw Exception(firstError);
+                }
+              }
+              throw Exception('البيانات المدخلة غير صحيحة. يرجى التحقق من جميع الحقول.');
+            }
+          }
+        }
+      }
+      
       // If it's already an Exception with a message, rethrow it
-      if (e is Exception && e.toString().contains('Exception: ')) {
+      if (e is Exception) {
         rethrow;
       }
+      
       // Otherwise, handle the error
       throw Exception(_handleError(e));
     }

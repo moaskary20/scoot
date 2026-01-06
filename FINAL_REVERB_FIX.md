@@ -128,3 +128,7 @@ Laravel Reverb يستخدم HTTP API للاتصال بين Laravel و Reverb Ser
 4. ✅ Reverb Server يعمل على 0.0.0.0:8080
 5. ✅ Laravel يمكنه الوصول إلى http://localhost:8080
 
+
+
+
+

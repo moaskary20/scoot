@@ -108,3 +108,7 @@ tail -f storage/logs/reverb.log
 2. إعادة إنشاء المفاتيح: `php artisan reverb:install`
 3. استخدام Redis للـ Broadcast كحل بديل
 
+
+
+
+

@@ -25,3 +25,7 @@ echo "-----------------------------------"
 tail -200 storage/logs/laravel.log | grep -i "broadcast\|command\|websocket\|reverb" | tail -20
 echo ""
 
+
+
+
+

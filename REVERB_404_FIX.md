@@ -87,3 +87,7 @@ tail -f storage/logs/reverb.log
 
 Laravel Reverb Broadcaster قد لا يعمل بشكل صحيح مع Reverb Server في بعض الحالات. استخدام Queue أو Redis هو حل أكثر موثوقية.
 
+
+
+
+

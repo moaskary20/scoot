@@ -128,9 +128,21 @@ class ApiService {
         ApiConstants.register,
         data: formData,
       );
-      return response.data;
+      
+      if (response.data['success'] == true) {
+        return response.data;
+      }
+      
+      // If response indicates failure, throw with message
+      final errorMessage = response.data['message'] ?? 'فشل إنشاء الحساب';
+      throw Exception(errorMessage);
     } catch (e) {
-      throw _handleError(e);
+      // If it's already an Exception with a message, rethrow it
+      if (e is Exception && e.toString().contains('Exception: ')) {
+        rethrow;
+      }
+      // Otherwise, handle the error
+      throw Exception(_handleError(e));
     }
   }
 
@@ -720,14 +732,18 @@ class ApiService {
 
   // Logout
   Future<void> logout() async {
+    // Always clear local storage first, even if API call fails
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(AppConstants.tokenKey);
+    await prefs.remove(AppConstants.userKey);
+    
+    // Try to call logout API, but don't fail if it errors (token might be invalid)
     try {
       await _dio.post(ApiConstants.logout);
     } catch (e) {
-      // Ignore errors on logout
-    } finally {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(AppConstants.tokenKey);
-      await prefs.remove(AppConstants.userKey);
+      // Ignore errors on logout - token might already be invalid
+      // Local storage is already cleared, so user is logged out locally
+      print('⚠️ Logout API call failed (this is OK): $e');
     }
   }
 

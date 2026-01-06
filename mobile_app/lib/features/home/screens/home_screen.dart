@@ -627,16 +627,16 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       // Check if error is due to active trip
-      final errorMessage = e.toString();
-      if (errorMessage.contains('لديك رحلة نشطة بالفعل') ||
-          errorMessage.contains('active trip')) {
+      final errorStr = e.toString();
+      if (errorStr.contains('لديك رحلة نشطة بالفعل') ||
+          errorStr.contains('active trip')) {
         // Try to extract trip_id from error message first
         int? tripId;
-        if (errorMessage.contains('trip_id:')) {
+        if (errorStr.contains('trip_id:')) {
           try {
             final tripIdMatch = RegExp(
               r'trip_id:(\d+)',
-            ).firstMatch(errorMessage);
+            ).firstMatch(errorStr);
             if (tripIdMatch != null) {
               tripId = int.parse(tripIdMatch.group(1)!);
               print('📋 Extracted trip_id from error: $tripId');
@@ -665,7 +665,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Extract and display user-friendly error message
       String errorMessage = 'حدث خطأ في بدء الرحلة';
-      final errorStr = e.toString();
       
       // Try to extract message from exception
       if (errorStr.contains('Exception: ')) {
@@ -1026,16 +1025,16 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       // Check if error is due to active trip
-      final errorMessage = e.toString();
-      if (errorMessage.contains('لديك رحلة نشطة بالفعل') ||
-          errorMessage.contains('active trip')) {
+      final errorStr = e.toString();
+      if (errorStr.contains('لديك رحلة نشطة بالفعل') ||
+          errorStr.contains('active trip')) {
         // Try to extract trip_id from error message first
         int? tripId;
-        if (errorMessage.contains('trip_id:')) {
+        if (errorStr.contains('trip_id:')) {
           try {
             final tripIdMatch = RegExp(
               r'trip_id:(\d+)',
-            ).firstMatch(errorMessage);
+            ).firstMatch(errorStr);
             if (tripIdMatch != null) {
               tripId = int.parse(tripIdMatch.group(1)!);
               print('📋 Extracted trip_id from error: $tripId');
@@ -1065,7 +1064,6 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         // Extract and display user-friendly error message
         String errorMessage = AppLocalizations.of(context)?.errorStartingTrip ?? 'حدث خطأ في بدء الرحلة';
-        final errorStr = e.toString();
         
         // Try to extract message from exception
         if (errorStr.contains('Exception: ')) {
@@ -1755,24 +1753,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             onTap: () async {
                               Navigator.pop(context);
                               try {
+                                // Logout will always clear local storage, even if API fails
                                 await _apiService.logout();
-                                if (mounted) {
-                                  Navigator.pushReplacementNamed(
-                                    context,
-                                    '/login',
-                                  );
-                                }
                               } catch (e) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'حدث خطأ أثناء تسجيل الخروج: $e',
-                                      ),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                }
+                                // Even if logout API fails, local storage is cleared
+                                print('⚠️ Logout error (ignored): $e');
+                              }
+                              
+                              // Always navigate to login, regardless of API result
+                              if (mounted) {
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  '/login',
+                                );
                               }
                             },
                           ),

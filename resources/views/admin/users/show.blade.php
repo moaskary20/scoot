@@ -138,11 +138,34 @@
                         <div class="text-gray-700">{{ $user->university_id ?: '-' }}</div>
                     </div>
                     <div>
-                        <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Photo of national Id') }}</div>
-                        @if($user->national_id_photo)
+                        <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Photo of national Id') }} ({{ trans('messages.Front') }})</div>
+                        @if($user->national_id_front_photo)
                             <div class="mt-2">
-                                <img src="{{ asset('storage/' . $user->national_id_photo) }}" alt="National ID Photo" 
-                                     class="h-32 w-auto rounded-lg border border-gray-300">
+                                <a href="{{ asset('storage/' . $user->national_id_front_photo) }}" target="_blank">
+                                    <img src="{{ asset('storage/' . $user->national_id_front_photo) }}" alt="National ID Front Photo" 
+                                         class="h-32 w-auto rounded-lg border border-gray-300 hover:opacity-80 cursor-pointer">
+                                </a>
+                            </div>
+                        @elseif($user->national_id_photo)
+                            <div class="mt-2">
+                                <a href="{{ asset('storage/' . $user->national_id_photo) }}" target="_blank">
+                                    <img src="{{ asset('storage/' . $user->national_id_photo) }}" alt="National ID Photo" 
+                                         class="h-32 w-auto rounded-lg border border-gray-300 hover:opacity-80 cursor-pointer">
+                                </a>
+                                <p class="text-xs text-gray-400 mt-1">{{ trans('messages.Old format') }}</p>
+                            </div>
+                        @else
+                            <div class="text-gray-500">-</div>
+                        @endif
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">{{ trans('messages.Photo of national Id') }} ({{ trans('messages.Back') }})</div>
+                        @if($user->national_id_back_photo)
+                            <div class="mt-2">
+                                <a href="{{ asset('storage/' . $user->national_id_back_photo) }}" target="_blank">
+                                    <img src="{{ asset('storage/' . $user->national_id_back_photo) }}" alt="National ID Back Photo" 
+                                         class="h-32 w-auto rounded-lg border border-gray-300 hover:opacity-80 cursor-pointer">
+                                </a>
                             </div>
                         @else
                             <div class="text-gray-500">-</div>

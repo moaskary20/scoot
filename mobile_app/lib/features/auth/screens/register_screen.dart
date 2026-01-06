@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:email_validator/email_validator.dart';
+import 'package:intl/intl.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/api_service.dart';
 
@@ -41,6 +42,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _ageController.dispose();
     _universityIdController.dispose();
     super.dispose();
+  }
+
+  Future<void> _selectDate() async {
+    final DateTime now = DateTime.now();
+    final DateTime initialDate = now.subtract(const Duration(days: 365 * 20)); // 20 years ago
+    final DateTime firstDate = DateTime(1900);
+    final DateTime lastDate = now.subtract(const Duration(days: 365 * 16)); // Minimum 16 years old
+    
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      locale: const Locale('ar', 'EG'),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Color(AppConstants.primaryColor),
+              onPrimary: Color(AppConstants.secondaryColor),
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    
+    if (picked != null) {
+      setState(() {
+        _ageController.text = DateFormat('yyyy/MM/dd').format(picked);
+      });
+    }
   }
 
   Future<void> _pickNationalIdImage({required bool isFront}) async {
@@ -124,10 +158,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       if (!mounted) return;
+      
+      // Extract user-friendly error message
+      String errorMessage = 'حدث خطأ في إنشاء الحساب';
+      final errorStr = e.toString();
+      
+      // Try to extract message from exception
+      if (errorStr.contains('Exception: ')) {
+        final parts = errorStr.split('Exception: ');
+        if (parts.length > 1) {
+          errorMessage = parts[1].trim();
+        }
+      } else if (errorStr.contains('message')) {
+        // Try to extract from JSON-like string
+        final match = RegExp(r'"message"\s*:\s*"([^"]+)"').firstMatch(errorStr);
+        if (match != null) {
+          errorMessage = match.group(1)!;
+        }
+      } else if (errorStr.contains('errors')) {
+        // Handle validation errors
+        try {
+          final errorsMatch = RegExp(r'"errors"\s*:\s*\{([^}]+)\}').firstMatch(errorStr);
+          if (errorsMatch != null) {
+            errorMessage = 'البيانات المدخلة غير صحيحة. يرجى التحقق من جميع الحقول.';
+          }
+        } catch (_) {
+          // Keep default message
+        }
+      }
+      
+      // Check for specific error types
+      if (errorStr.contains('email') && errorStr.contains('already')) {
+        errorMessage = 'البريد الإلكتروني مستخدم بالفعل';
+      } else if (errorStr.contains('phone') && errorStr.contains('already')) {
+        errorMessage = 'رقم الهاتف مستخدم بالفعل';
+      } else if (errorStr.contains('validation') || errorStr.contains('البيانات غير صحيحة')) {
+        errorMessage = 'البيانات المدخلة غير صحيحة. يرجى التحقق من جميع الحقول.';
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString()),
+          content: Text(errorMessage),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
         ),
       );
     } finally {
@@ -256,10 +329,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // Date of Birth Field (YYYY/MM/DD)
                 TextFormField(
                   controller: _ageController,
-                  keyboardType: TextInputType.datetime,
+                  readOnly: true,
+                  onTap: _selectDate,
                   decoration: InputDecoration(
                     labelText: 'تاريخ الميلاد (YYYY/MM/DD)',
-                    hintText: 'مثال: 2000/05/15',
+                    hintText: 'اضغط لاختيار التاريخ',
                     prefixIcon: const Icon(Icons.calendar_today),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -270,7 +344,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       return 'يرجى إدخال تاريخ الميلاد';
                     }
                     // التحقق من الصيغة YYYY/MM/DD
-                    final regex = RegExp(r'^\\d{4}/\\d{2}/\\d{2}$');
+                    final regex = RegExp(r'^\d{4}/\d{2}/\d{2}$');
                     if (!regex.hasMatch(value.trim())) {
                       return 'صيغة التاريخ يجب أن تكون YYYY/MM/DD';
                     }

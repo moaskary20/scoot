@@ -7,7 +7,9 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -124,42 +126,72 @@ class MobileAuthController extends Controller
             if ($request->hasFile('national_id_front')) {
                 $front = $request->file('national_id_front');
                 // Generate unique filename with extension
-                $extension = $front->getClientOriginalExtension();
+                $extension = $front->getClientOriginalExtension() ?: 'jpg';
                 $frontName = time() . '_front_' . uniqid() . '.' . $extension;
                 
-                // Store file and get the path
-                $storedPath = $front->storeAs('public/national_ids', $frontName);
+                // Ensure directory exists
+                $directory = 'national_ids';
+                $fullPath = storage_path('app/public/' . $directory);
+                if (!File::exists($fullPath)) {
+                    File::makeDirectory($fullPath, 0755, true);
+                }
+                
+                // Store file using Storage facade
+                $storedPath = Storage::disk('public')->putFileAs(
+                    $directory,
+                    $front,
+                    $frontName
+                );
                 
                 if ($storedPath) {
-                    $userData['national_id_front_photo'] = 'national_ids/' . $frontName;
+                    $userData['national_id_front_photo'] = $storedPath;
                     \Log::info('✅ National ID front photo saved', [
-                        'path' => $storedPath,
+                        'stored_path' => $storedPath,
                         'filename' => $frontName,
-                        'full_path' => storage_path('app/' . $storedPath),
+                        'full_path' => storage_path('app/public/' . $storedPath),
+                        'file_exists' => Storage::disk('public')->exists($storedPath),
                     ]);
                 } else {
-                    \Log::error('❌ Failed to save national ID front photo');
+                    \Log::error('❌ Failed to save national ID front photo', [
+                        'filename' => $frontName,
+                        'directory' => $directory,
+                    ]);
                 }
             }
 
             if ($request->hasFile('national_id_back')) {
                 $back = $request->file('national_id_back');
                 // Generate unique filename with extension
-                $extension = $back->getClientOriginalExtension();
+                $extension = $back->getClientOriginalExtension() ?: 'jpg';
                 $backName = time() . '_back_' . uniqid() . '.' . $extension;
                 
-                // Store file and get the path
-                $storedPath = $back->storeAs('public/national_ids', $backName);
+                // Ensure directory exists
+                $directory = 'national_ids';
+                $fullPath = storage_path('app/public/' . $directory);
+                if (!File::exists($fullPath)) {
+                    File::makeDirectory($fullPath, 0755, true);
+                }
+                
+                // Store file using Storage facade
+                $storedPath = Storage::disk('public')->putFileAs(
+                    $directory,
+                    $back,
+                    $backName
+                );
                 
                 if ($storedPath) {
-                    $userData['national_id_back_photo'] = 'national_ids/' . $backName;
+                    $userData['national_id_back_photo'] = $storedPath;
                     \Log::info('✅ National ID back photo saved', [
-                        'path' => $storedPath,
+                        'stored_path' => $storedPath,
                         'filename' => $backName,
-                        'full_path' => storage_path('app/' . $storedPath),
+                        'full_path' => storage_path('app/public/' . $storedPath),
+                        'file_exists' => Storage::disk('public')->exists($storedPath),
                     ]);
                 } else {
-                    \Log::error('❌ Failed to save national ID back photo');
+                    \Log::error('❌ Failed to save national ID back photo', [
+                        'filename' => $backName,
+                        'directory' => $directory,
+                    ]);
                 }
             }
 

@@ -323,8 +323,18 @@ class AppLocalizations {
   String get penaltyStatusWaived => _localizedValues[locale.languageCode]?['penaltyStatusWaived'] ?? 'ملغاة';
   
   // QR Scanner Screen
-  String get scanQRCode => _localizedValues[locale.languageCode]?['scanQRCode'] ?? 'امسح رمز QR';
+  String get scanQRCode => _localizedValues[locale.languageCode]?['scanQRCode'] ?? 'مسح QR Code';
   String get scanQRCodeToStart => _localizedValues[locale.languageCode]?['scanQRCodeToStart'] ?? 'امسح رمز QR للبدء';
+  String get pleaseEnterQRCode => _localizedValues[locale.languageCode]?['pleaseEnterQRCode'] ?? 'يرجى إدخال QR Code';
+  String get cameraError => _localizedValues[locale.languageCode]?['cameraError'] ?? 'خطأ في الكاميرا';
+  String get failedToOpenCamera => _localizedValues[locale.languageCode]?['failedToOpenCamera'] ?? 'فشل في فتح الكاميرا';
+  String get errorOpeningCamera => _localizedValues[locale.languageCode]?['errorOpeningCamera'] ?? 'حدث خطأ في فتح الكاميرا';
+  String get openingCamera => _localizedValues[locale.languageCode]?['openingCamera'] ?? 'جاري فتح الكاميرا...';
+  String get placeQRCodeInFrame => _localizedValues[locale.languageCode]?['placeQRCodeInFrame'] ?? 'ضع QR Code داخل الإطار';
+  String get codeWillBeScannedAutomatically => _localizedValues[locale.languageCode]?['codeWillBeScannedAutomatically'] ?? 'سيتم مسح الكود تلقائياً';
+  String get orEnterQRCodeManually => _localizedValues[locale.languageCode]?['orEnterQRCodeManually'] ?? 'أو أدخل QR Code يدوياً';
+  String get enterQRCodeHere => _localizedValues[locale.languageCode]?['enterQRCodeHere'] ?? 'أدخل QR Code هنا';
+  String get done => _localizedValues[locale.languageCode]?['done'] ?? 'تم';
   String get positionCamera => _localizedValues[locale.languageCode]?['positionCamera'] ?? 'ضع الكاميرا على رمز QR';
   
   // Active Trip Screen
@@ -681,8 +691,18 @@ class AppLocalizations {
       'penaltyTypeOther': 'أخرى',
       'penaltyStatusPending': 'قيد الانتظار',
       'penaltyStatusWaived': 'ملغاة',
-      'scanQRCode': 'امسح رمز QR',
+      'scanQRCode': 'مسح QR Code',
       'scanQRCodeToStart': 'امسح رمز QR للبدء',
+      'pleaseEnterQRCode': 'يرجى إدخال QR Code',
+      'cameraError': 'خطأ في الكاميرا',
+      'failedToOpenCamera': 'فشل في فتح الكاميرا',
+      'errorOpeningCamera': 'حدث خطأ في فتح الكاميرا',
+      'openingCamera': 'جاري فتح الكاميرا...',
+      'placeQRCodeInFrame': 'ضع QR Code داخل الإطار',
+      'codeWillBeScannedAutomatically': 'سيتم مسح الكود تلقائياً',
+      'orEnterQRCodeManually': 'أو أدخل QR Code يدوياً',
+      'enterQRCodeHere': 'أدخل QR Code هنا',
+      'done': 'تم',
       'positionCamera': 'ضع الكاميرا على رمز QR',
       'tripDuration': 'مدة الرحلة',
       'closeTrip': 'إغلاق الرحلة',
@@ -966,6 +986,16 @@ class AppLocalizations {
       'penaltyStatusWaived': 'Waived',
       'scanQRCode': 'Scan QR Code',
       'scanQRCodeToStart': 'Scan QR Code to Start',
+      'pleaseEnterQRCode': 'Please enter QR Code',
+      'cameraError': 'Camera Error',
+      'failedToOpenCamera': 'Failed to open camera',
+      'errorOpeningCamera': 'Error opening camera',
+      'openingCamera': 'Opening camera...',
+      'placeQRCodeInFrame': 'Place QR Code inside the frame',
+      'codeWillBeScannedAutomatically': 'Code will be scanned automatically',
+      'orEnterQRCodeManually': 'Or enter QR Code manually',
+      'enterQRCodeHere': 'Enter QR Code here',
+      'done': 'Done',
       'positionCamera': 'Position your camera over the QR code',
       'tripDuration': 'Trip Duration',
       'closeTrip': 'Close Trip',

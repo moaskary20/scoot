@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:provider/provider.dart';
+import 'dart:ui' as ui;
 import '../../../core/constants/app_constants.dart';
 import '../../../core/l10n/app_localizations.dart';
+import '../../../core/services/language_service.dart';
 
 class QRScannerScreen extends StatefulWidget {
   final Function(String) onQRCodeScanned;
@@ -41,7 +44,8 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     } catch (e) {
       setState(() {
         _hasError = true;
-        _errorMessage = 'فشل في فتح الكاميرا: $e';
+        final loc = AppLocalizations.of(context);
+        _errorMessage = '${loc?.failedToOpenCamera ?? 'فشل في فتح الكاميرا'}: $e';
       });
     }
   }
@@ -70,9 +74,10 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
   void _handleManualInput() async {
     final qrCode = _manualInputController.text.trim();
     if (qrCode.isEmpty) {
+      final loc = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('يرجى إدخال QR Code'),
+        SnackBar(
+          content: Text(loc?.pleaseEnterQRCode ?? 'يرجى إدخال QR Code'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -152,8 +157,11 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final languageService = Provider.of<LanguageService>(context, listen: false);
+    final localizations = AppLocalizations.of(context);
+    final isArabic = languageService.isArabic;
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
       child: Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(
@@ -162,9 +170,9 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
-            'مسح QR Code',
-            style: TextStyle(color: Colors.white),
+          title: Text(
+            localizations?.scanQRCode ?? 'مسح QR Code',
+            style: const TextStyle(color: Colors.white),
           ),
         ),
         body: Stack(
@@ -185,13 +193,18 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                           size: 64,
                         ),
                         const SizedBox(height: 16),
-                        Text(
-                          'خطأ في الكاميرا: ${error.toString()}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
-                          textAlign: TextAlign.center,
+                        Builder(
+                          builder: (context) {
+                            final loc = AppLocalizations.of(context);
+                            return Text(
+                              '${loc?.cameraError ?? 'خطأ في الكاميرا'}: ${error.toString()}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                              textAlign: TextAlign.center,
+                            );
+                          },
                         ),
                         const SizedBox(height: 24),
                         ElevatedButton(
@@ -221,13 +234,18 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                     const SizedBox(height: 16),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 40),
-                      child: Text(
-                        _errorMessage ?? 'حدث خطأ في فتح الكاميرا',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                        ),
-                        textAlign: TextAlign.center,
+                      child: Builder(
+                        builder: (context) {
+                          final loc = AppLocalizations.of(context);
+                          return Text(
+                            _errorMessage ?? (loc?.errorOpeningCamera ?? 'حدث خطأ في فتح الكاميرا'),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                            textAlign: TextAlign.center,
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -238,7 +256,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(AppConstants.primaryColor),
                       ),
-                      child: const Text('إغلاق'),
+                      child: Text(localizations?.close ?? 'إغلاق'),
                     ),
                   ],
                 ),
@@ -252,12 +270,17 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                     SizedBox(height: 16),
-                    Text(
-                      'جاري فتح الكاميرا...',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
+                    Builder(
+                      builder: (context) {
+                        final loc = AppLocalizations.of(context);
+                        return Text(
+                          loc?.openingCamera ?? 'جاري فتح الكاميرا...',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -405,26 +428,36 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                     size: 48,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'ضع QR Code داخل الإطار',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
+                  Builder(
+                    builder: (context) {
+                      final loc = AppLocalizations.of(context);
+                      return Text(
+                        loc?.placeQRCodeInFrame ?? 'ضع QR Code داخل الإطار',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      );
+                    },
                   ),
                   const SizedBox(height: 8),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 40),
-                    child: Text(
-                      'سيتم مسح الكود تلقائياً',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final loc = AppLocalizations.of(context);
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 40),
+                        child: Text(
+                          loc?.codeWillBeScannedAutomatically ?? 'سيتم مسح الكود تلقائياً',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -453,13 +486,18 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                           size: 20,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'أو أدخل QR Code يدوياً',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Builder(
+                          builder: (context) {
+                            final loc = AppLocalizations.of(context);
+                            return Text(
+                              loc?.orEnterQRCodeManually ?? 'أو أدخل QR Code يدوياً',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -478,7 +516,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                               fontSize: 16,
                             ),
                             decoration: InputDecoration(
-                              hintText: 'أدخل QR Code هنا',
+                              hintText: localizations?.enterQRCodeHere ?? 'أدخل QR Code هنا',
                               hintStyle: TextStyle(
                                 color: Colors.white.withOpacity(0.5),
                                 fontSize: 14,
@@ -540,12 +578,17 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                                     ),
                                   ),
                                 )
-                              : const Text(
-                                  'تم',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              : Builder(
+                                  builder: (context) {
+                                    final loc = AppLocalizations.of(context);
+                                    return Text(
+                                      loc?.done ?? 'تم',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    );
+                                  },
                                 ),
                         ),
                       ],

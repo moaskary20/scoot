@@ -2,10 +2,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:ui' as ui;
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/models/user_model.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/services/language_service.dart';
 import '../../../core/l10n/app_localizations.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -77,9 +80,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _isLoading = false;
         });
+        final localizations = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ في تحميل البيانات: $e'),
+            content: Text('${localizations?.dataLoadingError ?? 'حدث خطأ في تحميل البيانات'}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -151,11 +155,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
         
         if (mounted) {
+          final localizations = AppLocalizations.of(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('تم تحديث الصورة الشخصية بنجاح'),
+            SnackBar(
+              content: Text(localizations?.avatarUpdatedSuccessfully ?? 'تم تحديث الصورة الشخصية بنجاح'),
               backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
+              duration: const Duration(seconds: 2),
             ),
           );
         }
@@ -167,9 +172,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _isUpdatingAvatar = false;
           // Keep selected avatar on error so user can retry
         });
+        final localizations = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ في تحديث الصورة: $e'),
+            content: Text('${localizations?.avatarUpdateError ?? 'حدث خطأ في تحديث الصورة'}: $e'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -200,9 +206,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _newPasswordController.clear();
           _confirmPasswordController.clear();
         });
+        final localizations = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تم تحديث كلمة المرور بنجاح'),
+          SnackBar(
+            content: Text(localizations?.passwordUpdatedSuccessfully ?? 'تم تحديث كلمة المرور بنجاح'),
             backgroundColor: Colors.green,
           ),
         );
@@ -212,9 +219,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _isUpdatingPassword = false;
         });
+        final localizations = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ في تحديث كلمة المرور: $e'),
+            content: Text('${localizations?.passwordUpdateError ?? 'حدث خطأ في تحديث كلمة المرور'}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -242,24 +250,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-          title: Text(
-            AppLocalizations.of(context)?.profile ?? 'الملف الشخصي',
-            style: const TextStyle(
-              color: Colors.black,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+    final languageService = Provider.of<LanguageService>(context, listen: false);
+    final localizations = AppLocalizations.of(context);
+    final isArabic = languageService.isArabic;
+    
+    return Directionality(
+      textDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
+      child: Scaffold(
+        appBar: AppBar(
+            title: Text(
+              localizations?.profile ?? 'الملف الشخصي',
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-        backgroundColor: Color(AppConstants.primaryColor),
-        foregroundColor: Color(AppConstants.secondaryColor),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _user == null
-              ? const Center(child: Text('لا توجد بيانات'))
-              : SingleChildScrollView(
+          backgroundColor: Color(AppConstants.primaryColor),
+          foregroundColor: Color(AppConstants.secondaryColor),
+        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _user == null
+                ? Center(child: Text(localizations?.noData ?? 'لا توجد بيانات'))
+                : SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Form(
                     key: _formKey,
@@ -383,46 +397,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'معلومات الحساب',
-                                  style: TextStyle(
+                                Text(
+                                  localizations?.accountInfo ?? 'معلومات الحساب',
+                                  style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 const SizedBox(height: 16),
                                 _buildReadOnlyField(
-                                  'البريد الإلكتروني',
+                                  localizations?.email ?? 'البريد الإلكتروني',
                                   _user!.email,
                                   Icons.email,
+                                  localizations,
                                 ),
                                 const SizedBox(height: 16),
                                 _buildReadOnlyField(
-                                  'رقم الهاتف',
-                                  _user!.phone ?? 'غير متوفر',
+                                  localizations?.phoneNumber ?? 'رقم الهاتف',
+                                  _user!.phone ?? (localizations?.notAvailable ?? 'غير متوفر'),
                                   Icons.phone,
+                                  localizations,
                                 ),
                                 // Always show university ID field (even if null/empty, show "غير متوفر")
                                 const SizedBox(height: 16),
                                 _buildReadOnlyField(
-                                  'الرقم الجامعي',
+                                  localizations?.universityId ?? 'الرقم الجامعي',
                                   _user!.universityId != null && _user!.universityId!.isNotEmpty
                                       ? _user!.universityId!
-                                      : 'غير متوفر',
+                                      : (localizations?.notAvailable ?? 'غير متوفر'),
                                   Icons.school,
+                                  localizations,
                                 ),
                                 // Always show age field (even if null/0, show "غير متوفر")
                                 const SizedBox(height: 16),
                                 _buildReadOnlyField(
-                                  'السن',
+                                  localizations?.age ?? 'السن',
                                   _user!.age != null && _user!.age! > 0
-                                      ? '${_user!.age!} سنة'
-                                      : 'غير متوفر',
+                                      ? (localizations?.formatAge(_user!.age!) ?? '${_user!.age!} سنة')
+                                      : (localizations?.notAvailable ?? 'غير متوفر'),
                                   Icons.calendar_today,
+                                  localizations,
                                 ),
                                 // Account Status
                                 const SizedBox(height: 16),
-                                _buildAccountStatusField(),
+                                _buildAccountStatusField(localizations),
                               ],
                             ),
                           ),
@@ -431,7 +449,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         
                         // Resubmit National ID Section (if account is rejected)
                         if (_user!.accountStatus == 'rejected') ...[
-                          _buildResubmitNationalIdSection(),
+                          _buildResubmitNationalIdSection(localizations),
                           const SizedBox(height: 24),
                         ],
 
@@ -442,9 +460,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'تغيير كلمة المرور',
-                                  style: TextStyle(
+                                Text(
+                                  localizations?.changePassword ?? 'تغيير كلمة المرور',
+                                  style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -454,7 +472,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   controller: _currentPasswordController,
                                   obscureText: _obscureCurrentPassword,
                                   decoration: InputDecoration(
-                                    labelText: 'كلمة المرور الحالية',
+                                    labelText: localizations?.currentPassword ?? 'كلمة المرور الحالية',
                                     prefixIcon: const Icon(Icons.lock),
                                     suffixIcon: IconButton(
                                       icon: Icon(
@@ -475,7 +493,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
-                                      return 'يرجى إدخال كلمة المرور الحالية';
+                                      return localizations?.pleaseEnterCurrentPassword ?? 'يرجى إدخال كلمة المرور الحالية';
                                     }
                                     return null;
                                   },
@@ -485,7 +503,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   controller: _newPasswordController,
                                   obscureText: _obscureNewPassword,
                                   decoration: InputDecoration(
-                                    labelText: 'كلمة المرور الجديدة',
+                                    labelText: localizations?.newPassword ?? 'كلمة المرور الجديدة',
                                     prefixIcon: const Icon(Icons.lock_outline),
                                     suffixIcon: IconButton(
                                       icon: Icon(
@@ -506,10 +524,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
-                                      return 'يرجى إدخال كلمة المرور الجديدة';
+                                      return localizations?.pleaseEnterNewPassword ?? 'يرجى إدخال كلمة المرور الجديدة';
                                     }
                                     if (value.length < 8) {
-                                      return 'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
+                                      return localizations?.passwordMinLength ?? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
                                     }
                                     return null;
                                   },
@@ -519,7 +537,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   controller: _confirmPasswordController,
                                   obscureText: _obscureConfirmPassword,
                                   decoration: InputDecoration(
-                                    labelText: 'تأكيد كلمة المرور الجديدة',
+                                    labelText: localizations?.confirmNewPassword ?? 'تأكيد كلمة المرور الجديدة',
                                     prefixIcon: const Icon(Icons.lock_outline),
                                     suffixIcon: IconButton(
                                       icon: Icon(
@@ -540,10 +558,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
-                                      return 'يرجى تأكيد كلمة المرور';
+                                      return localizations?.pleaseConfirmPassword ?? 'يرجى تأكيد كلمة المرور';
                                     }
                                     if (value != _newPasswordController.text) {
-                                      return 'كلمة المرور غير متطابقة';
+                                      return localizations?.passwordMismatch ?? 'كلمة المرور غير متطابقة';
                                     }
                                     return null;
                                   },
@@ -578,9 +596,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                               ),
                                             ),
                                           )
-                                        : const Text(
-                                            'تحديث كلمة المرور',
-                                            style: TextStyle(
+                                        : Text(
+                                            localizations?.updatePassword ?? 'تحديث كلمة المرور',
+                                            style: const TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
                                             ),
@@ -595,10 +613,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ),
+      ),
     );
   }
 
-  Widget _buildReadOnlyField(String label, String value, IconData icon) {
+  Widget _buildReadOnlyField(String label, String value, IconData icon, AppLocalizations? loc) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -638,25 +657,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildAccountStatusField() {
+  Widget _buildAccountStatusField(AppLocalizations? loc) {
     String statusText;
     Color statusColor;
     IconData statusIcon;
 
     switch (_user!.accountStatus) {
       case 'active':
-        statusText = 'مفعل';
+        statusText = loc?.active ?? 'مفعل';
         statusColor = Colors.green;
         statusIcon = Icons.check_circle;
         break;
       case 'rejected':
-        statusText = 'مرفوض';
+        statusText = loc?.rejected ?? 'مرفوض';
         statusColor = Colors.red;
         statusIcon = Icons.cancel;
         break;
       case 'pending':
       default:
-        statusText = 'قيد التفعيل';
+        statusText = loc?.pending ?? 'قيد التفعيل';
         statusColor = Colors.orange;
         statusIcon = Icons.pending;
         break;
@@ -665,9 +684,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'حالة الحساب',
-          style: TextStyle(
+        Text(
+          loc?.accountStatus ?? 'حالة الحساب',
+          style: const TextStyle(
             fontSize: 14,
             color: Colors.grey,
             fontWeight: FontWeight.w500,
@@ -710,9 +729,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'ملاحظات المراجعة:',
-                  style: TextStyle(
+                Text(
+                  loc?.reviewNotes ?? 'ملاحظات المراجعة:',
+                  style: const TextStyle(
                     fontSize: 12,
                     color: Colors.red,
                     fontWeight: FontWeight.bold,
@@ -734,7 +753,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildResubmitNationalIdSection() {
+  Widget _buildResubmitNationalIdSection(AppLocalizations? loc) {
     return Card(
       color: Colors.red.withOpacity(0.05),
       child: Padding(
@@ -746,10 +765,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Icon(Icons.warning, color: Colors.red, size: 24),
                 const SizedBox(width: 8),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'رفع صورة البطاقة الشخصية مرة أخرى',
-                    style: TextStyle(
+                    loc?.resubmitNationalIdTitle ?? 'رفع صورة البطاقة الشخصية مرة أخرى',
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.red,
@@ -759,9 +778,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            const Text(
-              'تم رفض حسابك. يرجى رفع صور البطاقة الشخصية مرة أخرى للمراجعة.',
-              style: TextStyle(
+            Text(
+              loc?.accountRejectedMessage ?? 'تم رفض حسابك. يرجى رفع صور البطاقة الشخصية مرة أخرى للمراجعة.',
+              style: const TextStyle(
                 fontSize: 14,
                 color: Colors.black87,
               ),
@@ -784,18 +803,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: _selectedNationalIdFront == null
-                          ? const Column(
+                          ? Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.credit_card,
                                   size: 38,
                                   color: Colors.grey,
                                 ),
-                                SizedBox(height: 8),
+                                const SizedBox(height: 8),
                                 Text(
-                                  'الوجه الأمامي',
-                                  style: TextStyle(color: Colors.grey),
+                                  loc?.frontSide ?? 'الوجه الأمامي',
+                                  style: const TextStyle(color: Colors.grey),
                                 ),
                               ],
                             )
@@ -825,18 +844,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: _selectedNationalIdBack == null
-                          ? const Column(
+                          ? Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.credit_card,
                                   size: 38,
                                   color: Colors.grey,
                                 ),
-                                SizedBox(height: 8),
+                                const SizedBox(height: 8),
                                 Text(
-                                  'الوجه الخلفي',
-                                  style: TextStyle(color: Colors.grey),
+                                  loc?.backSide ?? 'الوجه الخلفي',
+                                  style: const TextStyle(color: Colors.grey),
                                 ),
                               ],
                             )
@@ -877,9 +896,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
-                    : const Text(
-                        'رفع الصور',
-                        style: TextStyle(
+                    : Text(
+                        loc?.uploadPhotos ?? 'رفع الصور',
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -912,9 +931,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final localizations = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ في اختيار الصورة: $e'),
+            content: Text('${localizations?.pickImageError ?? 'حدث خطأ في اختيار الصورة'}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -923,10 +943,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _resubmitNationalId() async {
+    final localizations = AppLocalizations.of(context);
     if (_selectedNationalIdFront == null || _selectedNationalIdBack == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('يرجى رفع صورة البطاقة الشخصية (الوجه الأمامي والخلفي)'),
+        SnackBar(
+          content: Text(localizations?.pleaseUploadBothSides ?? 'يرجى رفع صورة البطاقة الشخصية (الوجه الأمامي والخلفي)'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -946,7 +967,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message'] ?? 'تم رفع صور البطاقة الشخصية بنجاح'),
+            content: Text(result['message'] ?? (localizations?.nationalIdUploadedSuccessfully ?? 'تم رفع صور البطاقة الشخصية بنجاح')),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 4),
           ),
@@ -967,9 +988,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _isResubmittingNationalId = false;
         });
+        final localizations = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ في رفع الصور: $e'),
+            content: Text('${localizations?.nationalIdUploadError ?? 'حدث خطأ في رفع الصور'}: $e'),
             backgroundColor: Colors.red,
           ),
         );

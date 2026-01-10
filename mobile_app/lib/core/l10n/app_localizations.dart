@@ -165,6 +165,53 @@ class AppLocalizations {
   String get referralCodeNotFound => _localizedValues[locale.languageCode]?['referralCodeNotFound'] ?? 'لم يتم العثور على كود إحالة. يرجى المحاولة مرة أخرى.';
   String get errorLoadingData => _localizedValues[locale.languageCode]?['errorLoadingData'] ?? 'حدث خطأ في تحميل البيانات';
   String get noReferralCodeAvailable => _localizedValues[locale.languageCode]?['noReferralCodeAvailable'] ?? 'لا يوجد كود إحالة متاح. يرجى المحاولة مرة أخرى.';
+  
+  // Profile Screen
+  String get noData => _localizedValues[locale.languageCode]?['noData'] ?? 'لا توجد بيانات';
+  String get accountInfo => _localizedValues[locale.languageCode]?['accountInfo'] ?? 'معلومات الحساب';
+  String get email => _localizedValues[locale.languageCode]?['email'] ?? 'البريد الإلكتروني';
+  String get phoneNumber => _localizedValues[locale.languageCode]?['phoneNumber'] ?? 'رقم الهاتف';
+  String get universityId => _localizedValues[locale.languageCode]?['universityId'] ?? 'الرقم الجامعي';
+  String get age => _localizedValues[locale.languageCode]?['age'] ?? 'السن';
+  String get notAvailable => _localizedValues[locale.languageCode]?['notAvailable'] ?? 'غير متوفر';
+  String get year => _localizedValues[locale.languageCode]?['year'] ?? 'سنة';
+  String get years => _localizedValues[locale.languageCode]?['years'] ?? 'سنة';
+  String get changePassword => _localizedValues[locale.languageCode]?['changePassword'] ?? 'تغيير كلمة المرور';
+  String get currentPassword => _localizedValues[locale.languageCode]?['currentPassword'] ?? 'كلمة المرور الحالية';
+  String get newPassword => _localizedValues[locale.languageCode]?['newPassword'] ?? 'كلمة المرور الجديدة';
+  String get confirmNewPassword => _localizedValues[locale.languageCode]?['confirmNewPassword'] ?? 'تأكيد كلمة المرور الجديدة';
+  String get pleaseEnterCurrentPassword => _localizedValues[locale.languageCode]?['pleaseEnterCurrentPassword'] ?? 'يرجى إدخال كلمة المرور الحالية';
+  String get pleaseEnterNewPassword => _localizedValues[locale.languageCode]?['pleaseEnterNewPassword'] ?? 'يرجى إدخال كلمة المرور الجديدة';
+  String get pleaseConfirmPassword => _localizedValues[locale.languageCode]?['pleaseConfirmPassword'] ?? 'يرجى تأكيد كلمة المرور';
+  String get passwordMinLength => _localizedValues[locale.languageCode]?['passwordMinLength'] ?? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
+  String get passwordMismatch => _localizedValues[locale.languageCode]?['passwordMismatch'] ?? 'كلمة المرور غير متطابقة';
+  String get updatePassword => _localizedValues[locale.languageCode]?['updatePassword'] ?? 'تحديث كلمة المرور';
+  String get passwordUpdatedSuccessfully => _localizedValues[locale.languageCode]?['passwordUpdatedSuccessfully'] ?? 'تم تحديث كلمة المرور بنجاح';
+  String get passwordUpdateError => _localizedValues[locale.languageCode]?['passwordUpdateError'] ?? 'حدث خطأ في تحديث كلمة المرور';
+  String get updateAvatar => _localizedValues[locale.languageCode]?['updateAvatar'] ?? 'تحديث الصورة الشخصية';
+  String get avatarUpdatedSuccessfully => _localizedValues[locale.languageCode]?['avatarUpdatedSuccessfully'] ?? 'تم تحديث الصورة الشخصية بنجاح';
+  String get avatarUpdateError => _localizedValues[locale.languageCode]?['avatarUpdateError'] ?? 'حدث خطأ في تحديث الصورة';
+  String get pickImageError => _localizedValues[locale.languageCode]?['pickImageError'] ?? 'حدث خطأ في اختيار الصورة';
+  String get dataLoadingError => _localizedValues[locale.languageCode]?['dataLoadingError'] ?? 'حدث خطأ في تحميل البيانات';
+  String get accountStatus => _localizedValues[locale.languageCode]?['accountStatus'] ?? 'حالة الحساب';
+  String get rejected => _localizedValues[locale.languageCode]?['rejected'] ?? 'مرفوض';
+  String get reviewNotes => _localizedValues[locale.languageCode]?['reviewNotes'] ?? 'ملاحظات المراجعة:';
+  String get resubmitNationalIdTitle => _localizedValues[locale.languageCode]?['resubmitNationalIdTitle'] ?? 'رفع صورة البطاقة الشخصية مرة أخرى';
+  String get accountRejectedMessage => _localizedValues[locale.languageCode]?['accountRejectedMessage'] ?? 'تم رفض حسابك. يرجى رفع صور البطاقة الشخصية مرة أخرى للمراجعة.';
+  String get frontSide => _localizedValues[locale.languageCode]?['frontSide'] ?? 'الوجه الأمامي';
+  String get backSide => _localizedValues[locale.languageCode]?['backSide'] ?? 'الوجه الخلفي';
+  String get uploadPhotos => _localizedValues[locale.languageCode]?['uploadPhotos'] ?? 'رفع الصور';
+  String get pleaseUploadBothSides => _localizedValues[locale.languageCode]?['pleaseUploadBothSides'] ?? 'يرجى رفع صورة البطاقة الشخصية (الوجه الأمامي والخلفي)';
+  String get nationalIdUploadedSuccessfully => _localizedValues[locale.languageCode]?['nationalIdUploadedSuccessfully'] ?? 'تم رفع صور البطاقة الشخصية بنجاح';
+  String get nationalIdUploadError => _localizedValues[locale.languageCode]?['nationalIdUploadError'] ?? 'حدث خطأ في رفع الصور';
+  
+  String formatAge(int age) {
+    if (locale.languageCode == 'en') {
+      return '$age ${age == 1 ? 'year' : 'years'}';
+    } else {
+      return '$age $year';
+    }
+  }
   String get shareYourCode => _localizedValues[locale.languageCode]?['shareYourCode'] ?? 'شارك الكود بتاعك';
   String get errorSharing => _localizedValues[locale.languageCode]?['errorSharing'] ?? 'حدث خطأ في المشاركة';
   String get referralCode => _localizedValues[locale.languageCode]?['referralCode'] ?? 'كود الإحالة';
@@ -515,6 +562,44 @@ class AppLocalizations {
       'referralCodeNotFound': 'لم يتم العثور على كود إحالة. يرجى المحاولة مرة أخرى.',
       'errorLoadingData': 'حدث خطأ في تحميل البيانات',
       'noReferralCodeAvailable': 'لا يوجد كود إحالة متاح. يرجى المحاولة مرة أخرى.',
+      // Profile Screen
+      'noData': 'لا توجد بيانات',
+      'accountInfo': 'معلومات الحساب',
+      'email': 'البريد الإلكتروني',
+      'phoneNumber': 'رقم الهاتف',
+      'universityId': 'الرقم الجامعي',
+      'age': 'السن',
+      'notAvailable': 'غير متوفر',
+      'year': 'سنة',
+      'years': 'سنة',
+      'changePassword': 'تغيير كلمة المرور',
+      'currentPassword': 'كلمة المرور الحالية',
+      'newPassword': 'كلمة المرور الجديدة',
+      'confirmNewPassword': 'تأكيد كلمة المرور الجديدة',
+      'pleaseEnterCurrentPassword': 'يرجى إدخال كلمة المرور الحالية',
+      'pleaseEnterNewPassword': 'يرجى إدخال كلمة المرور الجديدة',
+      'pleaseConfirmPassword': 'يرجى تأكيد كلمة المرور',
+      'passwordMinLength': 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
+      'passwordMismatch': 'كلمة المرور غير متطابقة',
+      'updatePassword': 'تحديث كلمة المرور',
+      'passwordUpdatedSuccessfully': 'تم تحديث كلمة المرور بنجاح',
+      'passwordUpdateError': 'حدث خطأ في تحديث كلمة المرور',
+      'updateAvatar': 'تحديث الصورة الشخصية',
+      'avatarUpdatedSuccessfully': 'تم تحديث الصورة الشخصية بنجاح',
+      'avatarUpdateError': 'حدث خطأ في تحديث الصورة',
+      'pickImageError': 'حدث خطأ في اختيار الصورة',
+      'dataLoadingError': 'حدث خطأ في تحميل البيانات',
+      'accountStatus': 'حالة الحساب',
+      'rejected': 'مرفوض',
+      'reviewNotes': 'ملاحظات المراجعة:',
+      'resubmitNationalIdTitle': 'رفع صورة البطاقة الشخصية مرة أخرى',
+      'accountRejectedMessage': 'تم رفض حسابك. يرجى رفع صور البطاقة الشخصية مرة أخرى للمراجعة.',
+      'frontSide': 'الوجه الأمامي',
+      'backSide': 'الوجه الخلفي',
+      'uploadPhotos': 'رفع الصور',
+      'pleaseUploadBothSides': 'يرجى رفع صورة البطاقة الشخصية (الوجه الأمامي والخلفي)',
+      'nationalIdUploadedSuccessfully': 'تم رفع صور البطاقة الشخصية بنجاح',
+      'nationalIdUploadError': 'حدث خطأ في رفع الصور',
       'shareYourCode': 'شارك الكود بتاعك',
       'errorSharing': 'حدث خطأ في المشاركة',
       'referralCode': 'كود الإحالة',
@@ -735,6 +820,44 @@ class AppLocalizations {
       'referralCodeNotFound': 'Referral code not found. Please try again.',
       'errorLoadingData': 'Error loading data',
       'noReferralCodeAvailable': 'No referral code available. Please try again.',
+      // Profile Screen
+      'noData': 'No data available',
+      'accountInfo': 'Account Information',
+      'email': 'Email',
+      'phoneNumber': 'Phone Number',
+      'universityId': 'University ID',
+      'age': 'Age',
+      'notAvailable': 'Not Available',
+      'year': 'year',
+      'years': 'years',
+      'changePassword': 'Change Password',
+      'currentPassword': 'Current Password',
+      'newPassword': 'New Password',
+      'confirmNewPassword': 'Confirm New Password',
+      'pleaseEnterCurrentPassword': 'Please enter current password',
+      'pleaseEnterNewPassword': 'Please enter new password',
+      'pleaseConfirmPassword': 'Please confirm password',
+      'passwordMinLength': 'Password must be at least 8 characters',
+      'passwordMismatch': 'Passwords do not match',
+      'updatePassword': 'Update Password',
+      'passwordUpdatedSuccessfully': 'Password updated successfully',
+      'passwordUpdateError': 'Error updating password',
+      'updateAvatar': 'Update Profile Picture',
+      'avatarUpdatedSuccessfully': 'Profile picture updated successfully',
+      'avatarUpdateError': 'Error updating profile picture',
+      'pickImageError': 'Error selecting image',
+      'dataLoadingError': 'Error loading data',
+      'accountStatus': 'Account Status',
+      'rejected': 'Rejected',
+      'reviewNotes': 'Review Notes:',
+      'resubmitNationalIdTitle': 'Resubmit National ID',
+      'accountRejectedMessage': 'Your account has been rejected. Please upload national ID photos again for review.',
+      'frontSide': 'Front Side',
+      'backSide': 'Back Side',
+      'uploadPhotos': 'Upload Photos',
+      'pleaseUploadBothSides': 'Please upload national ID photos (front and back)',
+      'nationalIdUploadedSuccessfully': 'National ID photos uploaded successfully',
+      'nationalIdUploadError': 'Error uploading photos',
       'shareYourCode': 'Share Your Code',
       'errorSharing': 'Error sharing',
       'referralCode': 'Referral Code',

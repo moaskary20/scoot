@@ -215,8 +215,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
         
         // Update start time from backend to ensure continuity when app is reopened
         // BUT: Don't update if we just started the trip (to avoid resetting the timer)
-        // Only update if the difference is significant (more than 30 seconds)
-        // This prevents the timer from jumping when the app first loads
+        // Only update if the difference is significant (more than 60 seconds)
+        // This prevents the timer from jumping when the app first loads after starting a trip
         if (activeTrip['start_time'] != null) {
           try {
             final backendStartTimeString = activeTrip['start_time'].toString();
@@ -238,18 +238,26 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             // Calculate difference between current _actualStartTime and backend time
             final timeDifference = (_actualStartTime.difference(backendStartTimeLocal)).abs();
             
-            // Only update if difference is significant (more than 30 seconds)
+            // Calculate time since trip started to determine if this is the first load
+            final timeSinceTripStart = DateTime.now().difference(_actualStartTime);
+            
+            // Only update if:
+            // 1. Difference is significant (more than 60 seconds) AND
+            // 2. Trip has been running for more than 5 seconds (to avoid resetting immediately after start)
             // This prevents the timer from resetting when the app first loads after starting a trip
-            if (timeDifference.inSeconds > 30) {
+            if (timeDifference.inSeconds > 60 && timeSinceTripStart.inSeconds > 5) {
               print('🔄 Updating start time from backend:');
               print('   Old: $_actualStartTime');
               print('   New: $backendStartTimeLocal');
               print('   Difference: ${timeDifference.inSeconds} seconds');
+              print('   Time since trip start: ${timeSinceTripStart.inSeconds} seconds');
               _actualStartTime = backendStartTimeLocal;
               // Immediately update duration to reflect the correct time
               _updateDuration();
             } else {
-              print('✅ Start time is correct, no update needed (difference: ${timeDifference.inSeconds} seconds)');
+              print('✅ Start time is correct, no update needed');
+              print('   Difference: ${timeDifference.inSeconds} seconds');
+              print('   Time since trip start: ${timeSinceTripStart.inSeconds} seconds');
             }
           } catch (e) {
             print('⚠️ Error parsing start_time from backend: $e');

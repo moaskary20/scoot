@@ -45,7 +45,7 @@ class RidingGuideScreen extends StatelessWidget {
                   child: Align(
                     alignment: Alignment.centerRight,
                     child: Text(
-                      'إزاي تركب الاسكوتر',
+                      'دليل الركوب الآمن',
                       style: GoogleFonts.tajawal(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -55,23 +55,10 @@ class RidingGuideScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                Row(
-                  textDirection: TextDirection.rtl,
-                  children: [
-                    Text(
-                      'دليل الركوب',
-                      style: GoogleFonts.tajawal(
-                        fontSize: 16,
-                        color: Color(AppConstants.secondaryColor),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      Icons.description,
-                      color: Color(AppConstants.primaryColor),
-                      size: 20,
-                    ),
-                  ],
+                Icon(
+                  Icons.description,
+                  color: Color(AppConstants.primaryColor),
+                  size: 24,
                 ),
               ],
             ),
@@ -122,32 +109,47 @@ class RidingGuideScreen extends StatelessWidget {
               child: Column(
                 children: [
                   _buildGuidelineItem(
-                    'لازم يكون عندك 16 سنة أو أكثر',
+                    'يجب أن يكون عمرك 16 سنة أو أكثر.',
                     Icons.check_circle,
                   ),
                   const SizedBox(height: 16),
                   _buildGuidelineItem(
-                    'الركوب لشخص واحد بس',
+                    'الركوب لشخص واحد فقط على السكوتر.',
                     Icons.check_circle,
                   ),
                   const SizedBox(height: 16),
                   _buildGuidelineItem(
-                    'خليك دايما جوا المنطقة الخضرا',
+                    'ارتدِ خوذة الحماية دائمًا أثناء الركوب.',
                     Icons.check_circle,
                   ),
                   const SizedBox(height: 16),
                   _buildGuidelineItem(
-                    'امشي على يمين الطريق',
+                    'التزم بالقيادة داخل المنطقة البرتقالية (جامعة الجلالة) فقط.',
                     Icons.check_circle,
                   ),
                   const SizedBox(height: 16),
                   _buildGuidelineItem(
-                    'متطلعش بالسكوتر على الرصيف، ولا تمشي عكس الاتجاه',
+                    'سر دائمًا على يمين الطريق وبعيدًا عن السيارات.',
                     Icons.check_circle,
                   ),
                   const SizedBox(height: 16),
                   _buildGuidelineItem(
-                    'اركن في مكان آمن وواضح، بعيد عن ممرات الناس',
+                    'ممنوع صعود السكوتر على الرصيف أو السير عكس الاتجاه.',
+                    Icons.check_circle,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildGuidelineItem(
+                    'أركن السكوتر داخل المنطقة الخضراء وفي الأماكن المخصصة فقط.',
+                    Icons.check_circle,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildGuidelineItem(
+                    'تأكد من أن القفل مغلق بإحكام.',
+                    Icons.check_circle,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildGuidelineItem(
+                    'التقط صورة واضحة للسكوتر بعد الركن.',
                     Icons.check_circle,
                   ),
                 ],

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:image_picker/image_picker.dart';
@@ -634,7 +635,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // Terms and Conditions Checkbox
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  textDirection: TextDirection.rtl,
+                  textDirection: ui.TextDirection.rtl,
                   children: [
                     Checkbox(
                       value: _acceptTerms,

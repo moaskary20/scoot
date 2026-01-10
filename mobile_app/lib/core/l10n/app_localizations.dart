@@ -172,6 +172,57 @@ class AppLocalizations {
   String get bronze => _localizedValues[locale.languageCode]?['bronze'] ?? 'برونزي';
   String get silver => _localizedValues[locale.languageCode]?['silver'] ?? 'فضي';
   String get gold => _localizedValues[locale.languageCode]?['gold'] ?? 'ذهبي';
+  
+  // Loyalty Redemption
+  String get pointsToRedeem => _localizedValues[locale.languageCode]?['pointsToRedeem'] ?? 'عدد النقاط المراد استبدالها';
+  String get egpAmount => _localizedValues[locale.languageCode]?['egpAmount'] ?? 'المبلغ المضاف للمحفظة';
+  String get redeemNow => _localizedValues[locale.languageCode]?['redeemNow'] ?? 'استبدال النقاط';
+  String get redeemDisabled => _localizedValues[locale.languageCode]?['redeemDisabled'] ?? 'استبدال النقاط معطل حالياً';
+  String get insufficientPoints => _localizedValues[locale.languageCode]?['insufficientPoints'] ?? 'ليس لديك نقاط كافية';
+  String get invalidPointsAmount => _localizedValues[locale.languageCode]?['invalidPointsAmount'] ?? 'يرجى إدخال رقم صحيح';
+  String get redeemFailed => _localizedValues[locale.languageCode]?['redeemFailed'] ?? 'حدث خطأ في استبدال النقاط';
+  String get minPointsRequired => _localizedValues[locale.languageCode]?['minPointsRequired'] ?? 'الحد الأدنى لاستبدال النقاط هو';
+  String get redeemConfirmation => _localizedValues[locale.languageCode]?['redeemConfirmation'] ?? 'تأكيد الاستبدال';
+  String get redeemSuccess => _localizedValues[locale.languageCode]?['redeemSuccess'] ?? 'تم الاستبدال بنجاح';
+  String get currentPointsLabel => _localizedValues[locale.languageCode]?['currentPointsLabel'] ?? 'نقاطك الحالية';
+  String get pointsLabelSingle => _localizedValues[locale.languageCode]?['pointsLabelSingle'] ?? 'نقطة';
+  String get newPointsBalance => _localizedValues[locale.languageCode]?['newPointsBalance'] ?? 'النقاط الجديدة';
+  String get newWalletBalance => _localizedValues[locale.languageCode]?['newWalletBalance'] ?? 'رصيد المحفظة الجديد';
+  String get enterPointsToRedeem => _localizedValues[locale.languageCode]?['enterPointsToRedeem'] ?? 'أدخل عدد النقاط';
+  String get calculating => _localizedValues[locale.languageCode]?['calculating'] ?? 'جاري الحساب...';
+  String get redeemConfirmationQuestion => _localizedValues[locale.languageCode]?['redeemConfirmationQuestion'] ?? 'هل أنت متأكد من استبدال:';
+  String get pointsToRedeemLabel => _localizedValues[locale.languageCode]?['pointsToRedeemLabel'] ?? 'النقاط المستبدلة:';
+  String get walletAmountAfterRedeem => _localizedValues[locale.languageCode]?['walletAmountAfterRedeem'] ?? 'المبلغ المضاف للمحفظة:';
+  String get redeemNotesTitle => _localizedValues[locale.languageCode]?['redeemNotesTitle'] ?? 'ملاحظات مهمة:';
+  String redeemNotesText(int minPoints, int rate) {
+    final template = _localizedValues[locale.languageCode]?['redeemNotes'] ?? '• الحد الأدنى لاستبدال النقاط هو {minPoints} نقطة\n• كل {rate} نقطة = 1 جنيه\n• سيتم إضافة المبلغ مباشرة إلى المحفظة\n• لا يمكن استرجاع النقاط بعد الاستبدال';
+    return template.replaceAll('{minPoints}', minPoints.toString()).replaceAll('{rate}', rate.toString());
+  }
+  
+  String pointsToEgpRateText(int rate) {
+    final template = _localizedValues[locale.languageCode]?['pointsToEgpRate'] ?? '{rate} نقطة = 1 جنيه';
+    return template.replaceAll('{rate}', rate.toString());
+  }
+  
+  String minRedeemText(int minPoints) {
+    final template = _localizedValues[locale.languageCode]?['minRedeem'] ?? 'الحد الأدنى للاستبدال: {minPoints} نقطة';
+    return template.replaceAll('{minPoints}', minPoints.toString());
+  }
+  
+  String availablePointsText(int points) {
+    final template = _localizedValues[locale.languageCode]?['availablePoints'] ?? 'النقاط المتاحة: {points}';
+    return template.replaceAll('{points}', points.toString());
+  }
+  
+  String insufficientPointsMessage(int current, int required) {
+    final template = _localizedValues[locale.languageCode]?['insufficientPointsMessage'] ?? 'ليس لديك نقاط كافية. النقاط المتاحة: {current}';
+    return template.replaceAll('{current}', current.toString()).replaceAll('{required}', required.toString());
+  }
+  
+  String minRedeemMessage(int minPoints) {
+    final template = _localizedValues[locale.languageCode]?['minRedeemMessage'] ?? 'الحد الأدنى لاستبدال النقاط هو {minPoints} نقطة';
+    return template.replaceAll('{minPoints}', minPoints.toString());
+  }
 
   String pointsToNextLevel(int points) =>
       _localizedValues[locale.languageCode]?['pointsToNextLevel']?.replaceFirst('{points}', points.toString()) ??
@@ -203,6 +254,33 @@ class AppLocalizations {
       'silver': 'فضي',
       'gold': 'ذهبي',
       'pointsToNextLevel': 'متبقي {points} نقطة للمستوى التالي',
+      // Loyalty Redemption
+      'pointsToRedeem': 'عدد النقاط المراد استبدالها',
+      'egpAmount': 'المبلغ المضاف للمحفظة',
+      'redeemNow': 'استبدال النقاط',
+      'redeemDisabled': 'استبدال النقاط معطل حالياً',
+      'insufficientPoints': 'ليس لديك نقاط كافية',
+      'invalidPointsAmount': 'يرجى إدخال رقم صحيح',
+      'redeemFailed': 'حدث خطأ في استبدال النقاط',
+      'minPointsRequired': 'الحد الأدنى لاستبدال النقاط هو',
+      'redeemConfirmation': 'تأكيد الاستبدال',
+      'redeemSuccess': 'تم الاستبدال بنجاح',
+      'currentPointsLabel': 'نقاطك الحالية',
+      'pointsLabelSingle': 'نقطة',
+      'newPointsBalance': 'النقاط الجديدة',
+      'newWalletBalance': 'رصيد المحفظة الجديد',
+      'enterPointsToRedeem': 'أدخل عدد النقاط',
+      'calculating': 'جاري الحساب...',
+      'redeemConfirmationQuestion': 'هل أنت متأكد من استبدال:',
+      'pointsToRedeemLabel': 'النقاط المستبدلة:',
+      'walletAmountAfterRedeem': 'المبلغ المضاف للمحفظة:',
+      'redeemNotesTitle': 'ملاحظات مهمة:',
+      'redeemNotes': '• الحد الأدنى لاستبدال النقاط هو {minPoints} نقطة\n• كل {rate} نقطة = 1 جنيه\n• سيتم إضافة المبلغ مباشرة إلى المحفظة\n• لا يمكن استرجاع النقاط بعد الاستبدال',
+      'pointsToEgpRate': '{rate} نقطة = 1 جنيه',
+      'minRedeem': 'الحد الأدنى للاستبدال: {minPoints} نقطة',
+      'availablePoints': 'النقاط المتاحة: {points}',
+      'insufficientPointsMessage': 'ليس لديك نقاط كافية. النقاط المتاحة: {current}',
+      'minRedeemMessage': 'الحد الأدنى لاستبدال النقاط هو {minPoints} نقطة',
       'howToRide': 'إزاي تركب لينر سكوت',
       'language': 'اللغة',
       'selectLanguage': 'اختر اللغة',
@@ -324,7 +402,7 @@ class AppLocalizations {
       'loyaltyTransactions': 'Loyalty Transactions',
       'noLoyaltyTransactionsYet': 'No loyalty transactions yet',
       'pointsLabel': 'Points',
-      'currentLevel': 'Current level',
+      'currentLevel': 'Current Level',
       'maxLevelReached': 'Highest loyalty level 🎉',
       'loyaltyProgressDescription': 'The more you ride, the more points you earn and unlock higher levels.',
       'loyaltyEarned': 'Points earned',
@@ -337,7 +415,34 @@ class AppLocalizations {
       'silver': 'Silver',
       'gold': 'Gold',
       'pointsToNextLevel': '{points} points to the next level',
-      'howToRide': 'How to Ride Liner Scoot',
+      // Loyalty Redemption
+      'pointsToRedeem': 'Points to Redeem',
+      'egpAmount': 'Amount to be Added to Wallet',
+      'redeemNow': 'Redeem Points',
+      'redeemDisabled': 'Points redemption is currently disabled',
+      'insufficientPoints': 'Insufficient points',
+      'invalidPointsAmount': 'Please enter a valid number',
+      'redeemFailed': 'Failed to redeem points',
+      'minPointsRequired': 'Minimum points required for redemption:',
+      'redeemConfirmation': 'Confirm Redemption',
+      'redeemSuccess': 'Redemption Successful',
+      'currentPointsLabel': 'Your Current Points',
+      'pointsLabelSingle': 'point',
+      'newPointsBalance': 'New Points Balance',
+      'newWalletBalance': 'New Wallet Balance',
+      'enterPointsToRedeem': 'Enter points amount',
+      'calculating': 'Calculating...',
+      'redeemConfirmationQuestion': 'Are you sure you want to redeem:',
+      'pointsToRedeemLabel': 'Points to Redeem:',
+      'walletAmountAfterRedeem': 'Amount to be Added to Wallet:',
+      'redeemNotesTitle': 'Important Notes:',
+      'redeemNotes': '• Minimum points for redemption: {minPoints} points\n• {rate} points = 1 EGP\n• Amount will be added directly to your wallet\n• Points cannot be refunded after redemption',
+      'pointsToEgpRate': '{rate} points = 1 EGP',
+      'minRedeem': 'Minimum redemption: {minPoints} points',
+      'availablePoints': 'Available points: {points}',
+      'insufficientPointsMessage': 'You do not have enough points. Available points: {current}',
+      'minRedeemMessage': 'Minimum points required for redemption is {minPoints} points',
+      'howToRide': 'How to Ride',
       'language': 'Language',
       'selectLanguage': 'Select Language',
       'arabic': 'العربية',
@@ -440,7 +545,7 @@ class AppLocalizations {
       'remainingAmount': 'Remaining',
       'scanQRCode': 'Scan QR Code',
       'scanQRCodeToStart': 'Scan QR Code to Start',
-      'positionCamera': 'Position camera over QR code',
+      'positionCamera': 'Position your camera over the QR code',
       'tripDuration': 'Trip Duration',
       'closeTrip': 'Close Trip',
       'confirmCloseTrip': 'Are you sure you want to close the trip?',
@@ -453,7 +558,7 @@ class AppLocalizations {
       'stayHere': 'Stay Here',
       'warning': 'Warning',
       'cannotCloseTripMessage': 'You cannot close this screen during the trip. Use the "Close Trip" button to complete the trip.',
-      'cannotCancelTripMessage': 'You cannot cancel the trip from here. Please use the "Close Trip" button to complete it.',
+      'cannotCancelTripMessage': 'You cannot cancel the trip from here. Please use the "End Trip" button to complete it.',
     },
   };
 }

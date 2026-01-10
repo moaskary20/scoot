@@ -20,6 +20,8 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
   bool _isProcessing = false;
   bool _hasError = false;
   String? _errorMessage;
+  final TextEditingController _manualInputController = TextEditingController();
+  final FocusNode _manualInputFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -60,7 +62,52 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
       }
       _controller = null;
     }
+    _manualInputController.dispose();
+    _manualInputFocusNode.dispose();
     super.dispose();
+  }
+
+  void _handleManualInput() async {
+    final qrCode = _manualInputController.text.trim();
+    if (qrCode.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('يرجى إدخال QR Code'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isProcessing = true;
+    });
+
+    // Stop camera if it's running
+    if (_controller != null) {
+      try {
+        await _controller!.stop();
+      } catch (e) {
+        print('⚠️ Error stopping scanner: $e');
+      }
+      try {
+        await _controller!.dispose();
+      } catch (e) {
+        print('⚠️ Error disposing scanner: $e');
+      }
+      _controller = null;
+    }
+
+    // Return QR code
+    widget.onQRCodeScanned(qrCode);
+    
+    // Close screen after a short delay
+    if (mounted) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    }
   }
 
   void _handleBarcode(BarcodeCapture barcodeCapture) async {
@@ -347,7 +394,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             
             // Instructions
             Positioned(
-              bottom: 100,
+              bottom: 180,
               left: 0,
               right: 0,
               child: Column(
@@ -380,6 +427,131 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+            
+            // Manual Input Section
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.9),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      textDirection: TextDirection.rtl,
+                      children: [
+                        Icon(
+                          Icons.edit,
+                          color: Color(AppConstants.primaryColor),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'أو أدخل QR Code يدوياً',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      textDirection: TextDirection.rtl,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _manualInputController,
+                            focusNode: _manualInputFocusNode,
+                            textDirection: TextDirection.ltr,
+                            textAlign: TextAlign.left,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'أدخل QR Code هنا',
+                              hintStyle: TextStyle(
+                                color: Colors.white.withOpacity(0.5),
+                                fontSize: 14,
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[900]?.withOpacity(0.7),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[700]!,
+                                  width: 1,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[700]!,
+                                  width: 1,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Color(AppConstants.primaryColor),
+                                  width: 2,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
+                            ),
+                            onSubmitted: (_) => _handleManualInput(),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton(
+                          onPressed: _isProcessing ? null : _handleManualInput,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(AppConstants.primaryColor),
+                            foregroundColor: Color(AppConstants.secondaryColor),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 14,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            minimumSize: const Size(80, 48),
+                          ),
+                          child: _isProcessing
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Text(
+                                  'تم',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
             

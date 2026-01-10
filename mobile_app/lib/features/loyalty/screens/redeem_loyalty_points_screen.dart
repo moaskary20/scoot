@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/services/language_service.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../shared/theme/app_theme.dart';
 
@@ -394,7 +396,7 @@ class _RedeemLoyaltyPointsScreenState
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'استبدال النقاط معطل حالياً',
+                  loc?.redeemDisabled ?? 'استبدال النقاط معطل حالياً',
                   style: AppTheme.tajawal(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -409,8 +411,11 @@ class _RedeemLoyaltyPointsScreenState
       );
     }
 
+    final languageService = Provider.of<LanguageService>(context, listen: false);
+    final isArabic = languageService.isArabic;
+    
     return Directionality(
-      textDirection: ui.TextDirection.rtl,
+      textDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
       child: Scaffold(
         appBar: AppBar(
           title: Text(

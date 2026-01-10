@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/api_service.dart';
 
@@ -28,6 +30,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _acceptTerms = false; // موافقة على الشروط والأحكام
   // صور البطاقة الشخصية (الوجه الأمامي والخلفي)
   File? _nationalIdFrontPhoto;
   File? _nationalIdBackPhoto;
@@ -79,8 +82,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _pickNationalIdImage({required bool isFront}) async {
     try {
+      // Use camera instead of gallery to avoid READ_MEDIA_IMAGES permission
       final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
+        source: ImageSource.camera,
         maxWidth: 1024,
         maxHeight: 1024,
         imageQuality: 80,
@@ -106,8 +110,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  Future<void> _openTermsAndConditions() async {
+    try {
+      final uri = Uri.parse('https://linerscoot.com/privacy.html');
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('لا يمكن فتح صفحة الشروط والأحكام'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('حدث خطأ في فتح الصفحة: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // Check if user accepted terms and conditions
+    if (!_acceptTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('يرجى الموافقة على الشروط والأحكام للمتابعة'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
       return;
     }
 
@@ -583,11 +629,70 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
+
+                // Terms and Conditions Checkbox
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  textDirection: TextDirection.rtl,
+                  children: [
+                    Checkbox(
+                      value: _acceptTerms,
+                      onChanged: (value) {
+                        setState(() {
+                          _acceptTerms = value ?? false;
+                        });
+                      },
+                      activeColor: const Color(AppConstants.primaryColor),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: RichText(
+                          textAlign: TextAlign.right,
+                          text: TextSpan(
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[800],
+                              height: 1.5,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: 'أوافق على ',
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    setState(() {
+                                      _acceptTerms = !_acceptTerms;
+                                    });
+                                  },
+                              ),
+                              TextSpan(
+                                text: 'الشروط والأحكام',
+                                style: const TextStyle(
+                                  color: Color(AppConstants.primaryColor),
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.underline,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    _openTermsAndConditions();
+                                  },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
 
                 // Register Button
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _register,
+                  onPressed: (_isLoading || !_acceptTerms) ? null : _register,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(AppConstants.primaryColor),
                     foregroundColor: const Color(AppConstants.secondaryColor),
@@ -595,6 +700,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    disabledBackgroundColor: Colors.grey[300],
+                    disabledForegroundColor: Colors.grey[600],
                   ),
                   child: _isLoading
                       ? const SizedBox(

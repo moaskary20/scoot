@@ -721,11 +721,14 @@ class _HomeScreenState extends State<HomeScreen> {
       // Try to extract from DioException if available
       try {
         if (e is DioException && e.response?.data != null) {
-        // Try to extract from DioException response
-        final responseData = e.response!.data;
-        if (responseData is Map && responseData['message'] != null) {
-          errorMessage = responseData['message'].toString();
+          // Try to extract from DioException response
+          final responseData = e.response!.data;
+          if (responseData is Map && responseData['message'] != null) {
+            errorMessage = responseData['message'].toString();
+          }
         }
+      } catch (dioError) {
+        print('⚠️ Error extracting DioException message: $dioError');
       }
 
       if (mounted) {
@@ -1378,27 +1381,6 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         }
       }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-            action: errorMessage.contains('مستأجر') || 
-                    errorMessage.contains('الصيانة') ||
-                    errorMessage.contains('غير متاح')
-                ? SnackBarAction(
-                    label: 'بحث عن سكوتر',
-                    textColor: Colors.white,
-                    onPressed: () {
-                      // Refresh scooters list
-                      _loadScooters();
-                    },
-                  )
-                : null,
-          ),
-        );
-      }
     }
   }
 
@@ -1411,7 +1393,7 @@ class _HomeScreenState extends State<HomeScreen> {
           : ui.TextDirection.ltr,
       child: Scaffold(
         key: _scaffoldKey,
-      body: Stack(
+        body: Stack(
         children: [
           // Map
           if (_currentPosition != null)
@@ -2065,7 +2047,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  @override
   @override
   void dispose() {
     _scootersUpdateTimer?.cancel();

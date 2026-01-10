@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'dart:ui' as ui;
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/models/user_model.dart';
@@ -6,7 +8,6 @@ import '../../../core/models/wallet_transaction_model.dart';
 import '../../../core/l10n/app_localizations.dart';
 import 'top_up_screen.dart';
 import 'transaction_history_screen.dart';
-import 'add_card_screen.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -36,7 +37,12 @@ class _WalletScreenState extends State<WalletScreen> {
 
     try {
       final user = await _apiService.getCurrentUser();
-      final transactions = await _apiService.getWalletTransactions();
+      // جلب جميع المعاملات المالية المتعلقة بالشحن والمحفظة
+      // بما فيها المعاملات التي تمت من admin panel (top_up, adjustment, refund, subscription)
+      final transactions = await _apiService.getWalletTransactions(
+        // لا نستخدم type filter لجلب جميع المعاملات المالية
+        perPage: 20, // جلب آخر 20 معاملة
+      );
       
       if (mounted) {
         setState(() {
@@ -143,26 +149,6 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
-  Future<void> _addCard() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const AddCardScreen(),
-      ),
-    );
-    
-    // Refresh if card was saved
-    if (result == true) {
-      // Optionally show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)?.cardSavedSuccessfully ?? 'تم حفظ الكارت بنجاح'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
-  }
-
   @override
   void dispose() {
     _promoCodeController.dispose();
@@ -172,7 +158,7 @@ class _WalletScreenState extends State<WalletScreen> {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: ui.TextDirection.rtl,
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
@@ -211,13 +197,8 @@ class _WalletScreenState extends State<WalletScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Available Balance Section
+                        // Available Balance Section with Transaction History
                         _buildBalanceSection(),
-                        const SizedBox(height: 24),
-                        const Divider(height: 1),
-                        const SizedBox(height: 24),
-                        // Payment Method Section
-                        _buildPaymentMethodSection(),
                         const SizedBox(height: 24),
                         const Divider(height: 1),
                         const SizedBox(height: 24),
@@ -234,10 +215,12 @@ class _WalletScreenState extends State<WalletScreen> {
 
   Widget _buildBalanceSection() {
     final balance = _currentUser?.walletBalance ?? 0.0;
+    final recentTransactions = _transactions.take(5).toList();
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Balance Header
         const Text(
           'الرصيد المتاح',
           style: TextStyle(
@@ -247,6 +230,7 @@ class _WalletScreenState extends State<WalletScreen> {
           ),
         ),
         const SizedBox(height: 12),
+        // Balance and Top Up Button
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -312,68 +296,339 @@ class _WalletScreenState extends State<WalletScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        GestureDetector(
-          onTap: _showTransactionHistory,
-          child: Row(
-            children: [
-              Icon(
-                Icons.access_time,
-                color: Color(AppConstants.primaryColor),
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'تاريخ',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(AppConstants.primaryColor),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
+        const SizedBox(height: 24),
+        // Transaction History Section
+        _buildTransactionHistorySection(recentTransactions),
       ],
     );
   }
 
-  Widget _buildPaymentMethodSection() {
+  Widget _buildTransactionHistorySection(List<WalletTransactionModel> transactions) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'طريقة الدفع',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Colors.black,
-          ),
-        ),
-        const SizedBox(height: 12),
-        GestureDetector(
-          onTap: _addCard,
-          child: Row(
-            children: [
-              Icon(
-                Icons.add_circle_outline,
-                color: Color(AppConstants.primaryColor),
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'اضف كارت',
+        // Section Header
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Color(AppConstants.primaryColor).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.account_balance,
+                    color: Color(AppConstants.primaryColor),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'المعاملات المالية',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
+            TextButton.icon(
+              onPressed: _showTransactionHistory,
+              icon: const Icon(Icons.arrow_forward_ios, size: 14),
+              label: const Text(
+                'سجل المعاملات',
                 style: TextStyle(
-                  fontSize: 16,
-                  color: Color(AppConstants.primaryColor),
-                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ],
-          ),
+              style: TextButton.styleFrom(
+                foregroundColor: Color(AppConstants.primaryColor),
+              ),
+            ),
+          ],
         ),
+        const SizedBox(height: 16),
+        // Transactions List
+        if (transactions.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.receipt_long_outlined,
+                  size: 56,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'لا توجد معاملات مالية بعد',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'ستظهر جميع المعاملات المالية المتعلقة بالمحفظة هنا',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          )
+        else
+          ...transactions.map((transaction) => _buildTransactionItem(transaction)),
       ],
     );
+  }
+
+  Widget _buildTransactionItem(WalletTransactionModel transaction) {
+    final dateFormat = DateFormat('dd/MM/yyyy - HH:mm', 'ar');
+    final isCredit = transaction.transactionType == 'credit';
+    final statusColor = _getStatusColor(transaction.status);
+    final typeIcon = _getTransactionTypeIcon(transaction.type);
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.white,
+            (isCredit ? Colors.green[50] : Colors.red[50]) ?? Colors.white,
+          ],
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: (isCredit ? Colors.green[200] : Colors.red[200]) ?? Colors.grey[200]!,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (isCredit ? Colors.green[100] : Colors.red[100])?.withOpacity(0.3) ?? Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _showTransactionHistory,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Icon Container
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        (isCredit ? Colors.green : Colors.red)[400]!,
+                        (isCredit ? Colors.green : Colors.red)[600]!,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isCredit ? Colors.green : Colors.red)[300]!.withOpacity(0.4),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    typeIcon,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Transaction Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _getTransactionTypeText(transaction.type),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: statusColor.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              _getStatusText(transaction.status),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: statusColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        dateFormat.format(transaction.createdAt),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      if (transaction.description != null && transaction.description!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          transaction.description!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[700],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Amount
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${isCredit ? '+' : '-'} ${transaction.amount.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isCredit ? Colors.green[700] : Colors.red[700],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'ج.م',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  IconData _getTransactionTypeIcon(String type) {
+    switch (type) {
+      case 'top_up':
+        return Icons.add_circle;
+      case 'trip_payment':
+        return Icons.two_wheeler;
+      case 'refund':
+        return Icons.refresh;
+      case 'adjustment':
+        return Icons.tune;
+      case 'penalty':
+        return Icons.warning;
+      case 'subscription':
+        return Icons.credit_card;
+      default:
+        return Icons.receipt;
+    }
+  }
+
+  String _getTransactionTypeText(String type) {
+    switch (type) {
+      case 'top_up':
+        return 'شحن المحفظة';
+      case 'trip_payment':
+        return 'دفع رحلة';
+      case 'refund':
+        return 'استرجاع';
+      case 'adjustment':
+        return 'تعديل';
+      case 'penalty':
+        return 'غرامة';
+      case 'subscription':
+        return 'اشتراك';
+      default:
+        return 'معاملة';
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return Colors.green;
+      case 'pending':
+        return Colors.orange;
+      case 'failed':
+        return Colors.red;
+      case 'cancelled':
+        return Colors.grey;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getStatusText(String status) {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return 'مكتملة';
+      case 'pending':
+        return 'قيد الانتظار';
+      case 'failed':
+        return 'فاشلة';
+      case 'cancelled':
+        return 'ملغاة';
+      default:
+        return status;
+    }
   }
 
   Widget _buildPromoCodeSection() {

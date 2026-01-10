@@ -1,4 +1,5 @@
 import 'dart:ui' as ui;
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -49,6 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingUser = false;
   BitmapDescriptor? _availableScooterIcon;
   BitmapDescriptor? _unavailableScooterIcon;
+  Timer? _scootersUpdateTimer;
 
   @override
   void initState() {
@@ -57,6 +59,20 @@ class _HomeScreenState extends State<HomeScreen> {
     _initializeLocation();
     _loadUserData(); // Load user data on screen init
     _checkActiveTrip(); // Check for active trip on screen init
+    _startScootersUpdateTimer(); // Start periodic update for scooters
+  }
+
+  void _startScootersUpdateTimer() {
+    // Update scooters every 10 seconds to ensure rented scooters disappear immediately
+    _scootersUpdateTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      if (mounted && _currentPosition != null) {
+        print('🔄 Periodic update: Refreshing scooters list...');
+        _loadScooters();
+      } else {
+        print('⚠️ Skipping periodic update: widget not mounted or no position');
+      }
+    });
+    print('✅ Started periodic scooters update timer (10 seconds)');
   }
 
   Future<void> _createCustomMarkers() async {
@@ -305,9 +321,18 @@ class _HomeScreenState extends State<HomeScreen> {
       print('📍 Added current location marker');
     }
 
-    // Add scooter markers
-    print('🛴 Adding ${_scooters.length} scooter markers...');
-    for (var scooter in _scooters) {
+    // Add scooter markers - filter out rented scooters
+    // Filter out rented scooters (status = 'rented') - they should not appear on map
+    final availableScooters = _scooters.where((scooter) {
+      final isRented = scooter.status?.toLowerCase() == 'rented';
+      if (isRented) {
+        print('🚫 Skipping rented scooter ${scooter.code} - status: ${scooter.status}');
+      }
+      return !isRented;
+    }).toList();
+    
+    print('🛴 Adding ${availableScooters.length} available scooter markers (filtered ${_scooters.length - availableScooters.length} rented)...');
+    for (var scooter in availableScooters) {
       if (scooter.latitude == 0.0 && scooter.longitude == 0.0) {
         print('⚠️ Skipping scooter ${scooter.code} - invalid coordinates');
         continue;
@@ -605,6 +630,11 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         print('📅 Parsed start time: $startTime (local)');
+
+        // Update scooters immediately to remove the rented scooter from map
+        // This ensures real-time update - the rented scooter disappears immediately
+        print('🔄 Updating scooters list immediately after trip start...');
+        await _loadScooters();
 
         await _navigateToActiveTrip(
           tripData['trip_id'],
@@ -1027,6 +1057,11 @@ class _HomeScreenState extends State<HomeScreen> {
         // Validate trip data before navigation
         if (tripData['trip_id'] != null && tripData['start_time'] != null) {
           try {
+            // Update scooters immediately to remove the rented scooter from map
+            // This ensures real-time update - the rented scooter disappears immediately
+            print('🔄 Updating scooters list immediately after trip start (from guide)...');
+            await _loadScooters();
+
             await _navigateToActiveTrip(
               tripData['trip_id'],
               tripData['scooter_code'] ?? 'غير معروف',
@@ -1831,7 +1866,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  @override
   void dispose() {
+    _scootersUpdateTimer?.cancel();
     _mapController?.dispose();
     super.dispose();
   }

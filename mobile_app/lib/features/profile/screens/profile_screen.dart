@@ -53,6 +53,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final user = await _apiService.getCurrentUser();
+      print('📋 Loaded user data in ProfileScreen:');
+      print('  - Age: ${user.age}');
+      print('  - University ID: ${user.universityId}');
+      print('  - Age is null: ${user.age == null}');
+      print('  - Age > 0: ${user.age != null && user.age! > 0}');
+      print('  - University ID is null: ${user.universityId == null}');
+      print('  - University ID is not empty: ${user.universityId != null && user.universityId!.isNotEmpty}');
+      
       if (mounted) {
         setState(() {
           _user = user;
@@ -60,6 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     } catch (e) {
+      print('❌ Error loading user data in ProfileScreen: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -76,8 +85,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _pickAvatar() async {
     try {
+      // Use camera instead of gallery to avoid READ_MEDIA_IMAGES permission
       final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
+        source: ImageSource.camera,
         maxWidth: 1024,
         maxHeight: 1024,
         imageQuality: 80,
@@ -105,34 +115,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _updateAvatar() async {
     if (_selectedAvatar == null) return;
 
+    final selectedFile = _selectedAvatar!; // Save reference before clearing
     setState(() {
       _isUpdatingAvatar = true;
     });
 
     try {
-      final updatedUser = await _apiService.updateAvatar(_selectedAvatar!);
+      print('📸 Starting avatar upload...');
+      final updatedUser = await _apiService.updateAvatar(selectedFile);
+      print('✅ Avatar upload successful');
+      print('📋 Updated user avatar: ${updatedUser.avatar}');
+      
       if (mounted) {
+        // Update user data immediately
         setState(() {
           _user = updatedUser;
-          _selectedAvatar = null;
           _isUpdatingAvatar = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تم تحديث الصورة الشخصية بنجاح'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        
+        // Wait a bit then reload to ensure server has processed the image
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        // Reload user data to get the latest avatar URL from server
+        await _loadUserData();
+        
+        // Clear selected avatar after successful update and reload
+        if (mounted) {
+          setState(() {
+            _selectedAvatar = null;
+          });
+        }
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('تم تحديث الصورة الشخصية بنجاح'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
       }
     } catch (e) {
+      print('❌ Error updating avatar: $e');
       if (mounted) {
         setState(() {
           _isUpdatingAvatar = false;
+          // Keep selected avatar on error so user can retry
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('حدث خطأ في تحديث الصورة: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -185,8 +220,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _getImageUrl(String? imagePath) {
     if (imagePath == null || imagePath.isEmpty) return '';
-    if (imagePath.startsWith('http')) return imagePath;
-    return '${ApiConstants.baseUrl.replaceAll('/api', '')}/storage/$imagePath';
+    if (imagePath.startsWith('http')) {
+      // If it's already a full URL, just add cache buster
+      final separator = imagePath.contains('?') ? '&' : '?';
+      return '$imagePath${separator}t=${DateTime.now().millisecondsSinceEpoch}';
+    }
+    // Remove 'public/' prefix if exists (Laravel storage path format)
+    String cleanPath = imagePath;
+    if (cleanPath.startsWith('public/')) {
+      cleanPath = cleanPath.replaceFirst('public/', '');
+    }
+    // Build full URL
+    final baseUrl = '${ApiConstants.baseUrl.replaceAll('/api', '')}/storage/$cleanPath';
+    final separator = baseUrl.contains('?') ? '&' : '?';
+    return '$baseUrl${separator}t=${DateTime.now().millisecondsSinceEpoch}';
   }
 
   @override
@@ -223,46 +270,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                 ),
                                 child: ClipOval(
-                                  child: _selectedAvatar != null
+                                  child: _isUpdatingAvatar && _selectedAvatar != null
                                       ? Image.file(
                                           _selectedAvatar!,
                                           fit: BoxFit.cover,
                                         )
-                                      : _user!.avatar != null &&
-                                              _user!.avatar!.isNotEmpty
-                                          ? CachedNetworkImage(
-                                              imageUrl: _getImageUrl(
-                                                _user!.avatar,
-                                              ),
+                                      : _selectedAvatar != null
+                                          ? Image.file(
+                                              _selectedAvatar!,
                                               fit: BoxFit.cover,
-                                              placeholder: (context, url) =>
-                                                  Container(
-                                                color: Colors.grey[300],
-                                                child: const Icon(
-                                                  Icons.person,
-                                                  size: 60,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                              errorWidget:
-                                                  (context, url, error) =>
-                                                      Container(
-                                                color: Colors.grey[300],
-                                                child: const Icon(
-                                                  Icons.person,
-                                                  size: 60,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
                                             )
-                                          : Container(
-                                              color: Colors.grey[300],
-                                              child: const Icon(
-                                                Icons.person,
-                                                size: 60,
-                                                color: Colors.grey,
-                                              ),
-                                            ),
+                                          : _user!.avatar != null &&
+                                                  _user!.avatar!.isNotEmpty
+                                              ? CachedNetworkImage(
+                                                  imageUrl: _getImageUrl(
+                                                    _user!.avatar,
+                                                  ),
+                                                  fit: BoxFit.cover,
+                                                  cacheKey: _user!.avatar, // Use avatar path as cache key
+                                                  placeholder: (context, url) =>
+                                                      Container(
+                                                    color: Colors.grey[300],
+                                                    child: const Icon(
+                                                      Icons.person,
+                                                      size: 60,
+                                                      color: Colors.grey,
+                                                    ),
+                                                  ),
+                                                  errorWidget:
+                                                      (context, url, error) {
+                                                    print('❌ Error loading avatar: $error');
+                                                    print('📸 Avatar URL: $url');
+                                                    print('📸 Avatar path from user: ${_user!.avatar}');
+                                                    // If error is 403 or 404, show placeholder
+                                                    return Container(
+                                                      color: Colors.grey[300],
+                                                      child: const Icon(
+                                                        Icons.person,
+                                                        size: 60,
+                                                        color: Colors.grey,
+                                                      ),
+                                                    );
+                                                  },
+                                                )
+                                              : Container(
+                                                  color: Colors.grey[300],
+                                                  child: const Icon(
+                                                    Icons.person,
+                                                    size: 60,
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
                                 ),
                               ),
                               Positioned(
@@ -332,6 +390,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   'رقم الهاتف',
                                   _user!.phone ?? 'غير متوفر',
                                   Icons.phone,
+                                ),
+                                // Always show university ID field (even if null/empty, show "غير متوفر")
+                                const SizedBox(height: 16),
+                                _buildReadOnlyField(
+                                  'الرقم الجامعي',
+                                  _user!.universityId != null && _user!.universityId!.isNotEmpty
+                                      ? _user!.universityId!
+                                      : 'غير متوفر',
+                                  Icons.school,
+                                ),
+                                // Always show age field (even if null/0, show "غير متوفر")
+                                const SizedBox(height: 16),
+                                _buildReadOnlyField(
+                                  'السن',
+                                  _user!.age != null && _user!.age! > 0
+                                      ? '${_user!.age!} سنة'
+                                      : 'غير متوفر',
+                                  Icons.calendar_today,
                                 ),
                               ],
                             ),

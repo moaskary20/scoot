@@ -90,7 +90,7 @@ class TripRepository
     public function getUserTrips(int $userId, int $perPage = 15): LengthAwarePaginator
     {
         return Trip::where('user_id', $userId)
-            ->with(['scooter'])
+            ->with(['scooter', 'penalty']) // Load penalty relation for penalty details
             ->orderByDesc('start_time')
             ->paginate($perPage);
     }

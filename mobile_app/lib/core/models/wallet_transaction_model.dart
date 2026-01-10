@@ -35,24 +35,36 @@ class WalletTransactionModel {
 
   factory WalletTransactionModel.fromJson(Map<String, dynamic> json) {
     return WalletTransactionModel(
-      id: json['id'],
-      userId: json['user_id'],
-      tripId: json['trip_id'],
-      type: json['type'] ?? '',
-      transactionType: json['transaction_type'] ?? '',
+      id: _toInt(json['id']),
+      userId: _toInt(json['user_id'] ?? json['userId']),
+      tripId: json['trip_id'] != null || json['tripId'] != null 
+          ? _toInt(json['trip_id'] ?? json['tripId']) 
+          : null,
+      type: json['type']?.toString() ?? '',
+      transactionType: json['transaction_type']?.toString() ?? json['transactionType']?.toString() ?? '',
       amount: _toDouble(json['amount']),
-      balanceBefore: _toDouble(json['balance_before']),
-      balanceAfter: _toDouble(json['balance_after']),
-      reference: json['reference'],
-      paymentMethod: json['payment_method'],
-      status: json['status'] ?? 'completed',
-      description: json['description'],
-      notes: json['notes'],
-      createdAt: DateTime.parse(json['created_at']),
-      processedAt: json['processed_at'] != null 
-          ? DateTime.parse(json['processed_at']) 
+      balanceBefore: _toDouble(json['balance_before'] ?? json['balanceBefore']),
+      balanceAfter: _toDouble(json['balance_after'] ?? json['balanceAfter']),
+      reference: json['reference']?.toString(),
+      paymentMethod: json['payment_method']?.toString() ?? json['paymentMethod']?.toString(),
+      status: json['status']?.toString() ?? 'completed',
+      description: json['description']?.toString(),
+      notes: json['notes']?.toString(),
+      createdAt: _parseDateTime(json['created_at'] ?? json['createdAt']),
+      processedAt: json['processed_at'] != null || json['processedAt'] != null
+          ? _parseDateTime(json['processed_at'] ?? json['processedAt']) 
           : null,
     );
+  }
+
+  static int _toInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) {
+      return int.tryParse(value) ?? 0;
+    }
+    return 0;
   }
 
   static double _toDouble(dynamic value) {
@@ -62,6 +74,20 @@ class WalletTransactionModel {
       return double.tryParse(value) ?? 0.0;
     }
     return 0.0;
+  }
+
+  static DateTime _parseDateTime(dynamic value) {
+    if (value == null) return DateTime.now();
+    if (value is DateTime) return value;
+    if (value is String) {
+      try {
+        return DateTime.parse(value);
+      } catch (e) {
+        print('❌ Error parsing DateTime: $value - $e');
+        return DateTime.now();
+      }
+    }
+    return DateTime.now();
   }
 
   Map<String, dynamic> toJson() {

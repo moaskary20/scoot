@@ -222,9 +222,12 @@ class ApiService {
       // API returns: { success: true, data: { ... } }
       final userData = response.data['data'] ?? response.data;
       print('👤 Parsed user data: $userData');
+      print('📊 Age in response: ${userData['age']} (type: ${userData['age']?.runtimeType})');
+      print('📊 University ID in response: ${userData['university_id']} (type: ${userData['university_id']?.runtimeType})');
       
       final user = UserModel.fromJson(userData);
       print('✅ User model created - Name: ${user.name}, Phone: ${user.phone}');
+      print('✅ Age: ${user.age}, University ID: ${user.universityId}');
       
       return user;
     } catch (e) {
@@ -259,6 +262,10 @@ class ApiService {
   // Update avatar
   Future<UserModel> updateAvatar(File avatarFile) async {
     try {
+      print('📸 Starting avatar upload...');
+      print('📁 Avatar file path: ${avatarFile.path}');
+      print('📁 Avatar file exists: ${await avatarFile.exists()}');
+      
       final formData = FormData.fromMap({});
 
       formData.files.add(
@@ -271,18 +278,30 @@ class ApiService {
         ),
       );
 
+      print('📤 Uploading avatar to: /auth/update-avatar');
       final response = await _dio.post(
         '/auth/update-avatar',
         data: formData,
       );
 
+      print('📥 Avatar upload response: ${response.statusCode}');
+      print('📦 Response data: ${response.data}');
+
       if (response.data['success'] == true) {
         final userData = response.data['data'] ?? response.data;
+        print('✅ Avatar updated successfully');
+        print('🖼️ New avatar path: ${userData['avatar']}');
+        print('🖼️ Full avatar URL would be: ${ApiConstants.baseUrl.replaceAll('/api', '')}/storage/${userData['avatar']}');
         return UserModel.fromJson(userData);
       }
 
       throw Exception(response.data['message'] ?? 'فشل تحديث الصورة الشخصية');
     } catch (e) {
+      print('❌ Error updating avatar: $e');
+      if (e is DioException && e.response != null) {
+        print('📡 Response status: ${e.response?.statusCode}');
+        print('📡 Response data: ${e.response?.data}');
+      }
       throw _handleError(e);
     }
   }
@@ -461,38 +480,118 @@ class ApiService {
   Future<List<WalletTransactionModel>> getWalletTransactions({
     int page = 1,
     int perPage = 20,
+    String? type, // Filter by transaction type (e.g., 'top_up' for top-up transactions)
   }) async {
     try {
-      final response = await _dio.get(
-        ApiConstants.walletTransactions,
-        queryParameters: {
-          'page': page,
-          'per_page': perPage,
-        },
-      );
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'per_page': perPage,
+      };
       
-      if (response.data['success'] == true && response.data['data'] != null) {
-        final List<dynamic> transactions = response.data['data']['data'] ?? response.data['data'] ?? [];
-        return transactions
-            .map((json) => WalletTransactionModel.fromJson(json))
-            .toList();
-      } else if (response.data is List) {
-        final List<dynamic> transactions = response.data as List;
-        return transactions
-            .map((json) => WalletTransactionModel.fromJson(json))
-            .toList();
+      // Add type filter if provided
+      if (type != null && type.isNotEmpty) {
+        queryParams['type'] = type;
       }
       
+      print('📊 Fetching wallet transactions from: ${ApiConstants.baseUrl}${ApiConstants.walletTransactions}');
+      print('📋 Query parameters: $queryParams');
+      
+      final response = await _dio.get(
+        ApiConstants.walletTransactions,
+        queryParameters: queryParams,
+      );
+      
+      print('📦 Wallet transactions API Response Status: ${response.statusCode}');
+      print('📦 Wallet transactions API Response Data type: ${response.data.runtimeType}');
+      print('📦 Wallet transactions API Response Data: ${response.data}');
+      
+      List<dynamic> transactions = [];
+      
+      if (response.data != null && response.data is Map) {
+        final responseData = response.data as Map<String, dynamic>;
+        
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final dataField = responseData['data'];
+          
+          // Handle paginated response: { success: true, data: { data: [...], pagination: {...} } }
+          if (dataField is Map && dataField.containsKey('data') && dataField['data'] is List) {
+            transactions = dataField['data'] as List;
+            print('✅ Found ${transactions.length} transactions (paginated response)');
+          } 
+          // Handle direct data response: { success: true, data: [...] }
+          else if (dataField is List) {
+            transactions = dataField;
+            print('✅ Found ${transactions.length} transactions (direct list in data)');
+          }
+          // Handle items() from paginator: { success: true, data: [...] }
+          else if (dataField is List) {
+            transactions = dataField;
+            print('✅ Found ${transactions.length} transactions (items from paginator)');
+          }
+          else {
+            print('⚠️ Unexpected data structure: $dataField (type: ${dataField.runtimeType})');
+          }
+        } else {
+          print('⚠️ Response does not have success=true or data field');
+        }
+      } else if (response.data is List) {
+        // Handle direct list response: [...]
+        transactions = response.data as List;
+        print('✅ Found ${transactions.length} transactions (direct list response)');
+      } else {
+        print('⚠️ Unexpected response format: ${response.data} (type: ${response.data.runtimeType})');
+      }
+      
+      if (transactions.isNotEmpty) {
+        try {
+          final parsedTransactions = <WalletTransactionModel>[];
+          
+          for (int i = 0; i < transactions.length; i++) {
+            try {
+              final json = transactions[i];
+              print('🔄 Parsing transaction ${i + 1}/${transactions.length}: ${json.runtimeType}');
+              
+              if (json is! Map) {
+                print('⚠️ Transaction $i is not a Map, skipping');
+                continue;
+              }
+              
+              final transactionMap = json as Map<String, dynamic>;
+              print('📋 Transaction data: $transactionMap');
+              
+              final parsed = WalletTransactionModel.fromJson(transactionMap);
+              parsedTransactions.add(parsed);
+              print('✅ Successfully parsed transaction ${i + 1}');
+            } catch (e, stackTrace) {
+              print('❌ Error parsing transaction ${i + 1}: $e');
+              print('📋 Transaction data: ${transactions[i]}');
+              print('📚 Stack trace: $stackTrace');
+              // Continue parsing other transactions instead of failing completely
+            }
+          }
+          
+          print('✅ Successfully parsed ${parsedTransactions.length}/${transactions.length} transaction models');
+          return parsedTransactions;
+        } catch (e, stackTrace) {
+          print('❌ Error parsing transactions list: $e');
+          print('📚 Stack trace: $stackTrace');
+          return [];
+        }
+      }
+      
+      print('⚠️ No transactions found or empty response');
       return [];
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
-        print('Wallet transactions endpoint not found (404). Returning empty list.');
+        print('⚠️ Wallet transactions endpoint not found (404). Returning empty list.');
         return [];
       }
-      print('Error fetching wallet transactions: ${e.message}');
+      print('❌ Error fetching wallet transactions: ${e.message}');
+      print('📡 Status Code: ${e.response?.statusCode}');
+      print('📡 Response Data: ${e.response?.data}');
       return [];
     } catch (e) {
-      print('Error fetching wallet transactions: $e');
+      print('❌ Error fetching wallet transactions: $e');
       return [];
     }
   }
@@ -513,16 +612,26 @@ class ApiService {
 
       if (response.data != null) {
         final data = response.data['data'];
+        List<dynamic> trips = [];
         if (data is Map && data['data'] != null) {
-          final List<dynamic> trips = data['data'];
-          return trips.map((json) => TripModel.fromJson(json)).toList();
+          trips = data['data'];
         } else if (response.data['success'] == true && response.data['data'] is List) {
-          final List<dynamic> trips = response.data['data'];
-          return trips.map((json) => TripModel.fromJson(json)).toList();
+          trips = response.data['data'];
         } else if (response.data is List) {
-          final List<dynamic> trips = response.data as List;
-          return trips.map((json) => TripModel.fromJson(json)).toList();
+          trips = response.data as List;
         }
+        
+        // Log penalty data for debugging
+        if (trips.isNotEmpty) {
+          print('📋 Fetched ${trips.length} trips');
+          for (var trip in trips) {
+            if (trip['penalty'] != null) {
+              print('⚠️ Trip ${trip['id']} has penalty: ${trip['penalty']}');
+            }
+          }
+        }
+        
+        return trips.map((json) => TripModel.fromJson(json)).toList();
       }
 
       return [];

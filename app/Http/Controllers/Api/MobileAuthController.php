@@ -259,6 +259,14 @@ class MobileAuthController extends Controller
     {
         try {
             $user = $request->user();
+            
+            \Log::info('📱 User API Request', [
+                'user_id' => $user->id,
+                'age' => $user->age,
+                'university_id' => $user->university_id,
+                'age_type' => gettype($user->age),
+                'university_id_type' => gettype($user->university_id),
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -267,8 +275,8 @@ class MobileAuthController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'phone' => $user->phone,
-                    'age' => $user->age,
-                    'university_id' => $user->university_id,
+                    'age' => $user->age, // Ensure it's sent as integer or null
+                    'university_id' => $user->university_id, // Ensure it's sent as string or null
                     'national_id_photo' => $user->national_id_photo,
                     'avatar' => $user->avatar,
                     'is_active' => $user->is_active,
@@ -278,6 +286,10 @@ class MobileAuthController extends Controller
                 ],
             ], 200);
         } catch (\Exception $e) {
+            \Log::error('❌ Error in user API', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'حدث خطأ في جلب بيانات المستخدم',
@@ -381,12 +393,46 @@ class MobileAuthController extends Controller
 
             // Upload new avatar
             $avatar = $request->file('avatar');
-            $avatarName = 'avatar_' . $user->id . '_' . time() . '.' . $avatar->getClientOriginalExtension();
-            $avatar->storeAs('public/avatars', $avatarName);
-            $avatarPath = 'avatars/' . $avatarName;
+            // Generate unique filename with extension
+            $extension = $avatar->getClientOriginalExtension() ?: 'jpg';
+            $avatarName = 'avatar_' . $user->id . '_' . time() . '_' . uniqid() . '.' . $extension;
+            
+            // Ensure directory exists
+            $directory = 'avatars';
+            $fullPath = storage_path('app/public/' . $directory);
+            if (!File::exists($fullPath)) {
+                File::makeDirectory($fullPath, 0755, true);
+            }
+            
+            // Store file using Storage facade
+            $storedPath = Storage::disk('public')->putFileAs(
+                $directory,
+                $avatar,
+                $avatarName
+            );
+            
+            if (!$storedPath) {
+                \Log::error('❌ Failed to save avatar', [
+                    'filename' => $avatarName,
+                    'directory' => $directory,
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'فشل في حفظ الصورة الشخصية',
+                ], 500);
+            }
+            
+            \Log::info('✅ Avatar saved', [
+                'stored_path' => $storedPath,
+                'filename' => $avatarName,
+                'full_path' => storage_path('app/public/' . $storedPath),
+                'file_exists' => Storage::disk('public')->exists($storedPath),
+            ]);
 
-            // Update user
-            $user->update(['avatar' => $avatarPath]);
+            // Update user with stored path
+            $user->refresh(); // Refresh to get latest data
+            $user->update(['avatar' => $storedPath]);
+            $user->refresh(); // Refresh again to get updated avatar path
 
             return response()->json([
                 'success' => true,

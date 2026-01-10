@@ -39,7 +39,9 @@ class MobileScooterController extends Controller
             ]);
 
             // Get all active scooters with GPS coordinates
+            // Exclude rented scooters - they should not appear on the map
             $scooters = Scooter::where('is_active', true)
+                ->where('status', '!=', 'rented') // لا نعرض السكوترات المؤجرة
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
                 ->where('latitude', '!=', 0)
@@ -128,7 +130,9 @@ class MobileScooterController extends Controller
     public function getAllScooters(Request $request)
     {
         try {
+            // Exclude rented scooters - they should not appear on the map
             $scooters = Scooter::where('is_active', true)
+                ->where('status', '!=', 'rented') // لا نعرض السكوترات المؤجرة
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
                 ->get();

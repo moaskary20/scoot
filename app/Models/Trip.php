@@ -65,7 +65,7 @@ class Trip extends Model
 
     public function penalty(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Penalty::class);
+        return $this->belongsTo(\App\Models\Penalty::class, 'penalty_id', 'id');
     }
 
     public function penalties()

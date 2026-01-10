@@ -31,6 +31,58 @@ class MobileTripController extends Controller
             $trips = $this->tripRepository->getUserTrips($user->id, $perPage);
 
             $data = $trips->getCollection()->map(function (Trip $trip) {
+                // Get penalty details if exists - check both penalty_id and penalty relation
+                $penaltyData = null;
+                
+                // Try to get penalty from relation first
+                $penalty = null;
+                if ($trip->penalty) {
+                    $penalty = $trip->penalty;
+                } elseif ($trip->penalty_id) {
+                    // If penalty_id exists but relation not loaded, try to load it
+                    try {
+                        $penalty = \App\Models\Penalty::find($trip->penalty_id);
+                    } catch (\Exception $e) {
+                        \Log::warning('Error loading penalty by penalty_id for trip', [
+                            'trip_id' => $trip->id,
+                            'penalty_id' => $trip->penalty_id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                } elseif ($trip->penalty_amount > 0) {
+                    // If penalty_amount exists but no penalty_id, try to find penalty by trip_id
+                    try {
+                        $penalty = \App\Models\Penalty::where('trip_id', $trip->id)
+                            ->orderByDesc('created_at')
+                            ->first();
+                    } catch (\Exception $e) {
+                        \Log::warning('Error loading penalty by trip_id', [
+                            'trip_id' => $trip->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+                
+                // Build penalty data if penalty found
+                if ($penalty) {
+                    $penaltyData = [
+                        'id' => $penalty->id,
+                        'type' => $penalty->type ?? '',
+                        'title' => $penalty->title ?? '',
+                        'description' => $penalty->description ?? null,
+                        'amount' => (float) ($penalty->amount ?? 0),
+                        'status' => $penalty->status ?? 'pending',
+                        'applied_at' => $penalty->applied_at?->toDateTimeString(),
+                    ];
+                    
+                    \Log::info('Penalty data loaded for trip', [
+                        'trip_id' => $trip->id,
+                        'penalty_id' => $penalty->id,
+                        'title' => $penalty->title,
+                        'has_description' => !empty($penalty->description),
+                    ]);
+                }
+                
                 return [
                     'id' => $trip->id,
                     'scooter_code' => $trip->scooter?->code,
@@ -41,6 +93,7 @@ class MobileTripController extends Controller
                     'base_cost' => (float) ($trip->base_cost ?? 0),
                     'discount_amount' => (float) ($trip->discount_amount ?? 0),
                     'penalty_amount' => (float) ($trip->penalty_amount ?? 0),
+                    'penalty' => $penaltyData, // إضافة تفاصيل الغرامة
                     'status' => $trip->status,
                     'zone_exit_detected' => (bool) $trip->zone_exit_detected,
                     'zone_exit_details' => $trip->zone_exit_details,
@@ -48,6 +101,11 @@ class MobileTripController extends Controller
                     'paid_amount' => $trip->paid_amount,
                     'remaining_amount' => $trip->remaining_amount,
                     'end_image' => $trip->end_image,
+                    'start_latitude' => $trip->start_latitude ? (float) $trip->start_latitude : null,
+                    'start_longitude' => $trip->start_longitude ? (float) $trip->start_longitude : null,
+                    'end_latitude' => $trip->end_latitude ? (float) $trip->end_latitude : null,
+                    'end_longitude' => $trip->end_longitude ? (float) $trip->end_longitude : null,
+                    'notes' => $trip->notes,
                 ];
             });
 

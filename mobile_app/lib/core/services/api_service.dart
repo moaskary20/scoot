@@ -306,6 +306,59 @@ class ApiService {
     }
   }
 
+  // Resubmit national ID photos (for rejected accounts)
+  Future<Map<String, dynamic>> resubmitNationalId({
+    required File frontPhoto,
+    required File backPhoto,
+  }) async {
+    try {
+      print('📸 Starting national ID resubmission...');
+      print('📁 Front photo path: ${frontPhoto.path}');
+      print('📁 Back photo path: ${backPhoto.path}');
+      
+      final formData = FormData.fromMap({});
+
+      formData.files.add(
+        MapEntry(
+          'national_id_front',
+          await MultipartFile.fromFile(
+            frontPhoto.path,
+            filename: 'national_id_front.jpg',
+          ),
+        ),
+      );
+
+      formData.files.add(
+        MapEntry(
+          'national_id_back',
+          await MultipartFile.fromFile(
+            backPhoto.path,
+            filename: 'national_id_back.jpg',
+          ),
+        ),
+      );
+
+      print('📤 Uploading national ID photos to: ${ApiConstants.resubmitNationalId}');
+      final response = await _dio.post(
+        ApiConstants.resubmitNationalId,
+        data: formData,
+      );
+
+      print('📥 National ID resubmission response: ${response.statusCode}');
+      print('📦 Response data: ${response.data}');
+
+      if (response.data['success'] == true) {
+        print('✅ National ID photos resubmitted successfully');
+        return response.data;
+      }
+
+      throw Exception(response.data['message'] ?? 'فشل رفع صور البطاقة الشخصية');
+    } catch (e) {
+      print('❌ Error resubmitting national ID: $e');
+      throw _handleError(e);
+    }
+  }
+
   // Save token
   Future<void> saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();

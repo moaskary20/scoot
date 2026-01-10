@@ -27,6 +27,7 @@ Route::prefix('auth')->group(function () {
         Route::post('/logout', [MobileAuthController::class, 'logout']);
         Route::post('/update-password', [MobileAuthController::class, 'updatePassword']);
         Route::post('/update-avatar', [MobileAuthController::class, 'updateAvatar']);
+        Route::post('/resubmit-national-id', [MobileAuthController::class, 'resubmitNationalId']);
     });
 });
 

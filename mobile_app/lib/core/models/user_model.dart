@@ -8,6 +8,8 @@ class UserModel {
   final String? nationalIdPhoto;
   final String? avatar;
   final bool isActive;
+  final String? reviewNotes;
+  final String accountStatus; // 'active', 'pending', 'rejected'
   final double walletBalance;
   final int loyaltyPoints;
   final String loyaltyLevel;
@@ -22,6 +24,8 @@ class UserModel {
     this.nationalIdPhoto,
     this.avatar,
     required this.isActive,
+    this.reviewNotes,
+    required this.accountStatus,
     required this.walletBalance,
     required this.loyaltyPoints,
     required this.loyaltyLevel,
@@ -53,6 +57,17 @@ class UserModel {
     print('  - age: ${json['age']} (type: ${json['age']?.runtimeType}) -> parsed: $parsedAge');
     print('  - university_id: ${json['university_id']} (type: ${json['university_id']?.runtimeType}) -> parsed: $parsedUniversityId');
     
+    // Determine account status
+    String accountStatus = 'pending'; // قيد التفعيل
+    final isActive = json['is_active'] == true || json['is_active'] == 1 || json['is_active'] == '1';
+    final reviewNotes = json['review_notes']?.toString();
+    
+    if (isActive) {
+      accountStatus = 'active'; // مفعل
+    } else if (reviewNotes != null && reviewNotes.isNotEmpty && reviewNotes.trim().isNotEmpty) {
+      accountStatus = 'rejected'; // مرفوض
+    }
+    
     return UserModel(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
       name: json['name']?.toString() ?? '',
@@ -62,7 +77,9 @@ class UserModel {
       universityId: parsedUniversityId,
       nationalIdPhoto: json['national_id_photo']?.toString(),
       avatar: json['avatar']?.toString(),
-      isActive: json['is_active'] == true || json['is_active'] == 1 || json['is_active'] == '1',
+      isActive: isActive,
+      reviewNotes: reviewNotes,
+      accountStatus: json['account_status']?.toString() ?? accountStatus,
       walletBalance: _toDouble(json['wallet_balance']),
       loyaltyPoints: json['loyalty_points'] is int ? json['loyalty_points'] : int.tryParse(json['loyalty_points']?.toString() ?? '0') ?? 0,
       loyaltyLevel: json['loyalty_level']?.toString() ?? 'bronze',
@@ -89,6 +106,8 @@ class UserModel {
       'national_id_photo': nationalIdPhoto,
       'avatar': avatar,
       'is_active': isActive,
+      'review_notes': reviewNotes,
+      'account_status': accountStatus,
       'wallet_balance': walletBalance,
       'loyalty_points': loyaltyPoints,
       'loyalty_level': loyaltyLevel,

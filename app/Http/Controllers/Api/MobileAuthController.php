@@ -43,13 +43,8 @@ class MobileAuthController extends Controller
                 ], 401);
             }
 
-            // Check if user is active
-            if (!$user->is_active) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'حسابك غير مفعل. يرجى الانتظار حتى يتم تفعيله من قبل الإدارة',
-                ], 403);
-            }
+            // Allow login even if account is not active
+            // Account status will be checked when starting a trip
 
             // Delete all existing tokens to prevent multiple device login
             // This ensures only one device can be logged in at a time
@@ -57,6 +52,14 @@ class MobileAuthController extends Controller
 
             // Create new token
             $token = $user->createToken('mobile-app')->plainTextToken;
+
+            // Determine account status
+            $accountStatus = 'pending'; // قيد التفعيل
+            if ($user->is_active) {
+                $accountStatus = 'active'; // مفعل
+            } elseif ($user->review_notes && !empty(trim($user->review_notes))) {
+                $accountStatus = 'rejected'; // مرفوض
+            }
 
             return response()->json([
                 'success' => true,
@@ -70,6 +73,8 @@ class MobileAuthController extends Controller
                     'age' => $user->age,
                     'university_id' => $user->university_id,
                     'is_active' => $user->is_active,
+                    'review_notes' => $user->review_notes,
+                    'account_status' => $accountStatus,
                 ],
             ], 200);
         } catch (\Exception $e) {
@@ -220,6 +225,8 @@ class MobileAuthController extends Controller
                     'age' => $user->age,
                     'university_id' => $user->university_id,
                     'is_active' => $user->is_active,
+                    'review_notes' => $user->review_notes,
+                    'account_status' => $user->is_active ? 'active' : ($user->review_notes && !empty(trim($user->review_notes)) ? 'rejected' : 'pending'),
                 ],
             ], 201);
         } catch (\Exception $e) {
@@ -268,6 +275,14 @@ class MobileAuthController extends Controller
                 'university_id_type' => gettype($user->university_id),
             ]);
 
+            // Determine account status
+            $accountStatus = 'pending'; // قيد التفعيل
+            if ($user->is_active) {
+                $accountStatus = 'active'; // مفعل
+            } elseif ($user->review_notes && !empty(trim($user->review_notes))) {
+                $accountStatus = 'rejected'; // مرفوض
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -280,6 +295,8 @@ class MobileAuthController extends Controller
                     'national_id_photo' => $user->national_id_photo,
                     'avatar' => $user->avatar,
                     'is_active' => $user->is_active,
+                    'review_notes' => $user->review_notes,
+                    'account_status' => $accountStatus,
                     'wallet_balance' => $user->wallet_balance ?? 0,
                     'loyalty_points' => $user->loyalty_points ?? 0,
                     'loyalty_level' => $user->loyalty_level ?? 'bronze',
@@ -456,6 +473,110 @@ class MobileAuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'حدث خطأ في تحديث الصورة الشخصية',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Resubmit national ID photos (for rejected accounts)
+     */
+    public function resubmitNationalId(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'national_id_front' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+                'national_id_back' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'البيانات غير صحيحة',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $user = $request->user();
+
+            // Handle national ID photos upload (front & back)
+            if ($request->hasFile('national_id_front')) {
+                $front = $request->file('national_id_front');
+                $extension = $front->getClientOriginalExtension() ?: 'jpg';
+                $frontName = time() . '_front_' . uniqid() . '.' . $extension;
+                
+                $directory = 'national_ids';
+                $fullPath = storage_path('app/public/' . $directory);
+                if (!File::exists($fullPath)) {
+                    File::makeDirectory($fullPath, 0755, true);
+                }
+                
+                $storedPath = Storage::disk('public')->putFileAs(
+                    $directory,
+                    $front,
+                    $frontName
+                );
+                
+                if ($storedPath) {
+                    $user->national_id_front_photo = $storedPath;
+                    \Log::info('✅ National ID front photo resubmitted', [
+                        'stored_path' => $storedPath,
+                        'filename' => $frontName,
+                    ]);
+                }
+            }
+
+            if ($request->hasFile('national_id_back')) {
+                $back = $request->file('national_id_back');
+                $extension = $back->getClientOriginalExtension() ?: 'jpg';
+                $backName = time() . '_back_' . uniqid() . '.' . $extension;
+                
+                $directory = 'national_ids';
+                $fullPath = storage_path('app/public/' . $directory);
+                if (!File::exists($fullPath)) {
+                    File::makeDirectory($fullPath, 0755, true);
+                }
+                
+                $storedPath = Storage::disk('public')->putFileAs(
+                    $directory,
+                    $back,
+                    $backName
+                );
+                
+                if ($storedPath) {
+                    $user->national_id_back_photo = $storedPath;
+                    \Log::info('✅ National ID back photo resubmitted', [
+                        'stored_path' => $storedPath,
+                        'filename' => $backName,
+                    ]);
+                }
+            }
+
+            // Reset account status: clear review_notes and set is_active to false
+            // This will put the account back in "pending" status for admin review
+            $user->review_notes = null;
+            $user->is_active = false;
+            $user->save();
+
+            \Log::info('✅ National ID photos resubmitted', [
+                'user_id' => $user->id,
+                'front_photo' => $user->national_id_front_photo,
+                'back_photo' => $user->national_id_back_photo,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم رفع صور البطاقة الشخصية بنجاح. سيتم مراجعتها من قبل الإدارة',
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('Resubmit national ID error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'حدث خطأ في رفع الصور',
                 'error' => $e->getMessage(),
             ], 500);
         }

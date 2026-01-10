@@ -31,6 +31,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
   File? _selectedAvatar;
+  File? _selectedNationalIdFront;
+  File? _selectedNationalIdBack;
+  bool _isResubmittingNationalId = false;
 
   @override
   void initState() {
@@ -409,11 +412,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       : 'غير متوفر',
                                   Icons.calendar_today,
                                 ),
+                                // Account Status
+                                const SizedBox(height: 16),
+                                _buildAccountStatusField(),
                               ],
                             ),
                           ),
                         ),
                         const SizedBox(height: 24),
+                        
+                        // Resubmit National ID Section (if account is rejected)
+                        if (_user!.accountStatus == 'rejected') ...[
+                          _buildResubmitNationalIdSection(),
+                          const SizedBox(height: 24),
+                        ],
 
                         // Password Update Section
                         Card(
@@ -616,6 +628,345 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildAccountStatusField() {
+    String statusText;
+    Color statusColor;
+    IconData statusIcon;
+
+    switch (_user!.accountStatus) {
+      case 'active':
+        statusText = 'مفعل';
+        statusColor = Colors.green;
+        statusIcon = Icons.check_circle;
+        break;
+      case 'rejected':
+        statusText = 'مرفوض';
+        statusColor = Colors.red;
+        statusIcon = Icons.cancel;
+        break;
+      case 'pending':
+      default:
+        statusText = 'قيد التفعيل';
+        statusColor = Colors.orange;
+        statusIcon = Icons.pending;
+        break;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'حالة الحساب',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: statusColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: statusColor.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              Icon(statusIcon, color: statusColor, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  statusText,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_user!.reviewNotes != null && _user!.reviewNotes!.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red.withOpacity(0.2)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'ملاحظات المراجعة:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _user!.reviewNotes!,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildResubmitNationalIdSection() {
+    return Card(
+      color: Colors.red.withOpacity(0.05),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.warning, color: Colors.red, size: 24),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'رفع صورة البطاقة الشخصية مرة أخرى',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'تم رفض حسابك. يرجى رفع صور البطاقة الشخصية مرة أخرى للمراجعة.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Front Photo
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _pickNationalIdImage(isFront: true),
+                    child: Container(
+                      height: 150,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.grey,
+                          width: 2,
+                          style: BorderStyle.solid,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: _selectedNationalIdFront == null
+                          ? const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.credit_card,
+                                  size: 38,
+                                  color: Colors.grey,
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  'الوجه الأمامي',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ],
+                            )
+                          : ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.file(
+                                _selectedNationalIdFront!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _pickNationalIdImage(isFront: false),
+                    child: Container(
+                      height: 150,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.grey,
+                          width: 2,
+                          style: BorderStyle.solid,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: _selectedNationalIdBack == null
+                          ? const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.credit_card,
+                                  size: 38,
+                                  color: Colors.grey,
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  'الوجه الخلفي',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ],
+                            )
+                          : ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.file(
+                                _selectedNationalIdBack!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: (_selectedNationalIdFront == null || _selectedNationalIdBack == null || _isResubmittingNationalId)
+                    ? null
+                    : _resubmitNationalId,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: _isResubmittingNationalId
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text(
+                        'رفع الصور',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickNationalIdImage({required bool isFront}) async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        setState(() {
+          if (isFront) {
+            _selectedNationalIdFront = File(image.path);
+          } else {
+            _selectedNationalIdBack = File(image.path);
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('حدث خطأ في اختيار الصورة: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _resubmitNationalId() async {
+    if (_selectedNationalIdFront == null || _selectedNationalIdBack == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('يرجى رفع صورة البطاقة الشخصية (الوجه الأمامي والخلفي)'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isResubmittingNationalId = true;
+    });
+
+    try {
+      final result = await _apiService.resubmitNationalId(
+        frontPhoto: _selectedNationalIdFront!,
+        backPhoto: _selectedNationalIdBack!,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'تم رفع صور البطاقة الشخصية بنجاح'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+
+        // Reload user data to update account status
+        await _loadUserData();
+
+        // Clear selected images
+        setState(() {
+          _selectedNationalIdFront = null;
+          _selectedNationalIdBack = null;
+          _isResubmittingNationalId = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isResubmittingNationalId = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('حدث خطأ في رفع الصور: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
 

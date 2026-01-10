@@ -13,6 +13,8 @@ class ApiConstants {
   static const String logout = '/auth/logout';
   static const String user = '/auth/user';
   static const String forgotPassword = '/auth/forgot-password';
+  static const String updateAvatar = '/auth/update-avatar';
+  static const String resubmitNationalId = '/auth/resubmit-national-id';
   
   // Scooters
   static const String scooters = '/scooters';

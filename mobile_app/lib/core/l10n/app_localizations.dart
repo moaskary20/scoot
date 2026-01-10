@@ -261,6 +261,11 @@ class AppLocalizations {
   String get outsideZone => _localizedValues[locale.languageCode]?['outsideZone'] ?? 'خارج المنطقة';
   String get paidAmount => _localizedValues[locale.languageCode]?['paidAmount'] ?? 'المدفوع';
   String get remainingAmount => _localizedValues[locale.languageCode]?['remainingAmount'] ?? 'المتبقي';
+  String get total => _localizedValues[locale.languageCode]?['total'] ?? 'الإجمالي';
+  String get tapToViewDetails => _localizedValues[locale.languageCode]?['tapToViewDetails'] ?? 'اضغط لعرض التفاصيل';
+  String get fullyPaidMessage => _localizedValues[locale.languageCode]?['fullyPaidMessage'] ?? 'غير مدفوع بالكامل - يرجى سداد المبلغ المتبقي';
+  String get partiallyPaidMessage => _localizedValues[locale.languageCode]?['partiallyPaidMessage'] ?? 'مدفوع جزئياً - يرجى سداد المبلغ المتبقي';
+  String get errorLoadingTrips => _localizedValues[locale.languageCode]?['errorLoadingTrips'] ?? 'حدث خطأ في تحميل الرحلات';
   
   // Trip Details Screen
   String get tripInformation => _localizedValues[locale.languageCode]?['tripInformation'] ?? 'معلومات الرحلة';
@@ -649,6 +654,11 @@ class AppLocalizations {
       'outsideZone': 'خارج المنطقة',
       'paidAmount': 'المدفوع',
       'remainingAmount': 'المتبقي',
+      'total': 'الإجمالي',
+      'tapToViewDetails': 'اضغط لعرض التفاصيل',
+      'fullyPaidMessage': 'غير مدفوع بالكامل - يرجى سداد المبلغ المتبقي',
+      'partiallyPaidMessage': 'مدفوع جزئياً - يرجى سداد المبلغ المتبقي',
+      'errorLoadingTrips': 'حدث خطأ في تحميل الرحلات',
       'tripInformation': 'معلومات الرحلة',
       'penaltyDetails': 'تفاصيل الغرامة',
       'paymentDetails': 'تفاصيل الدفع',
@@ -927,6 +937,11 @@ class AppLocalizations {
       'outsideZone': 'Outside Zone',
       'paidAmount': 'Paid',
       'remainingAmount': 'Remaining',
+      'total': 'Total',
+      'tapToViewDetails': 'Tap to view details',
+      'fullyPaidMessage': 'Not fully paid - Please pay the remaining amount',
+      'partiallyPaidMessage': 'Partially paid - Please pay the remaining amount',
+      'errorLoadingTrips': 'Error loading trips',
       'tripInformation': 'Trip Information',
       'penaltyDetails': 'Penalty Details',
       'paymentDetails': 'Payment Details',

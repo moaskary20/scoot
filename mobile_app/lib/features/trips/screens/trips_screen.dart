@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'dart:ui' as ui;
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/models/trip_model.dart';
 import '../../../core/l10n/app_localizations.dart';
+import '../../../core/services/language_service.dart';
 import 'trip_details_screen.dart';
 
 class TripsScreen extends StatefulWidget {
@@ -58,7 +61,7 @@ class _TripsScreenState extends State<TripsScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${AppLocalizations.of(context)?.errorLoadingTransactions ?? 'حدث خطأ في تحميل الرحلات'}: $e'),
+            content: Text('${AppLocalizations.of(context)?.errorLoadingTrips ?? 'حدث خطأ في تحميل الرحلات'}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -84,13 +87,16 @@ class _TripsScreenState extends State<TripsScreen> {
   }
 
   String _formatDuration(int? minutes) {
-    if (minutes == null || minutes <= 0) return '0 دقيقة';
+    final localizations = AppLocalizations.of(context);
+    if (minutes == null || minutes <= 0) {
+      return localizations?.formatMinutesText(0) ?? '0 دقيقة';
+    }
     final hours = minutes ~/ 60;
     final mins = minutes % 60;
     if (hours > 0) {
-      return '${hours} س ${mins} د';
+      return localizations?.formatDurationText(hours, mins) ?? '${hours} س ${mins} د';
     }
-    return '$mins دقيقة';
+    return localizations?.formatMinutesText(mins) ?? '$mins دقيقة';
   }
 
   Color _getStatusColor(String status) {
@@ -149,8 +155,9 @@ class _TripsScreenState extends State<TripsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final languageService = Provider.of<LanguageService>(context, listen: false);
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: languageService.isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
@@ -275,15 +282,21 @@ class _TripsScreenState extends State<TripsScreen> {
                     Icon(Icons.warning_amber_rounded, color: Colors.red, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
-                        trip.paymentStatus == 'unpaid'
-                            ? 'غير مدفوع بالكامل - يرجى سداد المبلغ المتبقي'
-                            : 'مدفوع جزئياً - يرجى سداد المبلغ المتبقي: ${trip.remainingAmount.toStringAsFixed(2)} ج.م',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Builder(
+                        builder: (context) {
+                          final loc = AppLocalizations.of(context);
+                          final message = trip.paymentStatus == 'unpaid'
+                              ? (loc?.fullyPaidMessage ?? 'غير مدفوع بالكامل - يرجى سداد المبلغ المتبقي')
+                              : '${loc?.partiallyPaidMessage ?? 'مدفوع جزئياً - يرجى سداد المبلغ المتبقي'}: ${trip.remainingAmount.toStringAsFixed(2)} ${loc?.egp ?? 'ج.م'}';
+                          return Text(
+                            message,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -474,13 +487,18 @@ class _TripsScreenState extends State<TripsScreen> {
                       children: [
                         Icon(Icons.account_balance_wallet, color: Colors.red, size: 18),
                         const SizedBox(width: 8),
-                        const Text(
-                          'تفاصيل الدفع',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red,
-                          ),
+                        Builder(
+                          builder: (context) {
+                            final loc = AppLocalizations.of(context);
+                            return Text(
+                              loc?.paymentDetails ?? 'تفاصيل الدفع',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red,
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -488,78 +506,93 @@ class _TripsScreenState extends State<TripsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'المدفوع:',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${trip.paidAmount.toStringAsFixed(2)} ج.م',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.green[700],
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                        Builder(
+                          builder: (context) {
+                            final loc = AppLocalizations.of(context);
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${loc?.paidAmount ?? 'المدفوع'}:',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${trip.paidAmount.toStringAsFixed(2)} ${loc?.egp ?? 'ج.م'}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.green[700],
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                         Container(
                           width: 1,
                           height: 40,
                           color: Colors.grey[300],
                         ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'المتبقي:',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${trip.remainingAmount.toStringAsFixed(2)} ج.م',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                        Builder(
+                          builder: (context) {
+                            final loc = AppLocalizations.of(context);
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${loc?.remainingAmount ?? 'المتبقي'}:',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${trip.remainingAmount.toStringAsFixed(2)} ${loc?.egp ?? 'ج.م'}',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                         Container(
                           width: 1,
                           height: 40,
                           color: Colors.grey[300],
                         ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'الإجمالي:',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${trip.cost.toStringAsFixed(2)} ج.م',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.black87,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                        Builder(
+                          builder: (context) {
+                            final loc = AppLocalizations.of(context);
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${loc?.total ?? 'الإجمالي'}:',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${trip.cost.toStringAsFixed(2)} ${loc?.egp ?? 'ج.م'}',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -604,25 +637,30 @@ class _TripsScreenState extends State<TripsScreen> {
                 ],
               ),
             ],
-              // Show "اضغط لعرض التفاصيل" hint
+              // Show "Tap to view details" hint
               const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Icon(
-                    Icons.arrow_back_ios,
-                    size: 14,
-                    color: Colors.grey[400],
-                  ),
-                  Text(
-                    'اضغط لعرض التفاصيل',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey[500],
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ],
+              Builder(
+                builder: (context) {
+                  final loc = AppLocalizations.of(context);
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Icon(
+                        Icons.arrow_back_ios,
+                        size: 14,
+                        color: Colors.grey[400],
+                      ),
+                      Text(
+                        loc?.tapToViewDetails ?? 'اضغط لعرض التفاصيل',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[500],
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ),

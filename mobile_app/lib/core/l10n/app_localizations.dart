@@ -16,6 +16,8 @@ class AppLocalizations {
   String get home => _localizedValues[locale.languageCode]?['home'] ?? 'الرئيسية';
   String get wallet => _localizedValues[locale.languageCode]?['wallet'] ?? 'محفظة';
   String get trips => _localizedValues[locale.languageCode]?['trips'] ?? 'رحلاتي';
+  String get profile => _localizedValues[locale.languageCode]?['profile'] ?? 'الملف الشخصي';
+  String get safeRidingGuide => _localizedValues[locale.languageCode]?['safeRidingGuide'] ?? 'دليل الركوب الآمن';
   String get freeBalance => _localizedValues[locale.languageCode]?['freeBalance'] ?? 'رصيد مجاني';
   String get chargeBalance => _localizedValues[locale.languageCode]?['chargeBalance'] ?? 'اشحن رصيدك';
   String get howToRide => _localizedValues[locale.languageCode]?['howToRide'] ?? 'إزاي تركب لينر سكوت';
@@ -234,6 +236,8 @@ class AppLocalizations {
       'home': 'الرئيسية',
       'wallet': 'محفظة',
       'trips': 'رحلاتي',
+      'profile': 'الملف الشخصي',
+      'safeRidingGuide': 'دليل الركوب الآمن',
       'freeBalance': 'رصيد مجاني',
       'chargeBalance': 'اشحن رصيدك',
       'loyaltyPoints': 'نقاط الولاء',
@@ -395,6 +399,8 @@ class AppLocalizations {
       'home': 'Home',
       'wallet': 'Wallet',
       'trips': 'My Trips',
+      'profile': 'Profile',
+      'safeRidingGuide': 'Safe Riding Guide',
       'freeBalance': 'Free Balance',
       'chargeBalance': 'Charge Balance',
       'loyaltyPoints': 'Loyalty Points',

@@ -169,9 +169,9 @@ class _WalletScreenState extends State<WalletScreen> {
             icon: const Icon(Icons.arrow_back, color: Colors.black),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
-            'محفظة',
-            style: TextStyle(
+          title: Text(
+            AppLocalizations.of(context)?.wallet ?? 'محفظة',
+            style: const TextStyle(
               color: Colors.black,
               fontSize: 20,
               fontWeight: FontWeight.bold,

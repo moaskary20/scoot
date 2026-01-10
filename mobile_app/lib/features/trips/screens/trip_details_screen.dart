@@ -30,9 +30,9 @@ class TripDetailsScreen extends StatelessWidget {
             icon: const Icon(Icons.arrow_back, color: Colors.black),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
-            'تفاصيل الرحلة',
-            style: TextStyle(
+          title: Text(
+            AppLocalizations.of(context)?.tripDetails ?? 'تفاصيل الرحلة',
+            style: const TextStyle(
               color: Colors.black,
               fontSize: 20,
               fontWeight: FontWeight.bold,

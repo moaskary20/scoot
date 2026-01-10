@@ -6,6 +6,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/models/user_model.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/l10n/app_localizations.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -243,7 +244,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الملف الشخصي'),
+          title: Text(
+            AppLocalizations.of(context)?.profile ?? 'الملف الشخصي',
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         backgroundColor: Color(AppConstants.primaryColor),
         foregroundColor: Color(AppConstants.secondaryColor),
       ),

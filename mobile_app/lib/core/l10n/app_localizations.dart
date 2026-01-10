@@ -61,6 +61,7 @@ class AppLocalizations {
   
   // Wallet Screen
   String get walletBalance => _localizedValues[locale.languageCode]?['walletBalance'] ?? 'رصيد المحفظة';
+  String get availableBalance => _localizedValues[locale.languageCode]?['availableBalance'] ?? 'الرصيد المتاح';
   String get charge => _localizedValues[locale.languageCode]?['charge'] ?? 'اشحن';
   String get history => _localizedValues[locale.languageCode]?['history'] ?? 'تاريخ';
   String get addCard => _localizedValues[locale.languageCode]?['addCard'] ?? 'اضف كارت';
@@ -69,6 +70,60 @@ class AppLocalizations {
   String get errorLoadingWallet => _localizedValues[locale.languageCode]?['errorLoadingWallet'] ?? 'حدث خطأ في تحميل بيانات المحفظة';
   String get cardSavedSuccessfully => _localizedValues[locale.languageCode]?['cardSavedSuccessfully'] ?? 'تم حفظ الكارت بنجاح';
   String get errorOccurred => _localizedValues[locale.languageCode]?['errorOccurred'] ?? 'حدث خطأ';
+  
+  // Transaction Types
+  String get financialTransactions => _localizedValues[locale.languageCode]?['financialTransactions'] ?? 'المعاملات المالية';
+  String get noTransactionsYet => _localizedValues[locale.languageCode]?['noTransactionsYet'] ?? 'لا توجد معاملات مالية بعد';
+  String get transactionsWillAppearHere => _localizedValues[locale.languageCode]?['transactionsWillAppearHere'] ?? 'ستظهر جميع المعاملات المالية المتعلقة بالمحفظة هنا';
+  String get walletTopUp => _localizedValues[locale.languageCode]?['walletTopUp'] ?? 'شحن المحفظة';
+  String get tripPayment => _localizedValues[locale.languageCode]?['tripPayment'] ?? 'دفع رحلة';
+  String get refund => _localizedValues[locale.languageCode]?['refund'] ?? 'استرجاع';
+  String get adjustment => _localizedValues[locale.languageCode]?['adjustment'] ?? 'تعديل';
+  String get subscription => _localizedValues[locale.languageCode]?['subscription'] ?? 'اشتراك';
+  String get transaction => _localizedValues[locale.languageCode]?['transaction'] ?? 'معاملة';
+  String get pending => _localizedValues[locale.languageCode]?['pending'] ?? 'قيد الانتظار';
+  String get failed => _localizedValues[locale.languageCode]?['failed'] ?? 'فاشلة';
+  String get activate => _localizedValues[locale.languageCode]?['activate'] ?? 'تفعيل';
+  String get addPromoCode => _localizedValues[locale.languageCode]?['addPromoCode'] ?? 'ضيف البروموكود';
+  String get promoCodeHint => _localizedValues[locale.languageCode]?['promoCodeHint'] ?? 'بروموكود';
+  String get viewAndRedeemPoints => _localizedValues[locale.languageCode]?['viewAndRedeemPoints'] ?? 'عرض نقاطي واستبدالها';
+  String get redeemLoyaltyBalance => _localizedValues[locale.languageCode]?['redeemLoyaltyBalance'] ?? 'استبدل نقاط الولاء برصيد في المحفظة';
+  String get promoCodeActivated => _localizedValues[locale.languageCode]?['promoCodeActivated'] ?? 'تم تفعيل الكود بنجاح';
+  String get invalidPromoCode => _localizedValues[locale.languageCode]?['invalidPromoCode'] ?? 'كود غير صحيح';
+  
+  String getTransactionTypeText(String type) {
+    switch (type) {
+      case 'top_up':
+        return _localizedValues[locale.languageCode]?['walletTopUp'] ?? 'شحن المحفظة';
+      case 'trip_payment':
+        return _localizedValues[locale.languageCode]?['tripPayment'] ?? 'دفع رحلة';
+      case 'refund':
+        return _localizedValues[locale.languageCode]?['refund'] ?? 'استرجاع';
+      case 'adjustment':
+        return _localizedValues[locale.languageCode]?['adjustment'] ?? 'تعديل';
+      case 'penalty':
+        return _localizedValues[locale.languageCode]?['penalty'] ?? 'الغرامة';
+      case 'subscription':
+        return _localizedValues[locale.languageCode]?['subscription'] ?? 'اشتراك';
+      default:
+        return _localizedValues[locale.languageCode]?['transaction'] ?? 'معاملة';
+    }
+  }
+  
+  String getTransactionStatusText(String status) {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return _localizedValues[locale.languageCode]?['completed'] ?? 'مكتملة';
+      case 'pending':
+        return _localizedValues[locale.languageCode]?['pending'] ?? 'قيد الانتظار';
+      case 'failed':
+        return _localizedValues[locale.languageCode]?['failed'] ?? 'فاشلة';
+      case 'cancelled':
+        return _localizedValues[locale.languageCode]?['cancelled'] ?? 'ملغاة';
+      default:
+        return status;
+    }
+  }
   
   // Top Up Screen
   String get topUp => _localizedValues[locale.languageCode]?['topUp'] ?? 'شحن الرصيد';
@@ -378,6 +433,7 @@ class AppLocalizations {
       'km': 'كم',
       'yourLocation': 'موقعك الحالي',
       'walletBalance': 'رصيد المحفظة',
+      'availableBalance': 'الرصيد المتاح',
       'charge': 'اشحن',
       'history': 'تاريخ',
       'addCard': 'اضف كارت',
@@ -386,6 +442,24 @@ class AppLocalizations {
       'errorLoadingWallet': 'حدث خطأ في تحميل بيانات المحفظة',
       'cardSavedSuccessfully': 'تم حفظ الكارت بنجاح',
       'errorOccurred': 'حدث خطأ',
+      'financialTransactions': 'المعاملات المالية',
+      'noTransactionsYet': 'لا توجد معاملات مالية بعد',
+      'transactionsWillAppearHere': 'ستظهر جميع المعاملات المالية المتعلقة بالمحفظة هنا',
+      'walletTopUp': 'شحن المحفظة',
+      'tripPayment': 'دفع رحلة',
+      'refund': 'استرجاع',
+      'adjustment': 'تعديل',
+      'subscription': 'اشتراك',
+      'transaction': 'معاملة',
+      'pending': 'قيد الانتظار',
+      'failed': 'فاشلة',
+      'activate': 'تفعيل',
+      'addPromoCode': 'ضيف البروموكود',
+      'promoCodeHint': 'بروموكود',
+      'viewAndRedeemPoints': 'عرض نقاطي واستبدالها',
+      'redeemLoyaltyBalance': 'استبدل نقاط الولاء برصيد في المحفظة',
+      'promoCodeActivated': 'تم تفعيل الكود بنجاح',
+      'invalidPromoCode': 'كود غير صحيح',
       'topUp': 'شحن الرصيد',
       'enterAmount': 'أدخل المبلغ',
       'pleaseEnterValidAmount': 'يرجى إدخال مبلغ صحيح',
@@ -564,7 +638,8 @@ class AppLocalizations {
       'km': 'km',
       'yourLocation': 'Your Location',
       'walletBalance': 'Wallet Balance',
-      'charge': 'Charge',
+      'availableBalance': 'Available Balance',
+      'charge': 'Top Up',
       'history': 'History',
       'addCard': 'Add Card',
       'promoCode': 'Promo Code',
@@ -572,6 +647,24 @@ class AppLocalizations {
       'errorLoadingWallet': 'Error loading wallet data',
       'cardSavedSuccessfully': 'Card saved successfully',
       'errorOccurred': 'An error occurred',
+      'financialTransactions': 'Financial Transactions',
+      'noTransactionsYet': 'No financial transactions yet',
+      'transactionsWillAppearHere': 'All wallet-related financial transactions will appear here',
+      'walletTopUp': 'Wallet Top Up',
+      'tripPayment': 'Trip Payment',
+      'refund': 'Refund',
+      'adjustment': 'Adjustment',
+      'subscription': 'Subscription',
+      'transaction': 'Transaction',
+      'pending': 'Pending',
+      'failed': 'Failed',
+      'activate': 'Activate',
+      'addPromoCode': 'Add Promo Code',
+      'promoCodeHint': 'Promo Code',
+      'viewAndRedeemPoints': 'View and Redeem Points',
+      'redeemLoyaltyBalance': 'Redeem loyalty points for wallet balance',
+      'promoCodeActivated': 'Code activated successfully',
+      'invalidPromoCode': 'Invalid code',
       'topUp': 'Top Up',
       'enterAmount': 'Enter Amount',
       'pleaseEnterValidAmount': 'Please enter a valid amount',

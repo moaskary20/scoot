@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui' as ui;
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/services/language_service.dart';
 import '../../../core/models/user_model.dart';
 import '../../../core/models/wallet_transaction_model.dart';
 import '../../../core/l10n/app_localizations.dart';
@@ -108,11 +110,12 @@ class _WalletScreenState extends State<WalletScreen> {
           _isLoadingTransactions = false;
         });
         
+        final localizations = AppLocalizations.of(context);
         if (result['success'] == true) {
           _promoCodeController.clear();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(result['message'] ?? 'تم تفعيل الكود بنجاح'),
+              content: Text(result['message'] ?? (localizations?.promoCodeActivated ?? 'تم تفعيل الكود بنجاح')),
               backgroundColor: Colors.green,
             ),
           );
@@ -120,7 +123,7 @@ class _WalletScreenState extends State<WalletScreen> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(result['message'] ?? 'كود غير صحيح'),
+              content: Text(result['message'] ?? (localizations?.invalidPromoCode ?? 'كود غير صحيح')),
               backgroundColor: Colors.red,
             ),
           );
@@ -158,8 +161,12 @@ class _WalletScreenState extends State<WalletScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final languageService = Provider.of<LanguageService>(context, listen: false);
+    final localizations = AppLocalizations.of(context);
+    final isArabic = languageService.isArabic;
+    
     return Directionality(
-      textDirection: ui.TextDirection.rtl,
+      textDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
@@ -222,14 +229,15 @@ class _WalletScreenState extends State<WalletScreen> {
   Widget _buildBalanceSection() {
     final balance = _currentUser?.walletBalance ?? 0.0;
     final recentTransactions = _transactions.take(5).toList();
+    final localizations = AppLocalizations.of(context);
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Balance Header
-        const Text(
-          'الرصيد المتاح',
-          style: TextStyle(
+        Text(
+          localizations?.availableBalance ?? 'الرصيد المتاح',
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
             color: Colors.black,
@@ -241,7 +249,7 @@ class _WalletScreenState extends State<WalletScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              '${balance.toStringAsFixed(2)} ج.م',
+              '${balance.toStringAsFixed(2)} ${localizations?.egp ?? 'ج.م'}',
               style: const TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
@@ -286,9 +294,9 @@ class _WalletScreenState extends State<WalletScreen> {
                           size: 20,
                         ),
                         const SizedBox(width: 8),
-                        const Text(
-                          'إشحن',
-                          style: TextStyle(
+                        Text(
+                          localizations?.charge ?? 'اشحن',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -304,12 +312,12 @@ class _WalletScreenState extends State<WalletScreen> {
         ),
         const SizedBox(height: 24),
         // Transaction History Section
-        _buildTransactionHistorySection(recentTransactions),
+        _buildTransactionHistorySection(recentTransactions, localizations),
       ],
     );
   }
 
-  Widget _buildTransactionHistorySection(List<WalletTransactionModel> transactions) {
+  Widget _buildTransactionHistorySection(List<WalletTransactionModel> transactions, AppLocalizations? loc) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -332,9 +340,9 @@ class _WalletScreenState extends State<WalletScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'المعاملات المالية',
-                  style: TextStyle(
+                Text(
+                  loc?.financialTransactions ?? 'المعاملات المالية',
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
@@ -345,9 +353,9 @@ class _WalletScreenState extends State<WalletScreen> {
             TextButton.icon(
               onPressed: _showTransactionHistory,
               icon: const Icon(Icons.arrow_forward_ios, size: 14),
-              label: const Text(
-                'سجل المعاملات',
-                style: TextStyle(
+              label: Text(
+                loc?.transactionHistory ?? 'سجل المعاملات',
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -378,7 +386,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'لا توجد معاملات مالية بعد',
+                  loc?.noTransactionsYet ?? 'لا توجد معاملات مالية بعد',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey[600],
@@ -387,7 +395,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'ستظهر جميع المعاملات المالية المتعلقة بالمحفظة هنا',
+                  loc?.transactionsWillAppearHere ?? 'ستظهر جميع المعاملات المالية المتعلقة بالمحفظة هنا',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey[500],
@@ -398,13 +406,15 @@ class _WalletScreenState extends State<WalletScreen> {
             ),
           )
         else
-          ...transactions.map((transaction) => _buildTransactionItem(transaction)),
+          ...transactions.map((transaction) => _buildTransactionItem(transaction, loc)),
       ],
     );
   }
 
-  Widget _buildTransactionItem(WalletTransactionModel transaction) {
-    final dateFormat = DateFormat('dd/MM/yyyy - HH:mm', 'ar');
+  Widget _buildTransactionItem(WalletTransactionModel transaction, AppLocalizations? loc) {
+    final languageService = Provider.of<LanguageService>(context, listen: false);
+    final isArabic = languageService.isArabic;
+    final dateFormat = DateFormat('dd/MM/yyyy - HH:mm', isArabic ? 'ar' : 'en');
     final isCredit = transaction.transactionType == 'credit';
     final statusColor = _getStatusColor(transaction.status);
     final typeIcon = _getTransactionTypeIcon(transaction.type);
@@ -480,7 +490,7 @@ class _WalletScreenState extends State<WalletScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              _getTransactionTypeText(transaction.type),
+                              loc?.getTransactionTypeText(transaction.type) ?? _getTransactionTypeText(transaction.type),
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -504,7 +514,7 @@ class _WalletScreenState extends State<WalletScreen> {
                               ),
                             ),
                             child: Text(
-                              _getStatusText(transaction.status),
+                              loc?.getTransactionStatusText(transaction.status) ?? _getStatusText(transaction.status),
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
@@ -552,7 +562,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'ج.م',
+                      loc?.egp ?? 'ج.م',
                       style: TextStyle(
                         fontSize: 10,
                         color: Colors.grey[600],
@@ -589,22 +599,8 @@ class _WalletScreenState extends State<WalletScreen> {
   }
 
   String _getTransactionTypeText(String type) {
-    switch (type) {
-      case 'top_up':
-        return 'شحن المحفظة';
-      case 'trip_payment':
-        return 'دفع رحلة';
-      case 'refund':
-        return 'استرجاع';
-      case 'adjustment':
-        return 'تعديل';
-      case 'penalty':
-        return 'غرامة';
-      case 'subscription':
-        return 'اشتراك';
-      default:
-        return 'معاملة';
-    }
+    final localizations = AppLocalizations.of(context);
+    return localizations?.getTransactionTypeText(type) ?? 'معاملة';
   }
 
   Color _getStatusColor(String status) {
@@ -623,27 +619,19 @@ class _WalletScreenState extends State<WalletScreen> {
   }
 
   String _getStatusText(String status) {
-    switch (status.toLowerCase()) {
-      case 'completed':
-        return 'مكتملة';
-      case 'pending':
-        return 'قيد الانتظار';
-      case 'failed':
-        return 'فاشلة';
-      case 'cancelled':
-        return 'ملغاة';
-      default:
-        return status;
-    }
+    final localizations = AppLocalizations.of(context);
+    return localizations?.getTransactionStatusText(status) ?? status;
   }
 
   Widget _buildPromoCodeSection() {
+    final localizations = AppLocalizations.of(context);
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'ضيف البروموكود',
-          style: TextStyle(
+        Text(
+          localizations?.addPromoCode ?? 'ضيف البروموكود',
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
             color: Colors.black,
@@ -656,7 +644,7 @@ class _WalletScreenState extends State<WalletScreen> {
               child: TextField(
                 controller: _promoCodeController,
                 decoration: InputDecoration(
-                  hintText: 'بروموكود',
+                  hintText: localizations?.promoCodeHint ?? 'بروموكود',
                   hintStyle: TextStyle(
                     color: Colors.grey[400],
                   ),
@@ -707,9 +695,9 @@ class _WalletScreenState extends State<WalletScreen> {
                                 size: 20,
                               ),
                               const SizedBox(width: 8),
-                              const Text(
-                                'تفعيل',
-                                style: TextStyle(
+                              Text(
+                                localizations?.activate ?? 'تفعيل',
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -728,6 +716,8 @@ class _WalletScreenState extends State<WalletScreen> {
   }
 
   Widget _buildLoyaltyRedeemSection() {
+    final localizations = AppLocalizations.of(context);
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -746,9 +736,9 @@ class _WalletScreenState extends State<WalletScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text(
-              'استبدال نقاط الولاء',
-              style: TextStyle(
+            Text(
+              localizations?.loyaltyRedeem ?? 'استبدال نقاط الولاء',
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
@@ -795,7 +785,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'عرض نقاطي واستبدالها',
+                        localizations?.viewAndRedeemPoints ?? 'عرض نقاطي واستبدالها',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -804,7 +794,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'استبدل نقاط الولاء برصيد في المحفظة',
+                        localizations?.redeemLoyaltyBalance ?? 'استبدل نقاط الولاء برصيد في المحفظة',
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey[700],

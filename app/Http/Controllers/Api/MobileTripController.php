@@ -210,18 +210,21 @@ class MobileTripController extends Controller
                 ], 404);
             }
 
-            // Check if scooter is locked
-            if ($scooter->is_locked) {
-                \Log::warning('Scooter is locked', [
+            // Check if scooter is unlocked (if unlocked, it's rented/in use)
+            if (!$scooter->is_locked) {
+                \Log::warning('Scooter is unlocked (rented/in use)', [
                     'scooter_id' => $scooter->id,
                     'scooter_code' => $scooter->code,
+                    'is_locked' => $scooter->is_locked,
+                    'status' => $scooter->status,
                     'user_id' => $user->id,
                 ]);
                 
                 return response()->json([
                     'success' => false,
-                    'message' => 'السكوتر مقفول حالياً. يرجى المحاولة لاحقاً.',
-                    'error_code' => 'SCOOTER_LOCKED',
+                    'message' => 'السكوتر مستأجر حالياً من مستخدم آخر. يرجى البحث عن سكوتر آخر.',
+                    'error_code' => 'SCOOTER_UNLOCKED_RENTED',
+                    'scooter_status' => $scooter->status,
                 ], 400);
             }
 

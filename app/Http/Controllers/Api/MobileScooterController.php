@@ -39,8 +39,9 @@ class MobileScooterController extends Controller
             ]);
 
             // Get all active scooters with GPS coordinates
-            // Exclude rented scooters - they should not appear on the map
+            // Only show locked scooters (available for rent) - exclude unlocked scooters (rented/in use)
             $scooters = Scooter::where('is_active', true)
+                ->where('is_locked', true) // فقط السكوترات المقفولة (المتاحة للتأجير)
                 ->where('status', '!=', 'rented') // لا نعرض السكوترات المؤجرة
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
@@ -91,13 +92,16 @@ class MobileScooterController extends Controller
 
             // Format response
             $data = $nearbyScooters->map(function ($scooter) {
+                // Scooter is available if it's locked AND status is available
+                $isAvailable = $scooter->is_locked && $scooter->status === 'available';
+                
                 return [
                     'id' => $scooter->id,
                     'code' => $scooter->code,
                     'latitude' => (float) $scooter->latitude,
                     'longitude' => (float) $scooter->longitude,
                     'battery_percentage' => $scooter->battery_percentage ?? 0,
-                    'is_available' => $scooter->status === 'available',
+                    'is_available' => $isAvailable,
                     'is_locked' => (bool) $scooter->is_locked,
                     'status' => $scooter->status,
                     'distance' => round($scooter->distance, 2), // Distance in meters
@@ -130,21 +134,25 @@ class MobileScooterController extends Controller
     public function getAllScooters(Request $request)
     {
         try {
-            // Exclude rented scooters - they should not appear on the map
+            // Only show locked scooters (available for rent) - exclude unlocked scooters (rented/in use)
             $scooters = Scooter::where('is_active', true)
+                ->where('is_locked', true) // فقط السكوترات المقفولة (المتاحة للتأجير)
                 ->where('status', '!=', 'rented') // لا نعرض السكوترات المؤجرة
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
                 ->get();
 
             $data = $scooters->map(function ($scooter) {
+                // Scooter is available if it's locked AND status is available
+                $isAvailable = $scooter->is_locked && $scooter->status === 'available';
+                
                 return [
                     'id' => $scooter->id,
                     'code' => $scooter->code,
                     'latitude' => (float) $scooter->latitude,
                     'longitude' => (float) $scooter->longitude,
                     'battery_percentage' => $scooter->battery_percentage ?? 0,
-                    'is_available' => $scooter->status === 'available',
+                    'is_available' => $isAvailable,
                     'is_locked' => (bool) $scooter->is_locked,
                     'status' => $scooter->status,
                     'last_seen_at' => $scooter->last_seen_at?->toIso8601String(),
@@ -173,6 +181,9 @@ class MobileScooterController extends Controller
         try {
             $scooter = Scooter::where('is_active', true)->findOrFail($id);
 
+            // Scooter is available if it's locked AND status is available
+            $isAvailable = $scooter->is_locked && $scooter->status === 'available';
+            
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -181,7 +192,7 @@ class MobileScooterController extends Controller
                     'latitude' => (float) $scooter->latitude,
                     'longitude' => (float) $scooter->longitude,
                     'battery_percentage' => $scooter->battery_percentage ?? 0,
-                    'is_available' => $scooter->status === 'available',
+                    'is_available' => $isAvailable,
                     'is_locked' => (bool) $scooter->is_locked,
                     'status' => $scooter->status,
                     'last_seen_at' => $scooter->last_seen_at?->toIso8601String(),

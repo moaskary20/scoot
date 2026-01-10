@@ -711,13 +711,13 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       if (mounted) {
-        // Check if error message indicates scooter is unavailable (rented, maintenance, locked, etc.)
+        // Check if error message indicates scooter is unavailable (rented, maintenance, unlocked, etc.)
         final isScooterUnavailable = errorMessage.contains('مستأجر') || 
                                      errorMessage.contains('الصيانة') ||
                                      errorMessage.contains('غير متاح') ||
-                                     errorMessage.contains('مقفول') ||
-                                     errorMessage.contains('LOCKED') ||
-                                     errorStr.contains('SCOOTER_LOCKED') ||
+                                     errorMessage.contains('مفتوح') ||
+                                     errorMessage.contains('UNLOCKED') ||
+                                     errorStr.contains('SCOOTER_UNLOCKED_RENTED') ||
                                      errorStr.contains('SCOOTER_NOT_AVAILABLE') ||
                                      errorStr.contains('SCOOTER_RENTED') ||
                                      errorStr.contains('SCOOTER_MAINTENANCE');

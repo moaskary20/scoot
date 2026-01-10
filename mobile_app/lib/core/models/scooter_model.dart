@@ -22,15 +22,25 @@ class ScooterModel {
   });
 
   factory ScooterModel.fromJson(Map<String, dynamic> json) {
+    // Scooter is available if it's locked AND status is available
+    final isLocked = json['is_locked'] ?? json['lock_status'] ?? false;
+    final status = json['status']?.toString() ?? '';
+    final isAvailableFromJson = json['is_available'];
+    
+    // If is_available is explicitly provided, use it; otherwise calculate based on is_locked and status
+    final isAvailable = isAvailableFromJson != null 
+        ? (isAvailableFromJson == true || isAvailableFromJson == 'true')
+        : (isLocked == true && status == 'available');
+    
     return ScooterModel(
       id: json['id'] ?? json['scooter_id'] ?? 0,
       code: json['code'] ?? json['scooter_code'] ?? '',
       latitude: (json['latitude'] ?? json['lat'] ?? 0.0).toDouble(),
       longitude: (json['longitude'] ?? json['lng'] ?? json['lon'] ?? 0.0).toDouble(),
       batteryPercentage: json['battery_percentage'] ?? json['battery'] ?? 0,
-      isLocked: json['is_locked'] ?? json['lock_status'] ?? false,
-      isAvailable: json['is_available'] ?? (json['status'] == 'available') ?? true,
-      status: json['status'],
+      isLocked: isLocked,
+      isAvailable: isAvailable,
+      status: status.isNotEmpty ? status : null,
       distance: json['distance']?.toDouble(),
     );
   }

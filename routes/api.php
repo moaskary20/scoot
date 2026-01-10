@@ -43,6 +43,7 @@ Route::prefix('trips')->middleware('auth:sanctum')->group(function () {
     Route::post('/start', [MobileTripController::class, 'start']);
     Route::get('/active', [MobileTripController::class, 'getActiveTrip']);
     Route::post('/{id}/complete', [MobileTripController::class, 'complete']);
+    Route::post('/unlock-scooter', [MobileTripController::class, 'unlockScooter']);
 });
 
 // Mobile App Wallet Routes

@@ -1,0 +1,15 @@
+# Template for key.properties
+# Copy this file to key.properties and fill in your actual values
+# DO NOT commit key.properties to git!
+
+storePassword=YOUR_STORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=upload
+storeFile=/path/to/upload-keystore.jks
+
+# Example:
+# storePassword=MySecurePassword123
+# keyPassword=MySecurePassword123
+# keyAlias=upload
+# storeFile=/home/username/upload-keystore.jks
+

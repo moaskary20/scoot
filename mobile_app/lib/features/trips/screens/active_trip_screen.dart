@@ -44,6 +44,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
   double _currentCost = 0.0; // Current trip cost
   bool _hasError = false;
   String? _errorMessage;
+  bool _isScooterLocked = false; // Lock status
+  bool _isUnlocking = false; // Unlocking in progress
 
   @override
   void initState() {
@@ -249,19 +251,33 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             final scooterId = scooterData['id'];
             final scooterCode = scooterData['code'];
             
+            // Extract lock status
+            bool isLocked = false;
+            if (scooterData['is_locked'] != null) {
+              if (scooterData['is_locked'] is bool) {
+                isLocked = scooterData['is_locked'] as bool;
+              } else if (scooterData['is_locked'] is int) {
+                isLocked = (scooterData['is_locked'] as int) != 0;
+              } else if (scooterData['is_locked'] is String) {
+                isLocked = (scooterData['is_locked'] as String).toLowerCase() == 'true' || (scooterData['is_locked'] as String) == '1';
+              }
+            }
+            
             print('✅ Battery and cost data extracted:');
             print('   - Scooter ID: $scooterId');
             print('   - Scooter Code: $scooterCode');
             print('   - Battery Percentage: $battery% (raw: $batteryValue, type: ${batteryValue.runtimeType})');
             print('   - Current Cost: $currentCost ج.م');
+            print('   - Is Locked: $isLocked');
             
             if (mounted) {
               setState(() {
                 _batteryPercentage = battery;
                 _currentCost = currentCost;
+                _isScooterLocked = isLocked;
                 _isLoadingBattery = false;
               });
-              print('✅ State updated: Battery=$_batteryPercentage%, Cost=$_currentCost ج.م');
+              print('✅ State updated: Battery=$_batteryPercentage%, Cost=$_currentCost ج.م, Locked=$_isScooterLocked');
             }
           } else {
             print('⚠️ Scooter data is not a Map, type: ${scooterData.runtimeType}');
@@ -532,6 +548,47 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             ),
           );
         }
+      }
+    }
+  }
+
+  Future<void> _unlockScooter() async {
+    if (_isUnlocking) return;
+
+    setState(() {
+      _isUnlocking = true;
+    });
+
+    try {
+      final result = await _apiService.unlockScooter();
+      
+      if (mounted) {
+        setState(() {
+          _isScooterLocked = false;
+          _isUnlocking = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'تم فتح القفل بنجاح'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isUnlocking = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('حدث خطأ في فتح القفل: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
       }
     }
   }
@@ -990,6 +1047,50 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                         ),
 
                         const SizedBox(height: 30),
+
+                        // Unlock button (if scooter is locked)
+                        if (_isScooterLocked)
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed: _isUnlocking ? null : _unlockScooter,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orange,
+                                foregroundColor: Colors.white,
+                                elevation: 4,
+                                shadowColor: Colors.orange.withOpacity(0.4),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              child: _isUnlocking
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      ),
+                                    )
+                                  : const Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.lock_open, size: 24),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'فتح القفل',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                            ),
+                          ),
+
+                        if (_isScooterLocked) const SizedBox(height: 16),
 
                         // Complete button
                         SizedBox(

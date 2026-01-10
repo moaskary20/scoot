@@ -7,6 +7,8 @@ use App\Models\Trip;
 use App\Models\Scooter;
 use App\Models\GeoZone;
 use App\Repositories\TripRepository;
+use App\Repositories\ScooterLogRepository;
+use App\Services\WebSocketService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Carbon;
@@ -15,6 +17,8 @@ class MobileTripController extends Controller
 {
     public function __construct(
         private readonly TripRepository $tripRepository,
+        private readonly ScooterLogRepository $logRepository,
+        private readonly WebSocketService $webSocketService,
     ) {
         //
     }
@@ -379,6 +383,7 @@ class MobileTripController extends Controller
                     'id' => $trip->scooter->id,
                     'code' => $trip->scooter->code,
                     'battery_percentage' => $batteryPercentage, // From database
+                    'is_locked' => (bool) $trip->scooter->is_locked, // Lock status
                 ];
                 
                 \Log::info('🔋 Active trip battery data', [
@@ -693,6 +698,96 @@ class MobileTripController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'حدث خطأ في إغلاق الرحلة',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Unlock scooter during active trip
+     */
+    public function unlockScooter(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            // Check if user has an active trip
+            $trip = Trip::where('user_id', $user->id)
+                ->where('status', 'active')
+                ->with(['scooter'])
+                ->first();
+
+            if (!$trip) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'لا توجد رحلة نشطة',
+                ], 404);
+            }
+
+            if (!$trip->scooter) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'السكوتر غير موجود',
+                ], 404);
+            }
+
+            $scooter = $trip->scooter;
+
+            // Check if scooter is already unlocked
+            if (!$scooter->is_locked) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'السكوتر مفتوح بالفعل',
+                    'is_locked' => false,
+                ], 200);
+            }
+
+            // Unlock the scooter
+            $scooter->update(['is_locked' => false]);
+
+            // Log unlock event
+            try {
+                $this->logRepository->logManualLock($scooter, $user->id, false);
+            } catch (\Exception $e) {
+                \Log::warning('Error logging unlock event', [
+                    'scooter_id' => $scooter->id,
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            // Send unlock command via WebSocket
+            try {
+                $this->webSocketService->sendCommandToScooter($scooter, ['lock' => false, 'unlock' => true]);
+            } catch (\Exception $e) {
+                \Log::warning('Error sending unlock command via WebSocket', [
+                    'scooter_id' => $scooter->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            \Log::info('🔓 Scooter unlocked by user during active trip', [
+                'trip_id' => $trip->id,
+                'scooter_id' => $scooter->id,
+                'scooter_code' => $scooter->code,
+                'user_id' => $user->id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم فتح القفل بنجاح',
+                'is_locked' => false,
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('❌ Error unlocking scooter during active trip', [
+                'user_id' => $request->user()?->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'حدث خطأ في فتح القفل',
                 'error' => $e->getMessage(),
             ], 500);
         }

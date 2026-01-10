@@ -51,22 +51,47 @@ class MobileWalletController extends Controller
     {
         try {
             $user = $request->user();
-            $perPage = $request->get('per_page', 20);
-            $page = $request->get('page', 1);
+            $perPage = (int) $request->get('per_page', 20);
+            $page = (int) $request->get('page', 1);
 
             $transactions = $this->repository->getUserTransactions($user->id, $perPage);
 
+            // Transform transactions to ensure proper data types
+            $transactionsData = collect($transactions->items())->map(function (WalletTransaction $transaction) {
+                return [
+                    'id' => (int) $transaction->id,
+                    'user_id' => (int) $transaction->user_id,
+                    'trip_id' => $transaction->trip_id ? (int) $transaction->trip_id : null,
+                    'type' => $transaction->type,
+                    'transaction_type' => $transaction->transaction_type,
+                    'amount' => (float) $transaction->amount,
+                    'balance_before' => (float) $transaction->balance_before,
+                    'balance_after' => (float) $transaction->balance_after,
+                    'reference' => $transaction->reference,
+                    'payment_method' => $transaction->payment_method,
+                    'status' => $transaction->status,
+                    'description' => $transaction->description,
+                    'notes' => $transaction->notes,
+                    'created_at' => $transaction->created_at?->toDateTimeString(),
+                    'processed_at' => $transaction->processed_at?->toDateTimeString(),
+                ];
+            });
+
             return response()->json([
                 'success' => true,
-                'data' => $transactions->items(),
+                'data' => $transactionsData->values()->all(),
                 'pagination' => [
-                    'current_page' => $transactions->currentPage(),
-                    'last_page' => $transactions->lastPage(),
-                    'per_page' => $transactions->perPage(),
-                    'total' => $transactions->total(),
+                    'current_page' => (int) $transactions->currentPage(),
+                    'last_page' => (int) $transactions->lastPage(),
+                    'per_page' => (int) $transactions->perPage(),
+                    'total' => (int) $transactions->total(),
                 ],
             ], 200);
         } catch (\Exception $e) {
+            \Log::error('Error fetching wallet transactions: ' . $e->getMessage(), [
+                'user_id' => $request->user()?->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'حدث خطأ في جلب معاملات المحفظة',

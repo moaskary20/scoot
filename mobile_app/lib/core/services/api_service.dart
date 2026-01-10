@@ -897,6 +897,41 @@ class ApiService {
     }
   }
 
+  // Unlock scooter during active trip
+  Future<Map<String, dynamic>> unlockScooter() async {
+    try {
+      print('🔓 Unlocking scooter during active trip...');
+      
+      final response = await _dio.post(
+        ApiConstants.unlockScooter,
+      );
+
+      print('📦 Unlock scooter response: ${response.statusCode}');
+      print('📦 Response data: ${response.data}');
+
+      if (response.data['success'] == true) {
+        return response.data;
+      }
+
+      final errorMessage = response.data['message'] ?? 'فشل فتح القفل';
+      print('❌ Unlock scooter failed: $errorMessage');
+      throw Exception(errorMessage);
+    } catch (e) {
+      print('❌ Error unlocking scooter: $e');
+      if (e is DioException) {
+        print('📡 Status Code: ${e.response?.statusCode}');
+        print('📡 Response Data: ${e.response?.data}');
+        if (e.response?.data != null && e.response?.data['message'] != null) {
+          throw Exception(e.response!.data['message']);
+        }
+        if (e.response?.data != null && e.response?.data['error'] != null) {
+          throw Exception('${e.response!.data['message'] ?? 'حدث خطأ'}: ${e.response!.data['error']}');
+        }
+      }
+      throw _handleError(e);
+    }
+  }
+
   // Logout
   Future<void> logout() async {
     // Always clear local storage first, even if API call fails

@@ -26,6 +26,7 @@ class ApiConstants {
   static const String completeTrip = '/trips/{id}/complete';
   static const String cancelTrip = '/trips/{id}/cancel';
   static const String activeTrip = '/trips/active';
+  static const String unlockScooter = '/trips/unlock-scooter';
   
   // Wallet
   static const String wallet = '/wallet';

@@ -23,12 +23,36 @@ class CardModel {
 
   // Masked card number for display (shows only last 4 digits)
   String get maskedCardNumber {
-    if (cardNumber.length <= 4) return cardNumber;
-    return '**** **** **** ${cardNumber.substring(cardNumber.length - 4)}';
+    // If already masked or empty, return as is
+    if (cardNumber.isEmpty || cardNumber.contains('*')) {
+      return cardNumber.isNotEmpty ? cardNumber : '**** **** **** ****';
+    }
+    
+    // Extract only digits
+    final digitsOnly = cardNumber.replaceAll(RegExp(r'\D'), '');
+    
+    // If has less than 4 digits, return as is
+    if (digitsOnly.length <= 4) {
+      return digitsOnly.isNotEmpty ? digitsOnly : '**** **** **** ****';
+    }
+    
+    // Format as masked: **** **** **** XXXX
+    final last4 = digitsOnly.substring(digitsOnly.length - 4);
+    return '**** **** **** $last4';
   }
 
-  // Full expiry date
-  String get expiryDate => '$expiryMonth/$expiryYear';
+  // Full expiry date (format: MM/YY)
+  String get expiryDate {
+    String month = expiryMonth.padLeft(2, '0');
+    String year = expiryYear;
+    
+    // If year is 4 digits, take last 2
+    if (year.length == 4) {
+      year = year.substring(2);
+    }
+    
+    return '$month/$year';
+  }
 
   factory CardModel.fromJson(Map<String, dynamic> json) {
     return CardModel(

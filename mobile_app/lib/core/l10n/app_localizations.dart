@@ -127,6 +127,19 @@ class AppLocalizations {
   
   // Top Up Screen
   String get topUp => _localizedValues[locale.languageCode]?['topUp'] ?? 'شحن الرصيد';
+  String get topUpBalance => _localizedValues[locale.languageCode]?['topUpBalance'] ?? 'شحن الرصيد';
+  String get enterAmountToCharge => _localizedValues[locale.languageCode]?['enterAmountToCharge'] ?? 'أدخل المبلغ المراد شحنه';
+  String get minimumChargeAmount => _localizedValues[locale.languageCode]?['minimumChargeAmount'] ?? 'الحد الأدنى للشحن: 1 جنيه';
+  String get amountLabel => _localizedValues[locale.languageCode]?['amountLabel'] ?? 'المبلغ (جنيه)';
+  String get amountHint => _localizedValues[locale.languageCode]?['amountHint'] ?? '0.00';
+  String get pleaseEnterAmount => _localizedValues[locale.languageCode]?['pleaseEnterAmount'] ?? 'يرجى إدخال المبلغ';
+  String get pleaseEnterValidNumber => _localizedValues[locale.languageCode]?['pleaseEnterValidNumber'] ?? 'يرجى إدخال رقم صحيح';
+  String get minimumChargeRequired => _localizedValues[locale.languageCode]?['minimumChargeRequired'] ?? 'الحد الأدنى للشحن هو 1 جنيه';
+  String get availablePaymentMethods => _localizedValues[locale.languageCode]?['availablePaymentMethods'] ?? 'طرق الدفع المتاحة';
+  String get visaMastercard => _localizedValues[locale.languageCode]?['visaMastercard'] ?? 'الفيزا / الماستر كارد';
+  String get bankWallet => _localizedValues[locale.languageCode]?['bankWallet'] ?? 'المحفظة البنكية';
+  String get pay => _localizedValues[locale.languageCode]?['pay'] ?? 'دفع';
+  String get paymentError => _localizedValues[locale.languageCode]?['paymentError'] ?? 'حدث خطأ في إنشاء عملية الدفع';
   String get enterAmount => _localizedValues[locale.languageCode]?['enterAmount'] ?? 'أدخل المبلغ';
   String get pleaseEnterValidAmount => _localizedValues[locale.languageCode]?['pleaseEnterValidAmount'] ?? 'يرجى إدخال مبلغ صحيح';
   String get minimumCharge => _localizedValues[locale.languageCode]?['minimumCharge'] ?? 'الحد الأدنى للشحن هو 1 جنيه';
@@ -471,6 +484,19 @@ class AppLocalizations {
       'promoCodeActivated': 'تم تفعيل الكود بنجاح',
       'invalidPromoCode': 'كود غير صحيح',
       'topUp': 'شحن الرصيد',
+      'topUpBalance': 'شحن الرصيد',
+      'enterAmountToCharge': 'أدخل المبلغ المراد شحنه',
+      'minimumChargeAmount': 'الحد الأدنى للشحن: 1 جنيه',
+      'amountLabel': 'المبلغ (جنيه)',
+      'amountHint': '0.00',
+      'pleaseEnterAmount': 'يرجى إدخال المبلغ',
+      'pleaseEnterValidNumber': 'يرجى إدخال رقم صحيح',
+      'minimumChargeRequired': 'الحد الأدنى للشحن هو 1 جنيه',
+      'availablePaymentMethods': 'طرق الدفع المتاحة',
+      'visaMastercard': 'الفيزا / الماستر كارد',
+      'bankWallet': 'المحفظة البنكية',
+      'pay': 'دفع',
+      'paymentError': 'حدث خطأ في إنشاء عملية الدفع',
       'enterAmount': 'أدخل المبلغ',
       'pleaseEnterValidAmount': 'يرجى إدخال مبلغ صحيح',
       'minimumCharge': 'الحد الأدنى للشحن هو 1 جنيه',
@@ -679,6 +705,19 @@ class AppLocalizations {
       'promoCodeActivated': 'Code activated successfully',
       'invalidPromoCode': 'Invalid code',
       'topUp': 'Top Up',
+      'topUpBalance': 'Top Up Balance',
+      'enterAmountToCharge': 'Enter Amount to Charge',
+      'minimumChargeAmount': 'Minimum Charge: 1 EGP',
+      'amountLabel': 'Amount (EGP)',
+      'amountHint': '0.00',
+      'pleaseEnterAmount': 'Please enter amount',
+      'pleaseEnterValidNumber': 'Please enter a valid number',
+      'minimumChargeRequired': 'Minimum charge is 1 EGP',
+      'availablePaymentMethods': 'Available Payment Methods',
+      'visaMastercard': 'Visa / Mastercard',
+      'bankWallet': 'Bank Wallet',
+      'pay': 'Pay',
+      'paymentError': 'Error creating payment transaction',
       'enterAmount': 'Enter Amount',
       'pleaseEnterValidAmount': 'Please enter a valid amount',
       'minimumCharge': 'Minimum charge is 1 EGP',

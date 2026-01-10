@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:ui' as ui;
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/services/language_service.dart';
 import '../../../core/l10n/app_localizations.dart';
 
 class TopUpScreen extends StatefulWidget {
@@ -131,9 +134,10 @@ class _TopUpScreenState extends State<TopUpScreen> {
             }
           }
         } else {
+          final localizations = AppLocalizations.of(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(result['message'] ?? 'حدث خطأ في إنشاء عملية الدفع'),
+              content: Text(result['message'] ?? (localizations?.paymentError ?? 'حدث خطأ في إنشاء عملية الدفع')),
               backgroundColor: Colors.red,
             ),
           );
@@ -156,8 +160,12 @@ class _TopUpScreenState extends State<TopUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final languageService = Provider.of<LanguageService>(context, listen: false);
+    final localizations = AppLocalizations.of(context);
+    final isArabic = languageService.isArabic;
+    
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
@@ -167,9 +175,9 @@ class _TopUpScreenState extends State<TopUpScreen> {
             icon: const Icon(Icons.arrow_back, color: Colors.black),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
-            'شحن الرصيد',
-            style: TextStyle(
+          title: Text(
+            localizations?.topUpBalance ?? 'شحن الرصيد',
+            style: const TextStyle(
               color: Colors.black,
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -204,9 +212,9 @@ class _TopUpScreenState extends State<TopUpScreen> {
                   ),
                   const SizedBox(height: 40),
                   // Title
-                  const Text(
-                    'أدخل المبلغ المراد شحنه',
-                    style: TextStyle(
+                  Text(
+                    localizations?.enterAmountToCharge ?? 'أدخل المبلغ المراد شحنه',
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
@@ -215,7 +223,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'الحد الأدنى للشحن: 1 جنيه',
+                    localizations?.minimumChargeAmount ?? 'الحد الأدنى للشحن: 1 جنيه',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[600],
@@ -228,10 +236,10 @@ class _TopUpScreenState extends State<TopUpScreen> {
                     controller: _amountController,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: InputDecoration(
-                      labelText: 'المبلغ (جنيه)',
-                      hintText: '0.00',
+                      labelText: localizations?.amountLabel ?? 'المبلغ (جنيه)',
+                      hintText: localizations?.amountHint ?? '0.00',
                       prefixIcon: const Icon(Icons.attach_money),
-                      suffixText: 'ج.م',
+                      suffixText: localizations?.egp ?? 'ج.م',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -247,14 +255,14 @@ class _TopUpScreenState extends State<TopUpScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'يرجى إدخال المبلغ';
+                        return localizations?.pleaseEnterAmount ?? 'يرجى إدخال المبلغ';
                       }
                       final amount = double.tryParse(value.trim());
                       if (amount == null) {
-                        return 'يرجى إدخال رقم صحيح';
+                        return localizations?.pleaseEnterValidNumber ?? 'يرجى إدخال رقم صحيح';
                       }
                       if (amount < 1) {
-                        return 'الحد الأدنى للشحن هو 1 جنيه';
+                        return localizations?.minimumChargeRequired ?? 'الحد الأدنى للشحن هو 1 جنيه';
                       }
                       return null;
                     },
@@ -276,7 +284,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
                             Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
                             const SizedBox(width: 8),
                             Text(
-                              'طرق الدفع المتاحة',
+                              localizations?.availablePaymentMethods ?? 'طرق الدفع المتاحة',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -288,13 +296,13 @@ class _TopUpScreenState extends State<TopUpScreen> {
                         const SizedBox(height: 12),
                         _buildPaymentMethodItem(
                           icon: Icons.credit_card,
-                          title: 'الفيزا / الماستر كارد',
+                          title: localizations?.visaMastercard ?? 'الفيزا / الماستر كارد',
                           color: Colors.blue,
                         ),
                         const SizedBox(height: 8),
                         _buildPaymentMethodItem(
                           icon: Icons.account_balance,
-                          title: 'المحفظة البنكية',
+                          title: localizations?.bankWallet ?? 'المحفظة البنكية',
                           color: Colors.green,
                         ),
                       ],
@@ -323,9 +331,9 @@ class _TopUpScreenState extends State<TopUpScreen> {
                                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
-                          : const Text(
-                              'دفع',
-                              style: TextStyle(
+                          : Text(
+                              localizations?.pay ?? 'دفع',
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),

@@ -221,6 +221,10 @@ class _TripsScreenState extends State<TripsScreen> {
   Widget _buildTripCard(TripModel trip) {
     final statusColor = _getStatusColor(trip.status);
     final paymentStatusColor = _getPaymentStatusColor(trip.paymentStatus);
+    
+    // Check if trip is not fully paid
+    final bool isNotFullyPaid = trip.paymentStatus == 'unpaid' || trip.paymentStatus == 'partially_paid';
+    final bool hasDebt = trip.remainingAmount > 0;
 
     return InkWell(
       onTap: () {
@@ -235,13 +239,18 @@ class _TripsScreenState extends State<TripsScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isNotFullyPaid ? Colors.red.withOpacity(0.03) : Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(
+            color: isNotFullyPaid ? Colors.red.withOpacity(0.5) : Colors.grey[200]!,
+            width: isNotFullyPaid ? 2 : 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 4,
+              color: isNotFullyPaid 
+                  ? Colors.red.withOpacity(0.1)
+                  : Colors.black.withOpacity(0.05),
+              blurRadius: isNotFullyPaid ? 8 : 4,
               offset: const Offset(0, 2),
             ),
           ],
@@ -251,6 +260,37 @@ class _TripsScreenState extends State<TripsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+            // Warning Banner for unpaid trips
+            if (isNotFullyPaid) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, color: Colors.red, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        trip.paymentStatus == 'unpaid'
+                            ? 'غير مدفوع بالكامل - يرجى سداد المبلغ المتبقي'
+                            : 'مدفوع جزئياً - يرجى سداد المبلغ المتبقي: ${trip.remainingAmount.toStringAsFixed(2)} ج.م',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             // Header Row (Scooter + Status + Cost)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -260,13 +300,15 @@ class _TripsScreenState extends State<TripsScreen> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Color(AppConstants.primaryColor).withOpacity(0.1),
+                        color: isNotFullyPaid 
+                            ? Colors.red.withOpacity(0.1)
+                            : Color(AppConstants.primaryColor).withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.electric_scooter,
                         size: 20,
-                        color: Colors.black87,
+                        color: isNotFullyPaid ? Colors.red : Colors.black87,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -277,9 +319,10 @@ class _TripsScreenState extends State<TripsScreen> {
                           trip.scooterCode != null && trip.scooterCode!.isNotEmpty
                               ? '${AppLocalizations.of(context)?.scooter ?? 'سكوتر'} ${trip.scooterCode}'
                               : '${AppLocalizations.of(context)?.tripNumber ?? 'رحلة رقم'} ${trip.id}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
+                            color: isNotFullyPaid ? Colors.red[900] : Colors.black87,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -299,10 +342,10 @@ class _TripsScreenState extends State<TripsScreen> {
                   children: [
                     Text(
                       '${trip.cost.toStringAsFixed(2)} ${AppLocalizations.of(context)?.egp ?? 'ج.م'}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        color: isNotFullyPaid ? Colors.red[900] : Colors.black,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -319,7 +362,9 @@ class _TripsScreenState extends State<TripsScreen> {
             ),
             const SizedBox(height: 12),
             // Status Row
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -328,6 +373,7 @@ class _TripsScreenState extends State<TripsScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.trip_origin,
@@ -346,17 +392,18 @@ class _TripsScreenState extends State<TripsScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: paymentStatusColor.withOpacity(0.1),
+                    color: paymentStatusColor.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
+                    border: isNotFullyPaid ? Border.all(color: paymentStatusColor, width: 1.5) : null,
                   ),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        Icons.payment,
+                        isNotFullyPaid ? Icons.payment_outlined : Icons.payment,
                         size: 14,
                         color: paymentStatusColor,
                       ),
@@ -366,7 +413,7 @@ class _TripsScreenState extends State<TripsScreen> {
                         style: TextStyle(
                           fontSize: 12,
                           color: paymentStatusColor,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
@@ -402,63 +449,161 @@ class _TripsScreenState extends State<TripsScreen> {
                 ],
               ],
             ),
-            const SizedBox(height: 12),
-            // Payment details
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
+            if (hasDebt) ...[
+              const SizedBox(height: 12),
+              // Debt Warning Section (highlighted)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.red.withOpacity(0.1),
+                      Colors.orange.withOpacity(0.05),
+                    ],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                ),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '${AppLocalizations.of(context)?.paidAmount ?? 'المدفوع'}: ${trip.paidAmount.toStringAsFixed(2)} ${AppLocalizations.of(context)?.egp ?? 'ج.م'}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.green,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    Row(
+                      children: [
+                        Icon(Icons.account_balance_wallet, color: Colors.red, size: 18),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'تفاصيل الدفع',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${AppLocalizations.of(context)?.remainingAmount ?? 'المتبقي'}: ${trip.remainingAmount.toStringAsFixed(2)} ${AppLocalizations.of(context)?.egp ?? 'ج.م'}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.red,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'المدفوع:',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${trip.paidAmount.toStringAsFixed(2)} ج.م',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.green[700],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          width: 1,
+                          height: 40,
+                          color: Colors.grey[300],
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'المتبقي:',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${trip.remainingAmount.toStringAsFixed(2)} ج.م',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          width: 1,
+                          height: 40,
+                          color: Colors.grey[300],
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'الإجمالي:',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${trip.cost.toStringAsFixed(2)} ج.م',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '${AppLocalizations.of(context)?.baseCost ?? 'الأساسي'}: ${trip.baseCost.toStringAsFixed(2)} ${AppLocalizations.of(context)?.egp ?? 'ج.م'}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+              ),
+            ] else ...[
+              const SizedBox(height: 12),
+              // Payment details for fully paid trips (simplified)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${AppLocalizations.of(context)?.paidAmount ?? 'المدفوع'}: ${trip.paidAmount.toStringAsFixed(2)} ${AppLocalizations.of(context)?.egp ?? 'ج.م'}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.green,
+                      fontWeight: FontWeight.w500,
                     ),
-                    if (trip.discountAmount > 0)
-                      Text(
-                        '${AppLocalizations.of(context)?.discount ?? 'الخصم'}: -${trip.discountAmount.toStringAsFixed(2)} ${AppLocalizations.of(context)?.egp ?? 'ج.م'}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.green[700],
-                        ),
-                      ),
-                    if (trip.penaltyAmount > 0)
-                      Text(
-                        '${AppLocalizations.of(context)?.penalty ?? 'الغرامة'}: +${trip.penaltyAmount.toStringAsFixed(2)} ${AppLocalizations.of(context)?.egp ?? 'ج.م'}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.red[700],
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                  if (trip.discountAmount > 0 || trip.penaltyAmount > 0)
+                    Row(
+                      children: [
+                        if (trip.discountAmount > 0)
+                          Text(
+                            '${AppLocalizations.of(context)?.discount ?? 'الخصم'}: -${trip.discountAmount.toStringAsFixed(2)} ',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.green[700],
+                            ),
+                          ),
+                        if (trip.penaltyAmount > 0)
+                          Text(
+                            '${AppLocalizations.of(context)?.penalty ?? 'الغرامة'}: +${trip.penaltyAmount.toStringAsFixed(2)} ',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.red[700],
+                            ),
+                          ),
+                      ],
+                    ),
+                ],
+              ),
+            ],
               // Show "اضغط لعرض التفاصيل" hint
               const SizedBox(height: 8),
               Row(

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui' as ui;
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/models/trip_model.dart';
 import '../../../core/l10n/app_localizations.dart';
+import '../../../core/services/language_service.dart';
 
 class TripDetailsScreen extends StatelessWidget {
   final TripModel trip;
@@ -15,12 +17,15 @@ class TripDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('dd/MM/yyyy - HH:mm', 'ar');
+    final languageService = Provider.of<LanguageService>(context, listen: false);
+    final localizations = AppLocalizations.of(context);
+    final isArabic = languageService.isArabic;
+    final dateFormat = DateFormat('dd/MM/yyyy - HH:mm', isArabic ? 'ar' : 'en');
     final statusColor = _getStatusColor(trip.status);
     final paymentStatusColor = _getPaymentStatusColor(trip.paymentStatus);
 
     return Directionality(
-      textDirection: ui.TextDirection.rtl,
+      textDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
@@ -47,31 +52,31 @@ class TripDetailsScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header Card - Trip Overview
-                _buildHeaderCard(trip, dateFormat, statusColor, paymentStatusColor),
+                _buildHeaderCard(trip, dateFormat, statusColor, paymentStatusColor, localizations),
                 const SizedBox(height: 16),
                 // Trip Information Section
-                _buildSectionTitle('معلومات الرحلة', Icons.info_outline),
+                _buildSectionTitle(localizations?.tripInformation ?? 'معلومات الرحلة', Icons.info_outline),
                 const SizedBox(height: 12),
-                _buildTripInfoCard(trip, dateFormat),
+                _buildTripInfoCard(trip, dateFormat, localizations),
                 // Penalty Section (if exists)
                 if (trip.penalty != null || trip.penaltyAmount > 0) ...[
                   const SizedBox(height: 16),
-                  _buildSectionTitle('تفاصيل الغرامة', Icons.warning_amber_rounded),
+                  _buildSectionTitle(localizations?.penaltyDetails ?? 'تفاصيل الغرامة', Icons.warning_amber_rounded),
                   const SizedBox(height: 12),
-                  _buildPenaltyCard(trip),
+                  _buildPenaltyCard(trip, localizations, dateFormat),
                 ],
                 // Zone Exit Warning (if exists)
                 if (trip.zoneExitDetected) ...[
                   const SizedBox(height: 16),
-                  _buildSectionTitle('تحذير', Icons.location_off),
+                  _buildSectionTitle(localizations?.warning ?? 'تحذير', Icons.location_off),
                   const SizedBox(height: 12),
-                  _buildZoneExitCard(trip),
+                  _buildZoneExitCard(trip, localizations),
                 ],
                 // Payment Details Section
                 const SizedBox(height: 16),
-                _buildSectionTitle('تفاصيل الدفع', Icons.payment),
+                _buildSectionTitle(localizations?.paymentDetails ?? 'تفاصيل الدفع', Icons.payment),
                 const SizedBox(height: 12),
-                _buildPaymentDetailsCard(trip, paymentStatusColor),
+                _buildPaymentDetailsCard(trip, paymentStatusColor, localizations),
                 const SizedBox(height: 24),
               ],
             ),
@@ -107,6 +112,7 @@ class TripDetailsScreen extends StatelessWidget {
     DateFormat dateFormat,
     Color statusColor,
     Color paymentStatusColor,
+    AppLocalizations? loc,
   ) {
     return Container(
       decoration: BoxDecoration(
@@ -154,8 +160,8 @@ class TripDetailsScreen extends StatelessWidget {
                     children: [
                       Text(
                         trip.scooterCode != null && trip.scooterCode!.isNotEmpty
-                            ? 'سكوتر ${trip.scooterCode}'
-                            : 'رحلة رقم ${trip.id}',
+                            ? '${loc?.scooter ?? 'سكوتر'} ${trip.scooterCode}'
+                            : '${loc?.tripNumber ?? 'رحلة رقم'} ${trip.id}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 20,
@@ -164,7 +170,7 @@ class TripDetailsScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'رحلة رقم ${trip.id}',
+                        '${loc?.tripNumber ?? 'رحلة رقم'} ${trip.id}',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.9),
                           fontSize: 14,
@@ -178,7 +184,7 @@ class TripDetailsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '${trip.cost.toStringAsFixed(2)} ج.م',
+                    '${trip.cost.toStringAsFixed(2)} ${loc?.egp ?? 'ج.م'}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -188,7 +194,7 @@ class TripDetailsScreen extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     trip.durationMinutes != null
-                        ? _formatDuration(trip.durationMinutes!)
+                        ? _formatDuration(trip.durationMinutes!, loc)
                         : '-',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.9),
@@ -218,7 +224,7 @@ class TripDetailsScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      _getStatusText(trip.status),
+                      _getStatusText(trip.status, loc),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -245,7 +251,7 @@ class TripDetailsScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      _getPaymentStatusText(trip.paymentStatus),
+                      _getPaymentStatusText(trip.paymentStatus, loc),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -262,7 +268,7 @@ class TripDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTripInfoCard(TripModel trip, DateFormat dateFormat) {
+  Widget _buildTripInfoCard(TripModel trip, DateFormat dateFormat, AppLocalizations? loc) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -281,7 +287,7 @@ class TripDetailsScreen extends StatelessWidget {
         children: [
           _buildInfoRow(
             icon: Icons.access_time,
-            label: 'وقت البدء',
+            label: loc?.startTime ?? 'وقت البدء',
             value: dateFormat.format(trip.startTime),
             iconColor: Colors.green,
           ),
@@ -289,7 +295,7 @@ class TripDetailsScreen extends StatelessWidget {
             const Divider(height: 24),
             _buildInfoRow(
               icon: Icons.check_circle_outline,
-              label: 'وقت الانتهاء',
+              label: loc?.endTime ?? 'وقت الانتهاء',
               value: dateFormat.format(trip.endTime!),
               iconColor: Colors.blue,
             ),
@@ -298,8 +304,8 @@ class TripDetailsScreen extends StatelessWidget {
             const Divider(height: 24),
             _buildInfoRow(
               icon: Icons.timer,
-              label: 'المدة',
-              value: _formatDuration(trip.durationMinutes!),
+              label: loc?.duration ?? 'المدة',
+              value: _formatDuration(trip.durationMinutes!, loc),
               iconColor: Colors.orange,
             ),
           ],
@@ -307,7 +313,7 @@ class TripDetailsScreen extends StatelessWidget {
             const Divider(height: 24),
             _buildInfoRow(
               icon: Icons.location_on,
-              label: 'نقطة البداية',
+              label: loc?.startPoint ?? 'نقطة البداية',
               value: '${trip.startLatitude!.toStringAsFixed(6)}, ${trip.startLongitude!.toStringAsFixed(6)}',
               iconColor: Colors.green,
             ),
@@ -316,7 +322,7 @@ class TripDetailsScreen extends StatelessWidget {
             const Divider(height: 24),
             _buildInfoRow(
               icon: Icons.location_on,
-              label: 'نقطة النهاية',
+              label: loc?.endPoint ?? 'نقطة النهاية',
               value: '${trip.endLatitude!.toStringAsFixed(6)}, ${trip.endLongitude!.toStringAsFixed(6)}',
               iconColor: Colors.red,
             ),
@@ -325,7 +331,7 @@ class TripDetailsScreen extends StatelessWidget {
             const Divider(height: 24),
             _buildInfoRow(
               icon: Icons.note,
-              label: 'ملاحظات',
+              label: loc?.notes ?? 'ملاحظات',
               value: trip.notes!,
               iconColor: Colors.grey,
             ),
@@ -335,7 +341,7 @@ class TripDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPenaltyCard(TripModel trip) {
+  Widget _buildPenaltyCard(TripModel trip, AppLocalizations? loc, DateFormat dateFormat) {
     final penalty = trip.penalty;
     final hasPenalty = penalty != null || trip.penaltyAmount > 0;
 
@@ -381,7 +387,7 @@ class TripDetailsScreen extends StatelessWidget {
                     Text(
                       (penalty != null && penalty!.title.trim().isNotEmpty)
                           ? penalty!.title
-                          : 'غرامة',
+                          : (loc?.penaltyDefault ?? 'غرامة'),
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -390,7 +396,7 @@ class TripDetailsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${trip.penaltyAmount.toStringAsFixed(2)} ج.م',
+                      '${trip.penaltyAmount.toStringAsFixed(2)} ${loc?.egp ?? 'ج.م'}',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -416,7 +422,7 @@ class TripDetailsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'وصف الغرامة:',
+                    loc?.penaltyDescription ?? 'وصف الغرامة:',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -443,7 +449,7 @@ class TripDetailsScreen extends StatelessWidget {
                 Icon(Icons.category, size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 4),
                 Text(
-                  'النوع: ${_getPenaltyTypeText(penalty.type)}',
+                  '${loc?.penaltyType ?? 'النوع:'} ${_getPenaltyTypeText(penalty.type, loc)}',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey[700],
@@ -457,7 +463,7 @@ class TripDetailsScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    _getPenaltyStatusText(penalty.status),
+                    _getPenaltyStatusText(penalty.status, loc),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -474,7 +480,7 @@ class TripDetailsScreen extends StatelessWidget {
                   Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
                   const SizedBox(width: 4),
                   Text(
-                    'تاريخ التطبيق: ${DateFormat('dd/MM/yyyy - HH:mm', 'ar').format(penalty.appliedAt!)}',
+                    '${loc?.appliedDate ?? 'تاريخ التطبيق:'} ${dateFormat.format(penalty.appliedAt!)}',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[700],
@@ -489,7 +495,7 @@ class TripDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildZoneExitCard(TripModel trip) {
+  Widget _buildZoneExitCard(TripModel trip, AppLocalizations? loc) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.orange[50],
@@ -510,7 +516,7 @@ class TripDetailsScreen extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'تم اكتشاف خروج من المنطقة المسموحة',
+                  loc?.zoneExitMessage ?? 'تم اكتشاف خروج من المنطقة المسموحة',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -543,7 +549,7 @@ class TripDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentDetailsCard(TripModel trip, Color paymentStatusColor) {
+  Widget _buildPaymentDetailsCard(TripModel trip, Color paymentStatusColor, AppLocalizations? loc) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -562,27 +568,30 @@ class TripDetailsScreen extends StatelessWidget {
         children: [
           if (trip.discountAmount > 0) ...[
             _buildPaymentRow(
-              label: 'الخصم',
+              label: loc?.discount ?? 'الخصم',
               amount: -trip.discountAmount,
               color: Colors.green[700]!,
               isDiscount: true,
+              loc: loc,
             ),
             const Divider(height: 24),
           ],
           if (trip.penaltyAmount > 0) ...[
             _buildPaymentRow(
-              label: 'الغرامة',
+              label: loc?.penalty ?? 'الغرامة',
               amount: trip.penaltyAmount,
               color: Colors.red[700]!,
               isPenalty: true,
+              loc: loc,
             ),
             const Divider(height: 24),
           ],
           _buildPaymentRow(
-            label: 'إجمالي التكلفة',
+            label: loc?.totalCost ?? 'إجمالي التكلفة',
             amount: trip.cost,
             color: Colors.black,
             isTotal: true,
+            loc: loc,
           ),
         ],
       ),
@@ -640,6 +649,7 @@ class TripDetailsScreen extends StatelessWidget {
     bool isDiscount = false,
     bool isPenalty = false,
     bool isTotal = false,
+    AppLocalizations? loc,
   }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -653,7 +663,7 @@ class TripDetailsScreen extends StatelessWidget {
           ),
         ),
         Text(
-          '${isDiscount ? '-' : (isPenalty ? '+' : '')}${amount.abs().toStringAsFixed(2)} ج.م',
+          '${isDiscount ? '-' : (isPenalty ? '+' : '')}${amount.abs().toStringAsFixed(2)} ${loc?.egp ?? 'ج.م'}',
           style: TextStyle(
             fontSize: isTotal ? 18 : 14,
             fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
@@ -664,12 +674,23 @@ class TripDetailsScreen extends StatelessWidget {
     );
   }
 
-  String _formatDuration(int minutes) {
-    if (minutes <= 0) return '0 دقيقة';
+  String _formatDuration(int minutes, AppLocalizations? loc) {
+    if (minutes <= 0) {
+      if (loc != null) {
+        return '0 ${loc.minutes}';
+      }
+      return '0 دقيقة';
+    }
     final hours = minutes ~/ 60;
     final mins = minutes % 60;
     if (hours > 0) {
+      if (loc != null) {
+        return loc.formatDurationText(hours, mins);
+      }
       return '${hours} ساعة ${mins} دقيقة';
+    }
+    if (loc != null) {
+      return loc.formatMinutesText(mins);
     }
     return '$mins دقيقة';
   }
@@ -687,14 +708,14 @@ class TripDetailsScreen extends StatelessWidget {
     }
   }
 
-  String _getStatusText(String status) {
+  String _getStatusText(String status, AppLocalizations? loc) {
     switch (status) {
       case 'completed':
-        return 'مكتملة';
+        return loc?.completed ?? 'مكتملة';
       case 'active':
-        return 'نشطة';
+        return loc?.active ?? 'نشطة';
       case 'cancelled':
-        return 'ملغاة';
+        return loc?.cancelled ?? 'ملغاة';
       default:
         return status;
     }
@@ -713,29 +734,29 @@ class TripDetailsScreen extends StatelessWidget {
     }
   }
 
-  String _getPaymentStatusText(String status) {
+  String _getPaymentStatusText(String status, AppLocalizations? loc) {
     switch (status) {
       case 'paid':
-        return 'مدفوع';
+        return loc?.paid ?? 'مدفوع';
       case 'partially_paid':
-        return 'مدفوع جزئياً';
+        return loc?.partiallyPaid ?? 'مدفوع جزئياً';
       case 'unpaid':
-        return 'غير مدفوع';
+        return loc?.unpaid ?? 'غير مدفوع';
       default:
         return status;
     }
   }
 
-  String _getPenaltyTypeText(String type) {
+  String _getPenaltyTypeText(String type, AppLocalizations? loc) {
     switch (type) {
       case 'zone_exit':
-        return 'خروج من المنطقة';
+        return loc?.penaltyTypeZoneExit ?? 'خروج من المنطقة';
       case 'forbidden_parking':
-        return 'ركن في مكان محظور';
+        return loc?.penaltyTypeForbiddenParking ?? 'ركن في مكان محظور';
       case 'unlocked_scooter':
-        return 'عدم قفل السكوتر';
+        return loc?.penaltyTypeUnlockedScooter ?? 'عدم قفل السكوتر';
       case 'other':
-        return 'أخرى';
+        return loc?.penaltyTypeOther ?? 'أخرى';
       default:
         return type;
     }
@@ -756,16 +777,16 @@ class TripDetailsScreen extends StatelessWidget {
     }
   }
 
-  String _getPenaltyStatusText(String status) {
+  String _getPenaltyStatusText(String status, AppLocalizations? loc) {
     switch (status) {
       case 'paid':
-        return 'مدفوعة';
+        return loc?.paid ?? 'مدفوع';
       case 'pending':
-        return 'قيد الانتظار';
+        return loc?.penaltyStatusPending ?? 'قيد الانتظار';
       case 'waived':
-        return 'ملغاة';
+        return loc?.penaltyStatusWaived ?? 'ملغاة';
       case 'cancelled':
-        return 'ملغاة';
+        return loc?.cancelled ?? 'ملغاة';
       default:
         return status;
     }

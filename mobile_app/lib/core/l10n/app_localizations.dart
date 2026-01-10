@@ -136,6 +136,44 @@ class AppLocalizations {
   String get paidAmount => _localizedValues[locale.languageCode]?['paidAmount'] ?? 'المدفوع';
   String get remainingAmount => _localizedValues[locale.languageCode]?['remainingAmount'] ?? 'المتبقي';
   
+  // Trip Details Screen
+  String get tripInformation => _localizedValues[locale.languageCode]?['tripInformation'] ?? 'معلومات الرحلة';
+  String get penaltyDetails => _localizedValues[locale.languageCode]?['penaltyDetails'] ?? 'تفاصيل الغرامة';
+  String get paymentDetails => _localizedValues[locale.languageCode]?['paymentDetails'] ?? 'تفاصيل الدفع';
+  String get startPoint => _localizedValues[locale.languageCode]?['startPoint'] ?? 'نقطة البداية';
+  String get endPoint => _localizedValues[locale.languageCode]?['endPoint'] ?? 'نقطة النهاية';
+  String get notes => _localizedValues[locale.languageCode]?['notes'] ?? 'ملاحظات';
+  String get penaltyDefault => _localizedValues[locale.languageCode]?['penaltyDefault'] ?? 'غرامة';
+  String get penaltyDescription => _localizedValues[locale.languageCode]?['penaltyDescription'] ?? 'وصف الغرامة:';
+  String get penaltyType => _localizedValues[locale.languageCode]?['penaltyType'] ?? 'النوع:';
+  String get appliedDate => _localizedValues[locale.languageCode]?['appliedDate'] ?? 'تاريخ التطبيق:';
+  String get zoneExitMessage => _localizedValues[locale.languageCode]?['zoneExitMessage'] ?? 'تم اكتشاف خروج من المنطقة المسموحة';
+  String get totalCost => _localizedValues[locale.languageCode]?['totalCost'] ?? 'إجمالي التكلفة';
+  String get scooter => _localizedValues[locale.languageCode]?['scooter'] ?? 'سكوتر';
+  String get hours => _localizedValues[locale.languageCode]?['hours'] ?? 'ساعة';
+  String formatDurationText(int hours, int minutes) {
+    final template = _localizedValues[locale.languageCode]?['durationFormat'] ?? '{hours} ساعة {minutes} دقيقة';
+    return template.replaceAll('{hours}', hours.toString()).replaceAll('{minutes}', minutes.toString());
+  }
+  String formatMinutesText(int minutes) {
+    final template = _localizedValues[locale.languageCode]?['minutesFormat'] ?? '{minutes} دقيقة';
+    return template.replaceAll('{minutes}', minutes.toString());
+  }
+  String formatHoursText(int hours) {
+    final template = _localizedValues[locale.languageCode]?['hoursFormat'] ?? '{hours} ساعة';
+    return template.replaceAll('{hours}', hours.toString());
+  }
+  
+  // Penalty Types
+  String get penaltyTypeZoneExit => _localizedValues[locale.languageCode]?['penaltyTypeZoneExit'] ?? 'خروج من المنطقة';
+  String get penaltyTypeForbiddenParking => _localizedValues[locale.languageCode]?['penaltyTypeForbiddenParking'] ?? 'ركن في مكان محظور';
+  String get penaltyTypeUnlockedScooter => _localizedValues[locale.languageCode]?['penaltyTypeUnlockedScooter'] ?? 'عدم قفل السكوتر';
+  String get penaltyTypeOther => _localizedValues[locale.languageCode]?['penaltyTypeOther'] ?? 'أخرى';
+  
+  // Penalty Statuses
+  String get penaltyStatusPending => _localizedValues[locale.languageCode]?['penaltyStatusPending'] ?? 'قيد الانتظار';
+  String get penaltyStatusWaived => _localizedValues[locale.languageCode]?['penaltyStatusWaived'] ?? 'ملغاة';
+  
   // QR Scanner Screen
   String get scanQRCode => _localizedValues[locale.languageCode]?['scanQRCode'] ?? 'امسح رمز QR';
   String get scanQRCodeToStart => _localizedValues[locale.languageCode]?['scanQRCodeToStart'] ?? 'امسح رمز QR للبدء';
@@ -377,6 +415,29 @@ class AppLocalizations {
       'outsideZone': 'خارج المنطقة',
       'paidAmount': 'المدفوع',
       'remainingAmount': 'المتبقي',
+      'tripInformation': 'معلومات الرحلة',
+      'penaltyDetails': 'تفاصيل الغرامة',
+      'paymentDetails': 'تفاصيل الدفع',
+      'startPoint': 'نقطة البداية',
+      'endPoint': 'نقطة النهاية',
+      'notes': 'ملاحظات',
+      'penaltyDefault': 'غرامة',
+      'penaltyDescription': 'وصف الغرامة:',
+      'penaltyType': 'النوع:',
+      'appliedDate': 'تاريخ التطبيق:',
+      'zoneExitMessage': 'تم اكتشاف خروج من المنطقة المسموحة',
+      'totalCost': 'إجمالي التكلفة',
+      'scooter': 'سكوتر',
+      'hours': 'ساعة',
+      'durationFormat': '{hours} ساعة {minutes} دقيقة',
+      'minutesFormat': '{minutes} دقيقة',
+      'hoursFormat': '{hours} ساعة',
+      'penaltyTypeZoneExit': 'خروج من المنطقة',
+      'penaltyTypeForbiddenParking': 'ركن في مكان محظور',
+      'penaltyTypeUnlockedScooter': 'عدم قفل السكوتر',
+      'penaltyTypeOther': 'أخرى',
+      'penaltyStatusPending': 'قيد الانتظار',
+      'penaltyStatusWaived': 'ملغاة',
       'scanQRCode': 'امسح رمز QR',
       'scanQRCodeToStart': 'امسح رمز QR للبدء',
       'positionCamera': 'ضع الكاميرا على رمز QR',
@@ -549,6 +610,29 @@ class AppLocalizations {
       'outsideZone': 'Outside Zone',
       'paidAmount': 'Paid',
       'remainingAmount': 'Remaining',
+      'tripInformation': 'Trip Information',
+      'penaltyDetails': 'Penalty Details',
+      'paymentDetails': 'Payment Details',
+      'startPoint': 'Start Point',
+      'endPoint': 'End Point',
+      'notes': 'Notes',
+      'penaltyDefault': 'Penalty',
+      'penaltyDescription': 'Penalty Description:',
+      'penaltyType': 'Type:',
+      'appliedDate': 'Applied Date:',
+      'zoneExitMessage': 'Zone exit from allowed area detected',
+      'totalCost': 'Total Cost',
+      'scooter': 'Scooter',
+      'hours': 'hour',
+      'durationFormat': '{hours} hour{hoursPlural} {minutes} minute{minutesPlural}',
+      'minutesFormat': '{minutes} minute{minutesPlural}',
+      'hoursFormat': '{hours} hour{hoursPlural}',
+      'penaltyTypeZoneExit': 'Zone Exit',
+      'penaltyTypeForbiddenParking': 'Forbidden Parking',
+      'penaltyTypeUnlockedScooter': 'Unlocked Scooter',
+      'penaltyTypeOther': 'Other',
+      'penaltyStatusPending': 'Pending',
+      'penaltyStatusWaived': 'Waived',
       'scanQRCode': 'Scan QR Code',
       'scanQRCodeToStart': 'Scan QR Code to Start',
       'positionCamera': 'Position your camera over the QR code',

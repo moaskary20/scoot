@@ -152,16 +152,34 @@ class AppLocalizations {
   String get scooter => _localizedValues[locale.languageCode]?['scooter'] ?? 'سكوتر';
   String get hours => _localizedValues[locale.languageCode]?['hours'] ?? 'ساعة';
   String formatDurationText(int hours, int minutes) {
-    final template = _localizedValues[locale.languageCode]?['durationFormat'] ?? '{hours} ساعة {minutes} دقيقة';
-    return template.replaceAll('{hours}', hours.toString()).replaceAll('{minutes}', minutes.toString());
+    if (locale.languageCode == 'en') {
+      final hoursText = hours == 1 ? 'hour' : 'hours';
+      final minutesText = minutes == 1 ? 'minute' : 'minutes';
+      return '$hours $hoursText $minutes $minutesText';
+    } else {
+      final template = _localizedValues[locale.languageCode]?['durationFormat'] ?? '{hours} ساعة {minutes} دقيقة';
+      return template.replaceAll('{hours}', hours.toString()).replaceAll('{minutes}', minutes.toString());
+    }
   }
+  
   String formatMinutesText(int minutes) {
-    final template = _localizedValues[locale.languageCode]?['minutesFormat'] ?? '{minutes} دقيقة';
-    return template.replaceAll('{minutes}', minutes.toString());
+    if (locale.languageCode == 'en') {
+      final minutesText = minutes == 1 ? 'minute' : 'minutes';
+      return '$minutes $minutesText';
+    } else {
+      final template = _localizedValues[locale.languageCode]?['minutesFormat'] ?? '{minutes} دقيقة';
+      return template.replaceAll('{minutes}', minutes.toString());
+    }
   }
+  
   String formatHoursText(int hours) {
-    final template = _localizedValues[locale.languageCode]?['hoursFormat'] ?? '{hours} ساعة';
-    return template.replaceAll('{hours}', hours.toString());
+    if (locale.languageCode == 'en') {
+      final hoursText = hours == 1 ? 'hour' : 'hours';
+      return '$hours $hoursText';
+    } else {
+      final template = _localizedValues[locale.languageCode]?['hoursFormat'] ?? '{hours} ساعة';
+      return template.replaceAll('{hours}', hours.toString());
+    }
   }
   
   // Penalty Types
@@ -624,9 +642,9 @@ class AppLocalizations {
       'totalCost': 'Total Cost',
       'scooter': 'Scooter',
       'hours': 'hour',
-      'durationFormat': '{hours} hour{hoursPlural} {minutes} minute{minutesPlural}',
-      'minutesFormat': '{minutes} minute{minutesPlural}',
-      'hoursFormat': '{hours} hour{hoursPlural}',
+      'durationFormat': '{hours} hour(s) {minutes} minute(s)',
+      'minutesFormat': '{minutes} minute(s)',
+      'hoursFormat': '{hours} hour(s)',
       'penaltyTypeZoneExit': 'Zone Exit',
       'penaltyTypeForbiddenParking': 'Forbidden Parking',
       'penaltyTypeUnlockedScooter': 'Unlocked Scooter',

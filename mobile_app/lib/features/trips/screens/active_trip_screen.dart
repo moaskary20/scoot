@@ -56,26 +56,24 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
       print('🛴 Scooter Code: ${widget.scooterCode}');
       print('⏰ Start Time from backend: ${widget.startTime}');
       
-      // Use current time as actual start time to avoid timezone issues
-      // Or use the backend time if it's recent (within 2 minutes)
-      final now = DateTime.now();
+      // Always use backend start time to ensure continuity when app is reopened
+      // Convert UTC to local time if needed
       final backendTime = widget.startTime.isUtc ? widget.startTime.toLocal() : widget.startTime;
-      final timeDiff = now.difference(backendTime).inMinutes.abs();
+      _actualStartTime = backendTime;
+      
+      final now = DateTime.now();
+      final timeDiff = now.difference(backendTime);
       
       print('🕐 Current time: $now');
       print('🕐 Backend time: $backendTime');
-      print('🕐 Time difference: $timeDiff minutes');
-      
-      if (timeDiff > 2 || timeDiff < 0) {
-        // If backend time is more than 2 minutes different or negative, use current time
-        _actualStartTime = now;
-        print('⚠️ Backend time seems incorrect (diff: $timeDiff min), using current time');
-      } else {
-        _actualStartTime = backendTime;
-        print('✅ Using backend start time (diff: $timeDiff min)');
-      }
-      
+      print('🕐 Time difference: ${timeDiff.inMinutes} minutes (${timeDiff.inSeconds} seconds)');
       print('⏰ Actual Start Time: $_actualStartTime');
+      
+      // If backend time is in the future (shouldn't happen), use current time as fallback
+      if (timeDiff.isNegative) {
+        print('⚠️ Backend time is in the future, using current time as fallback');
+        _actualStartTime = now;
+      }
       
       // Initialize safely
       _startTimer();
@@ -146,10 +144,11 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     final minutes = totalSeconds ~/ 60;
     final seconds = totalSeconds % 60;
     
-    // Ensure duration is not negative
+    // Ensure duration is not negative (shouldn't happen if backend time is correct)
     if (totalSeconds < 0) {
-      print('⚠️ Negative duration detected, resetting start time');
-      _actualStartTime = now;
+      print('⚠️ Negative duration detected. Backend start time: $_actualStartTime, Current time: $now');
+      // Don't reset to current time - keep using backend time
+      // This ensures continuity when app is reopened
       setState(() {
         _durationSeconds = 0;
         _durationMinutes = 0;
@@ -213,6 +212,24 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
         print('📦 [${DateTime.now()}] Active trip data received');
         print('📦 Full response: $activeTrip');
         print('📦 Response keys: ${activeTrip.keys.toList()}');
+        
+        // Update start time from backend to ensure continuity when app is reopened
+        if (activeTrip['start_time'] != null) {
+          try {
+            final backendStartTime = DateTime.parse(activeTrip['start_time']);
+            final backendStartTimeLocal = backendStartTime.isUtc ? backendStartTime.toLocal() : backendStartTime;
+            
+            // Only update if it's different (to avoid unnecessary updates)
+            if (_actualStartTime != backendStartTimeLocal) {
+              print('🔄 Updating start time from backend: $_actualStartTime -> $backendStartTimeLocal');
+              _actualStartTime = backendStartTimeLocal;
+              // Immediately update duration to reflect the correct time
+              _updateDuration();
+            }
+          } catch (e) {
+            print('⚠️ Error parsing start_time from backend: $e');
+          }
+        }
         
         // Get current cost - handle different types
         double currentCost = 0.0;

@@ -217,7 +217,6 @@ class AppLocalizations {
   String get appliedDate => _localizedValues[locale.languageCode]?['appliedDate'] ?? 'تاريخ التطبيق:';
   String get zoneExitMessage => _localizedValues[locale.languageCode]?['zoneExitMessage'] ?? 'تم اكتشاف خروج من المنطقة المسموحة';
   String get totalCost => _localizedValues[locale.languageCode]?['totalCost'] ?? 'إجمالي التكلفة';
-  String get scooter => _localizedValues[locale.languageCode]?['scooter'] ?? 'سكوتر';
   String get hours => _localizedValues[locale.languageCode]?['hours'] ?? 'ساعة';
   String formatDurationText(int hours, int minutes) {
     if (locale.languageCode == 'en') {
@@ -555,7 +554,6 @@ class AppLocalizations {
       'appliedDate': 'تاريخ التطبيق:',
       'zoneExitMessage': 'تم اكتشاف خروج من المنطقة المسموحة',
       'totalCost': 'إجمالي التكلفة',
-      'scooter': 'سكوتر',
       'hours': 'ساعة',
       'durationFormat': '{hours} ساعة {minutes} دقيقة',
       'minutesFormat': '{minutes} دقيقة',
@@ -785,7 +783,6 @@ class AppLocalizations {
       'appliedDate': 'Applied Date:',
       'zoneExitMessage': 'Zone exit from allowed area detected',
       'totalCost': 'Total Cost',
-      'scooter': 'Scooter',
       'hours': 'hour',
       'durationFormat': '{hours} hour(s) {minutes} minute(s)',
       'minutesFormat': '{minutes} minute(s)',

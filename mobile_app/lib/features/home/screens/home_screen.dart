@@ -1744,21 +1744,31 @@ class _HomeScreenState extends State<HomeScreen> {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            const Text(
-                                              'مستخدم',
-                                              style: TextStyle(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.black,
-                                              ),
+                                            Builder(
+                                              builder: (context) {
+                                                final loc = AppLocalizations.of(context);
+                                                return Text(
+                                                  loc?.user ?? 'مستخدم',
+                                                  style: const TextStyle(
+                                                    fontSize: 20,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.black,
+                                                  ),
+                                                );
+                                              },
                                             ),
                                             const SizedBox(height: 4),
-                                            Text(
-                                              'لا توجد بيانات متاحة',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.grey[600],
-                                              ),
+                                            Builder(
+                                              builder: (context) {
+                                                final loc = AppLocalizations.of(context);
+                                                return Text(
+                                                  loc?.noData ?? 'لا توجد بيانات متاحة',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.grey[600],
+                                                  ),
+                                                );
+                                              },
                                             ),
                                           ],
                                         ),
@@ -1830,15 +1840,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            _currentUser!.name.isNotEmpty
-                                                ? _currentUser!.name
-                                                : 'مستخدم',
-                                            style: const TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.black,
-                                            ),
+                                          Builder(
+                                            builder: (context) {
+                                              final loc = AppLocalizations.of(context);
+                                              return Text(
+                                                _currentUser!.name.isNotEmpty
+                                                    ? _currentUser!.name
+                                                    : (loc?.user ?? 'مستخدم'),
+                                                style: const TextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.black,
+                                                ),
+                                              );
+                                            },
                                           ),
                                           const SizedBox(height: 4),
                                           Row(
@@ -1849,17 +1864,22 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 color: Colors.grey,
                                               ),
                                               const SizedBox(width: 4),
-                                              Text(
-                                                (_currentUser!.phone != null &&
-                                                        _currentUser!
-                                                            .phone!
-                                                            .isNotEmpty)
-                                                    ? _currentUser!.phone!
-                                                    : 'لا يوجد رقم هاتف',
-                                                style: TextStyle(
-                                                  fontSize: 14,
-                                                  color: Colors.grey[700],
-                                                ),
+                                              Builder(
+                                                builder: (context) {
+                                                  final loc = AppLocalizations.of(context);
+                                                  return Text(
+                                                    (_currentUser!.phone != null &&
+                                                            _currentUser!
+                                                                .phone!
+                                                                .isNotEmpty)
+                                                        ? _currentUser!.phone!
+                                                        : (loc?.noPhoneNumber ?? 'لا يوجد رقم هاتف'),
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      color: Colors.grey[700],
+                                                    ),
+                                                  );
+                                                },
                                               ),
                                             ],
                                           ),
@@ -1914,13 +1934,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                               size: 20,
                                             ),
                                             const SizedBox(width: 8),
-                                            const Text(
-                                              'اشحن رصيدك',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                            Builder(
+                                              builder: (context) {
+                                                final loc = AppLocalizations.of(context);
+                                                return Text(
+                                                  loc?.chargeBalance ?? 'اشحن رصيدك',
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                );
+                                              },
                                             ),
                                           ],
                                         ),
@@ -2014,7 +2039,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           _buildMenuItem(
                             icon: Icons.person,
-                            title: 'الملف الشخصي',
+                            title: AppLocalizations.of(context)?.profile ?? 'الملف الشخصي',
                             color: Color(AppConstants.primaryColor),
                             onTap: () {
                               Navigator.pop(context);

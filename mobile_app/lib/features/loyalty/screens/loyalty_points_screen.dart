@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:ui' as ui;
+import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/models/loyalty_transaction_model.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/services/language_service.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../shared/theme/app_theme.dart';
 import 'redeem_loyalty_points_screen.dart';
@@ -65,28 +68,33 @@ class _LoyaltyPointsScreenState extends State<LoyaltyPointsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context);
+    final languageService = Provider.of<LanguageService>(context, listen: false);
+    final localizations = AppLocalizations.of(context);
+    final isArabic = languageService.isArabic;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          loc?.loyaltyPoints ?? 'نقاط الولاء',
-          style: AppTheme.tajawal(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: const Color(AppConstants.secondaryColor),
+    return Directionality(
+      textDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            localizations?.loyaltyPoints ?? 'نقاط الولاء',
+            style: AppTheme.tajawal(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: const Color(AppConstants.secondaryColor),
+            ),
           ),
+          centerTitle: true,
         ),
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _loadLoyaltyData,
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _errorMessage != null
-                  ? _buildErrorState(loc)
-                  : _buildContent(loc),
+        body: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: _loadLoyaltyData,
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _errorMessage != null
+                    ? _buildErrorState(localizations)
+                    : _buildContent(localizations),
+          ),
         ),
       ),
     );
@@ -391,7 +399,7 @@ class _LoyaltyPointsScreenState extends State<LoyaltyPointsScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'استبدال النقاط',
+                  loc?.loyaltyRedeem ?? 'استبدال النقاط',
                   style: AppTheme.tajawal(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -404,7 +412,7 @@ class _LoyaltyPointsScreenState extends State<LoyaltyPointsScreen> {
           const SizedBox(height: 16),
           if (canRedeem) ...[
             Text(
-              'يمكنك استبدال نقاط الولاء برصيد في المحفظة',
+              loc?.canRedeemLoyaltyPoints ?? 'يمكنك استبدال نقاط الولاء برصيد في المحفظة',
               style: AppTheme.tajawal(
                 fontSize: 14,
                 color: Colors.white,
@@ -439,7 +447,7 @@ class _LoyaltyPointsScreenState extends State<LoyaltyPointsScreen> {
                   ),
                 ),
                 child: Text(
-                  'استبدال الآن',
+                  loc?.redeemNow ?? 'استبدال الآن',
                   style: AppTheme.tajawal(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -449,7 +457,7 @@ class _LoyaltyPointsScreenState extends State<LoyaltyPointsScreen> {
             ),
           ] else ...[
             Text(
-              'تحتاج ${minPoints - _points} نقطة إضافية للاستبدال',
+              loc?.needMorePointsToRedeemText(minPoints - _points) ?? 'تحتاج ${minPoints - _points} نقطة إضافية للاستبدال',
               style: AppTheme.tajawal(
                 fontSize: 14,
                 color: Colors.white70,
@@ -469,7 +477,7 @@ class _LoyaltyPointsScreenState extends State<LoyaltyPointsScreen> {
                   ),
                 ),
                 child: Text(
-                  'النقاط غير كافية',
+                  loc?.pointsNotEnough ?? 'النقاط غير كافية',
                   style: AppTheme.tajawal(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -553,7 +561,10 @@ class _LoyaltyPointsScreenState extends State<LoyaltyPointsScreen> {
       _ => loc?.loyaltyPoints ?? 'نقاط الولاء',
     };
 
-    final dateText = DateFormat('yyyy-MM-dd HH:mm').format(tx.createdAt);
+    final languageService = Provider.of<LanguageService>(context, listen: false);
+    final isArabic = languageService.isArabic;
+    final dateFormat = DateFormat('yyyy-MM-dd HH:mm', isArabic ? 'ar' : 'en');
+    final dateText = dateFormat.format(tx.createdAt);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),

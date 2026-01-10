@@ -282,9 +282,16 @@ class AppLocalizations {
   String get loyaltyAdjusted => _localizedValues[locale.languageCode]?['loyaltyAdjusted'] ?? 'تعديل نقاط';
   String get loyaltyExpired => _localizedValues[locale.languageCode]?['loyaltyExpired'] ?? 'نقاط منتهية';
   String get balanceAfter => _localizedValues[locale.languageCode]?['balanceAfter'] ?? 'الرصيد بعد';
+  String get canRedeemLoyaltyPoints => _localizedValues[locale.languageCode]?['canRedeemLoyaltyPoints'] ?? 'يمكنك استبدال نقاط الولاء برصيد في المحفظة';
+  String get pointsNotEnough => _localizedValues[locale.languageCode]?['pointsNotEnough'] ?? 'النقاط غير كافية';
   String get bronze => _localizedValues[locale.languageCode]?['bronze'] ?? 'برونزي';
   String get silver => _localizedValues[locale.languageCode]?['silver'] ?? 'فضي';
   String get gold => _localizedValues[locale.languageCode]?['gold'] ?? 'ذهبي';
+  
+  String needMorePointsToRedeemText(int points) {
+    final template = _localizedValues[locale.languageCode]?['needMorePointsToRedeem'] ?? 'تحتاج {points} نقطة إضافية للاستبدال';
+    return template.replaceAll('{points}', points.toString());
+  }
   
   // Loyalty Redemption
   String get pointsToRedeem => _localizedValues[locale.languageCode]?['pointsToRedeem'] ?? 'عدد النقاط المراد استبدالها';
@@ -365,6 +372,9 @@ class AppLocalizations {
       'loyaltyAdjusted': 'تعديل نقاط',
       'loyaltyExpired': 'نقاط منتهية',
       'balanceAfter': 'الرصيد بعد',
+      'canRedeemLoyaltyPoints': 'يمكنك استبدال نقاط الولاء برصيد في المحفظة',
+      'needMorePointsToRedeem': 'تحتاج {points} نقطة إضافية للاستبدال',
+      'pointsNotEnough': 'النقاط غير كافية',
       'bronze': 'برونزي',
       'silver': 'فضي',
       'gold': 'ذهبي',
@@ -569,7 +579,10 @@ class AppLocalizations {
       'loyaltyRedeem': 'Redeem Loyalty Points',
       'loyaltyAdjusted': 'Points adjusted',
       'loyaltyExpired': 'Points expired',
-      'balanceAfter': 'Balance after',
+      'balanceAfter': 'Balance After',
+      'canRedeemLoyaltyPoints': 'You can redeem loyalty points for wallet balance',
+      'needMorePointsToRedeem': 'You need {points} more point(s) to redeem',
+      'pointsNotEnough': 'Insufficient Points',
       'bronze': 'Bronze',
       'silver': 'Silver',
       'gold': 'Gold',

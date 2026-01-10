@@ -117,48 +117,57 @@ class RidingGuideScreen extends StatelessWidget {
               child: Column(
                 children: [
                   _buildGuidelineItem(
-                    'يجب أن يكون عمرك 16 سنة أو أكثر.',
+                    localizations?.ridingGuideLine1 ?? 'يجب أن يكون عمرك 16 سنة أو أكثر.',
                     Icons.check_circle,
+                    isArabic,
                   ),
                   const SizedBox(height: 16),
                   _buildGuidelineItem(
-                    'الركوب لشخص واحد فقط على السكوتر.',
+                    localizations?.ridingGuideLine2 ?? 'الركوب لشخص واحد فقط على السكوتر.',
                     Icons.check_circle,
+                    isArabic,
                   ),
                   const SizedBox(height: 16),
                   _buildGuidelineItem(
-                    'ارتدِ خوذة الحماية دائمًا أثناء الركوب.',
+                    localizations?.ridingGuideLine3 ?? 'ارتدِ خوذة الحماية دائمًا أثناء الركوب.',
                     Icons.check_circle,
+                    isArabic,
                   ),
                   const SizedBox(height: 16),
                   _buildGuidelineItem(
-                    'التزم بالقيادة داخل المنطقة البرتقالية (جامعة الجلالة) فقط.',
+                    localizations?.ridingGuideLine4 ?? 'التزم بالقيادة داخل المنطقة البرتقالية (جامعة الجلالة) فقط.',
                     Icons.check_circle,
+                    isArabic,
                   ),
                   const SizedBox(height: 16),
                   _buildGuidelineItem(
-                    'سر دائمًا على يمين الطريق وبعيدًا عن السيارات.',
+                    localizations?.ridingGuideLine5 ?? 'سر دائمًا على يمين الطريق وبعيدًا عن السيارات.',
                     Icons.check_circle,
+                    isArabic,
                   ),
                   const SizedBox(height: 16),
                   _buildGuidelineItem(
-                    'ممنوع صعود السكوتر على الرصيف أو السير عكس الاتجاه.',
+                    localizations?.ridingGuideLine6 ?? 'ممنوع صعود السكوتر على الرصيف أو السير عكس الاتجاه.',
                     Icons.check_circle,
+                    isArabic,
                   ),
                   const SizedBox(height: 16),
                   _buildGuidelineItem(
-                    'أركن السكوتر داخل المنطقة الخضراء وفي الأماكن المخصصة فقط.',
+                    localizations?.ridingGuideLine7 ?? 'أركن السكوتر داخل المنطقة الخضراء وفي الأماكن المخصصة فقط.',
                     Icons.check_circle,
+                    isArabic,
                   ),
                   const SizedBox(height: 16),
                   _buildGuidelineItem(
-                    'تأكد من أن القفل مغلق بإحكام.',
+                    localizations?.ridingGuideLine8 ?? 'تأكد من أن القفل مغلق بإحكام.',
                     Icons.check_circle,
+                    isArabic,
                   ),
                   const SizedBox(height: 16),
                   _buildGuidelineItem(
-                    'التقط صورة واضحة للسكوتر بعد الركن.',
+                    localizations?.ridingGuideLine9 ?? 'التقط صورة واضحة للسكوتر بعد الركن.',
                     Icons.check_circle,
+                    isArabic,
                   ),
                 ],
               ),
@@ -187,7 +196,7 @@ class RidingGuideScreen extends StatelessWidget {
                       elevation: 0,
                     ),
                     child: Text(
-                      'ابدأ الرحلة',
+                      localizations?.startTrip ?? 'ابدأ الرحلة',
                       style: GoogleFonts.tajawal(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -209,7 +218,7 @@ class RidingGuideScreen extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      'ألغ',
+                      localizations?.cancel ?? 'إلغاء',
                       style: GoogleFonts.tajawal(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -226,9 +235,9 @@ class RidingGuideScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildGuidelineItem(String text, IconData icon) {
+  Widget _buildGuidelineItem(String text, IconData icon, bool isArabic) {
     return Row(
-      textDirection: TextDirection.rtl,
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(
@@ -245,7 +254,7 @@ class RidingGuideScreen extends StatelessWidget {
               color: Color(AppConstants.secondaryColor),
               height: 1.5,
             ),
-            textAlign: TextAlign.right,
+            textAlign: isArabic ? TextAlign.right : TextAlign.left,
           ),
         ),
       ],

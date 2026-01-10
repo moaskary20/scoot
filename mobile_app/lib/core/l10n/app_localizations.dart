@@ -18,6 +18,15 @@ class AppLocalizations {
   String get trips => _localizedValues[locale.languageCode]?['trips'] ?? 'رحلاتي';
   String get profile => _localizedValues[locale.languageCode]?['profile'] ?? 'الملف الشخصي';
   String get safeRidingGuide => _localizedValues[locale.languageCode]?['safeRidingGuide'] ?? 'دليل الركوب الآمن';
+  String get ridingGuideLine1 => _localizedValues[locale.languageCode]?['ridingGuideLine1'] ?? 'يجب أن يكون عمرك 16 سنة أو أكثر.';
+  String get ridingGuideLine2 => _localizedValues[locale.languageCode]?['ridingGuideLine2'] ?? 'الركوب لشخص واحد فقط على السكوتر.';
+  String get ridingGuideLine3 => _localizedValues[locale.languageCode]?['ridingGuideLine3'] ?? 'ارتدِ خوذة الحماية دائمًا أثناء الركوب.';
+  String get ridingGuideLine4 => _localizedValues[locale.languageCode]?['ridingGuideLine4'] ?? 'التزم بالقيادة داخل المنطقة البرتقالية (جامعة الجلالة) فقط.';
+  String get ridingGuideLine5 => _localizedValues[locale.languageCode]?['ridingGuideLine5'] ?? 'سر دائمًا على يمين الطريق وبعيدًا عن السيارات.';
+  String get ridingGuideLine6 => _localizedValues[locale.languageCode]?['ridingGuideLine6'] ?? 'ممنوع صعود السكوتر على الرصيف أو السير عكس الاتجاه.';
+  String get ridingGuideLine7 => _localizedValues[locale.languageCode]?['ridingGuideLine7'] ?? 'أركن السكوتر داخل المنطقة الخضراء وفي الأماكن المخصصة فقط.';
+  String get ridingGuideLine8 => _localizedValues[locale.languageCode]?['ridingGuideLine8'] ?? 'تأكد من أن القفل مغلق بإحكام.';
+  String get ridingGuideLine9 => _localizedValues[locale.languageCode]?['ridingGuideLine9'] ?? 'التقط صورة واضحة للسكوتر بعد الركن.';
   String get freeBalance => _localizedValues[locale.languageCode]?['freeBalance'] ?? 'رصيد مجاني';
   String get chargeBalance => _localizedValues[locale.languageCode]?['chargeBalance'] ?? 'اشحن رصيدك';
   String get user => _localizedValues[locale.languageCode]?['user'] ?? 'مستخدم';
@@ -417,6 +426,15 @@ class AppLocalizations {
       'trips': 'رحلاتي',
       'profile': 'الملف الشخصي',
       'safeRidingGuide': 'دليل الركوب الآمن',
+      'ridingGuideLine1': 'يجب أن يكون عمرك 16 سنة أو أكثر.',
+      'ridingGuideLine2': 'الركوب لشخص واحد فقط على السكوتر.',
+      'ridingGuideLine3': 'ارتدِ خوذة الحماية دائمًا أثناء الركوب.',
+      'ridingGuideLine4': 'التزم بالقيادة داخل المنطقة البرتقالية (جامعة الجلالة) فقط.',
+      'ridingGuideLine5': 'سر دائمًا على يمين الطريق وبعيدًا عن السيارات.',
+      'ridingGuideLine6': 'ممنوع صعود السكوتر على الرصيف أو السير عكس الاتجاه.',
+      'ridingGuideLine7': 'أركن السكوتر داخل المنطقة الخضراء وفي الأماكن المخصصة فقط.',
+      'ridingGuideLine8': 'تأكد من أن القفل مغلق بإحكام.',
+      'ridingGuideLine9': 'التقط صورة واضحة للسكوتر بعد الركن.',
       'freeBalance': 'رصيد مجاني',
       'chargeBalance': 'اشحن رصيدك',
       'user': 'مستخدم',
@@ -677,6 +695,15 @@ class AppLocalizations {
       'trips': 'My Trips',
       'profile': 'Profile',
       'safeRidingGuide': 'Safe Riding Guide',
+      'ridingGuideLine1': 'You must be 16 years or older.',
+      'ridingGuideLine2': 'Ride alone on the scooter only.',
+      'ridingGuideLine3': 'Always wear a helmet while riding.',
+      'ridingGuideLine4': 'Ride only within the orange zone (Galala University).',
+      'ridingGuideLine5': 'Always ride on the right side of the road and away from cars.',
+      'ridingGuideLine6': 'Do not ride on the sidewalk or in the opposite direction.',
+      'ridingGuideLine7': 'Park the scooter only in the green zone and designated areas.',
+      'ridingGuideLine8': 'Make sure the lock is securely closed.',
+      'ridingGuideLine9': 'Take a clear photo of the scooter after parking.',
       'freeBalance': 'Free Balance',
       'chargeBalance': 'Charge Balance',
       'user': 'User',

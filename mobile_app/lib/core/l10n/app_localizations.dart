@@ -351,6 +351,19 @@ class AppLocalizations {
   String get warning => _localizedValues[locale.languageCode]?['warning'] ?? 'تحذير';
   String get cannotCloseTripMessage => _localizedValues[locale.languageCode]?['cannotCloseTripMessage'] ?? 'لا يمكنك إغلاق هذه الشاشة أثناء الرحلة. استخدم زر "إغلاق الرحلة" لإتمام الرحلة.';
   String get cannotCancelTripMessage => _localizedValues[locale.languageCode]?['cannotCancelTripMessage'] ?? 'لا يمكنك إلغاء الرحلة من هنا. يرجى استخدام زر "إغلاق الرحلة" لإتمامها.';
+  String get lockNotClosed => _localizedValues[locale.languageCode]?['lockNotClosed'] ?? 'القفل غير مغلق';
+  String get mustLockFirst => _localizedValues[locale.languageCode]?['mustLockFirst'] ?? 'يجب أن تقفل القفل أولاً قبل إنهاء الرحلة.';
+  String get ensureLockClosed => _localizedValues[locale.languageCode]?['ensureLockClosed'] ?? 'يرجى التأكد من أن القفل مغلق بشكل صحيح ثم المحاولة مرة أخرى.';
+  String get speed => _localizedValues[locale.languageCode]?['speed'] ?? 'السرعة';
+  String get currentCost => _localizedValues[locale.languageCode]?['currentCost'] ?? 'التكلفة الحالية';
+  String get kmh => _localizedValues[locale.languageCode]?['kmh'] ?? 'كم/س';
+  String get unlock => _localizedValues[locale.languageCode]?['unlock'] ?? 'فتح القفل';
+  String get unlockSuccessfully => _localizedValues[locale.languageCode]?['unlockSuccessfully'] ?? 'تم فتح القفل بنجاح';
+  String get unlockError => _localizedValues[locale.languageCode]?['unlockError'] ?? 'حدث خطأ في فتح القفل';
+  String get initializationError => _localizedValues[locale.languageCode]?['initializationError'] ?? 'تحذير: حدث خطأ في التهيئة';
+  String get tryAgain => _localizedValues[locale.languageCode]?['tryAgain'] ?? 'المحاولة مرة أخرى';
+  String get errorLoadingScreen => _localizedValues[locale.languageCode]?['errorLoadingScreen'] ?? 'حدث خطأ في تحميل الشاشة';
+  String get goBack => _localizedValues[locale.languageCode]?['goBack'] ?? 'العودة';
 
   // Loyalty
   String get loyaltyPoints => _localizedValues[locale.languageCode]?['loyaltyPoints'] ?? 'نقاط الولاء';
@@ -717,6 +730,19 @@ class AppLocalizations {
       'warning': 'تحذير',
       'cannotCloseTripMessage': 'لا يمكنك إغلاق هذه الشاشة أثناء الرحلة. استخدم زر "إغلاق الرحلة" لإتمام الرحلة.',
       'cannotCancelTripMessage': 'لا يمكنك إلغاء الرحلة من هنا. يرجى استخدام زر "إغلاق الرحلة" لإتمامها.',
+      'lockNotClosed': 'القفل غير مغلق',
+      'mustLockFirst': 'يجب أن تقفل القفل أولاً قبل إنهاء الرحلة.',
+      'ensureLockClosed': 'يرجى التأكد من أن القفل مغلق بشكل صحيح ثم المحاولة مرة أخرى.',
+      'speed': 'السرعة',
+      'currentCost': 'التكلفة الحالية',
+      'kmh': 'كم/س',
+      'unlock': 'فتح القفل',
+      'unlockSuccessfully': 'تم فتح القفل بنجاح',
+      'unlockError': 'حدث خطأ في فتح القفل',
+      'initializationError': 'تحذير: حدث خطأ في التهيئة',
+      'tryAgain': 'المحاولة مرة أخرى',
+      'errorLoadingScreen': 'حدث خطأ في تحميل الشاشة',
+      'goBack': 'العودة',
     },
     'en': {
       'appName': 'Liner Scoot',
@@ -1010,6 +1036,19 @@ class AppLocalizations {
       'warning': 'Warning',
       'cannotCloseTripMessage': 'You cannot close this screen during the trip. Use the "Close Trip" button to complete the trip.',
       'cannotCancelTripMessage': 'You cannot cancel the trip from here. Please use the "End Trip" button to complete it.',
+      'lockNotClosed': 'Lock Not Closed',
+      'mustLockFirst': 'You must lock the scooter first before ending the trip.',
+      'ensureLockClosed': 'Please ensure the lock is properly closed and try again.',
+      'speed': 'Speed',
+      'currentCost': 'Current Cost',
+      'kmh': 'km/h',
+      'unlock': 'Unlock',
+      'unlockSuccessfully': 'Lock opened successfully',
+      'unlockError': 'Error opening lock',
+      'initializationError': 'Warning: Initialization Error',
+      'tryAgain': 'Try Again',
+      'errorLoadingScreen': 'Error loading screen',
+      'goBack': 'Go Back',
     },
   };
 }

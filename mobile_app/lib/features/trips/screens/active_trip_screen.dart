@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'dart:io';
+import 'dart:ui' as ui;
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/location_service.dart';
+import '../../../core/services/language_service.dart';
 import '../../../core/l10n/app_localizations.dart';
 
 class ActiveTripScreen extends StatefulWidget {
@@ -386,74 +389,77 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
         await showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            title: Row(
-              children: [
-                Icon(Icons.lock_open, color: Colors.orange[700], size: 28),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'القفل غير مغلق',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orange[900],
+          builder: (dialogContext) {
+            final loc = AppLocalizations.of(dialogContext);
+            return AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.lock_open, color: Colors.orange[700], size: 28),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      loc?.lockNotClosed ?? 'القفل غير مغلق',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange[900],
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'يجب أن تقفل القفل أولاً قبل إنهاء الرحلة.',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    loc?.mustLockFirst ?? 'يجب أن تقفل القفل أولاً قبل إنهاء الرحلة.',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.orange[700], size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'يرجى التأكد من أن القفل مغلق بشكل صحيح ثم المحاولة مرة أخرى.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[800],
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.orange[700], size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            loc?.ensureLockClosed ?? 'يرجى التأكد من أن القفل مغلق بشكل صحيح ثم المحاولة مرة أخرى.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[800],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text(
+                    loc?.ok ?? 'حسناً',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
-            ),
-            actions: [
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text(
-                  'حسناً',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         );
       }
       return;
@@ -554,22 +560,38 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           context: context,
           barrierDismissible: false,
           builder: (dialogContext) => AlertDialog(
-            title: const Text(
-              'تم إغلاق الرحلة بنجاح',
-              style: TextStyle(
-                color: Colors.green,
-                fontWeight: FontWeight.bold,
-              ),
+            title: Builder(
+              builder: (context) {
+                final loc = AppLocalizations.of(context);
+                return Text(
+                  loc?.tripClosedSuccessfully ?? 'تم إغلاق الرحلة بنجاح',
+                  style: const TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              },
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 10),
-                _buildInfoRow('المدة', '$durationMinutes دقيقة'),
-                const SizedBox(height: 10),
-                _buildInfoRow('التكلفة', '${cost.toStringAsFixed(2)} ج.م'),
-              ],
+            content: Builder(
+              builder: (context) {
+                final loc = AppLocalizations.of(context);
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 10),
+                    _buildInfoRow(
+                      loc?.duration ?? 'المدة',
+                      '${durationMinutes} ${loc?.minutes ?? 'دقيقة'}',
+                    ),
+                    const SizedBox(height: 10),
+                    _buildInfoRow(
+                      loc?.cost ?? 'التكلفة',
+                      '${cost.toStringAsFixed(2)} ${loc?.egp ?? 'ج.م'}',
+                    ),
+                  ],
+                );
+              },
             ),
             actions: [
               SizedBox(
@@ -622,12 +644,17 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'العودة إلى الصفحة الرئيسية',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Builder(
+                    builder: (context) {
+                      final loc = AppLocalizations.of(context);
+                      return Text(
+                        loc?.backToHome ?? 'العودة إلى الصفحة الرئيسية',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -664,13 +691,18 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                   Icon(Icons.lock_open, color: Colors.orange[700], size: 28),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      'القفل غير مغلق',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.orange[900],
-                      ),
+                    child: Builder(
+                      builder: (context) {
+                        final loc = AppLocalizations.of(context);
+                        return Text(
+                          loc?.lockNotClosed ?? 'القفل غير مغلق',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange[900],
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -679,36 +711,46 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'يجب أن تقفل القفل أولاً قبل إنهاء الرحلة.',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final loc = AppLocalizations.of(context);
+                      return Text(
+                        loc?.mustLockFirst ?? 'يجب أن تقفل القفل أولاً قبل إنهاء الرحلة.',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.info_outline, color: Colors.orange[700], size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'يرجى التأكد من أن القفل مغلق بشكل صحيح ثم المحاولة مرة أخرى.',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[800],
-                            ),
-                          ),
+                  Builder(
+                    builder: (context) {
+                      final loc = AppLocalizations.of(context);
+                      return Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.orange.withOpacity(0.3)),
                         ),
-                      ],
-                    ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.info_outline, color: Colors.orange[700], size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                loc?.ensureLockClosed ?? 'يرجى التأكد من أن القفل مغلق بشكل صحيح ثم المحاولة مرة أخرى.',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[800],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -723,9 +765,14 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                     backgroundColor: Colors.orange,
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text(
-                    'حسناً',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  child: Builder(
+                    builder: (context) {
+                      final loc = AppLocalizations.of(context);
+                      return Text(
+                        loc?.ok ?? 'حسناً',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -738,22 +785,42 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
         final shouldGoBack = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('خطأ في إغلاق الرحلة'),
-            content: Text(
-              'حدث خطأ أثناء إغلاق الرحلة:\n\n$e\n\n'
-              'هل تريد العودة إلى الصفحة الرئيسية؟',
+            title: Builder(
+              builder: (context) {
+                final loc = AppLocalizations.of(context);
+                return Text(loc?.tripCompletionError ?? 'خطأ في إغلاق الرحلة');
+              },
+            ),
+            content: Builder(
+              builder: (context) {
+                final loc = AppLocalizations.of(context);
+                return Text(
+                  '${loc?.tripCompletionErrorMessage ?? 'حدث خطأ أثناء إغلاق الرحلة:'}\n\n$e\n\n'
+                  '${loc?.returnToHomeQuestion ?? 'هل تريد العودة إلى الصفحة الرئيسية؟'}',
+                );
+              },
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('البقاء هنا'),
+                child: Builder(
+                  builder: (context) {
+                    final loc = AppLocalizations.of(context);
+                    return Text(loc?.stayHere ?? 'البقاء هنا');
+                  },
+                ),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context, true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
                 ),
-                child: const Text('العودة للصفحة الرئيسية'),
+                child: Builder(
+                  builder: (context) {
+                    final loc = AppLocalizations.of(context);
+                    return Text(loc?.backToHome ?? 'العودة للصفحة الرئيسية');
+                  },
+                ),
               ),
             ],
           ),
@@ -794,7 +861,12 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message'] ?? 'تم فتح القفل بنجاح'),
+            content: Builder(
+              builder: (context) {
+                final loc = AppLocalizations.of(context);
+                return Text(result['message'] ?? (loc?.unlockSuccessfully ?? 'تم فتح القفل بنجاح'));
+              },
+            ),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 3),
           ),
@@ -808,7 +880,12 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ في فتح القفل: $e'),
+            content: Builder(
+              builder: (context) {
+                final loc = AppLocalizations.of(context);
+                return Text('${loc?.unlockError ?? 'حدث خطأ في فتح القفل'}: $e');
+              },
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 4),
           ),
@@ -965,12 +1042,17 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                     color: Colors.orange,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'تحذير: حدث خطأ في التهيئة',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final loc = AppLocalizations.of(context);
+                      return Text(
+                        loc?.initializationError ?? 'تحذير: حدث خطأ في التهيئة',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -989,7 +1071,12 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                         _hasError = false;
                       });
                     },
-                    child: const Text('المحاولة مرة أخرى'),
+                    child: Builder(
+                      builder: (context) {
+                        final loc = AppLocalizations.of(context);
+                        return Text(loc?.tryAgain ?? 'المحاولة مرة أخرى');
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -1000,8 +1087,11 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     }
 
     try {
+      final languageService = Provider.of<LanguageService>(context, listen: false);
+      final localizations = AppLocalizations.of(context);
+      final isArabic = languageService.isArabic;
       return Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
         child: PopScope(
           canPop: false,
           onPopInvoked: (didPop) {
@@ -1068,9 +1158,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                             },
                           ),
                           const Spacer(),
-                          const Text(
-                            'رحلة نشطة',
-                            style: TextStyle(
+                          Text(
+                            localizations?.activeTrip ?? 'رحلة نشطة',
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -1101,7 +1191,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              'سكوتر ${widget.scooterCode}',
+                              '${localizations?.scooter ?? 'سكوتر'} ${widget.scooterCode}',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
@@ -1159,9 +1249,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              const Text(
-                                'مدة الرحلة',
-                                style: TextStyle(
+                              Text(
+                                localizations?.tripDuration ?? 'مدة الرحلة',
+                                style: const TextStyle(
                                   fontSize: 16,
                                   color: Colors.grey,
                                   fontWeight: FontWeight.w500,
@@ -1181,7 +1271,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                               child: _buildInfoCard(
                                 icon: Icons.battery_charging_full,
                                 value: _isLoadingBattery ? '--' : '$_batteryPercentage%',
-                                label: 'البطارية',
+                                label: localizations?.battery ?? 'البطارية',
                                 color: _getBatteryColor(_batteryPercentage),
                                 child: _isLoadingBattery
                                     ? const SizedBox(
@@ -1198,9 +1288,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                               child: _buildInfoCard(
                                 icon: Icons.speed,
                                 value: '${(_currentSpeed * 3.6).toStringAsFixed(0)}',
-                                label: 'كم/س',
+                                label: localizations?.kmh ?? 'كم/س',
                                 color: Colors.blue,
-                                subtitle: 'السرعة',
+                                subtitle: localizations?.speed ?? 'السرعة',
                               ),
                             ),
                           ],
@@ -1246,9 +1336,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'التكلفة الحالية',
-                                    style: TextStyle(
+                                  Text(
+                                    localizations?.currentCost ?? 'التكلفة الحالية',
+                                    style: const TextStyle(
                                       fontSize: 14,
                                       color: Colors.grey,
                                       fontWeight: FontWeight.w500,
@@ -1256,7 +1346,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '${_currentCost.toStringAsFixed(2)} ج.م',
+                                    '${_currentCost.toStringAsFixed(2)} ${localizations?.egp ?? 'ج.م'}',
                                     style: const TextStyle(
                                       fontSize: 28,
                                       fontWeight: FontWeight.bold,
@@ -1297,14 +1387,14 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                       ),
                                     )
-                                  : const Row(
+                                  : Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.lock_open, size: 24),
-                                        SizedBox(width: 8),
+                                        const Icon(Icons.lock_open, size: 24),
+                                        const SizedBox(width: 8),
                                         Text(
-                                          'فتح القفل',
-                                          style: TextStyle(
+                                          localizations?.unlock ?? 'فتح القفل',
+                                          style: const TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -1340,14 +1430,14 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                     ),
                                   )
-                                : const Row(
+                                : Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.stop_circle, size: 24),
-                                      SizedBox(width: 8),
+                                      const Icon(Icons.stop_circle, size: 24),
+                                      const SizedBox(width: 8),
                                       Text(
-                                        'إغلاق الرحلة',
-                                        style: TextStyle(
+                                        localizations?.closeTrip ?? 'إغلاق الرحلة',
+                                        style: const TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -1383,12 +1473,17 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                   color: Colors.red,
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'حدث خطأ في تحميل الشاشة',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Builder(
+                  builder: (context) {
+                    final loc = AppLocalizations.of(context);
+                    return Text(
+                      loc?.errorLoadingScreen ?? 'حدث خطأ في تحميل الشاشة',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 8),
                 Padding(
@@ -1407,7 +1502,12 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  child: const Text('العودة'),
+                  child: Builder(
+                    builder: (context) {
+                      final loc = AppLocalizations.of(context);
+                      return Text(loc?.goBack ?? 'العودة');
+                    },
+                  ),
                 ),
               ],
             ),

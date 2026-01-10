@@ -506,6 +506,45 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Parse start_time from backend with proper timezone handling
+  DateTime _parseStartTime(dynamic startTimeValue) {
+    if (startTimeValue == null) {
+      print('⚠️ start_time is null, using current time');
+      return DateTime.now();
+    }
+
+    final startTimeString = startTimeValue.toString();
+    print('🕐 Parsing start_time: $startTimeString');
+
+    try {
+      // Try parsing as ISO 8601 first (with timezone)
+      if (startTimeString.contains('T') || startTimeString.contains('Z') || startTimeString.contains('+')) {
+        final parsed = DateTime.parse(startTimeString);
+        final localTime = parsed.isUtc ? parsed.toLocal() : parsed;
+        print('✅ Parsed as ISO 8601: $localTime (local)');
+        return localTime;
+      } else {
+        // Legacy format without timezone - assume server timezone is UTC
+        final parsed = DateTime.parse(startTimeString + 'Z');
+        final localTime = parsed.toLocal();
+        print('✅ Parsed as legacy format (assumed UTC): $localTime (local)');
+        return localTime;
+      }
+    } catch (e) {
+      // If parsing fails, try with DateFormat
+      try {
+        final parsed = DateFormat('yyyy-MM-dd HH:mm:ss').parse(startTimeString);
+        final localTime = parsed.toLocal();
+        print('✅ Parsed with DateFormat: $localTime (local)');
+        return localTime;
+      } catch (e2) {
+        print('⚠️ Failed to parse start_time: $startTimeString, using current time');
+        print('⚠️ Error: $e2');
+        return DateTime.now();
+      }
+    }
+  }
+
   Future<void> _startTrip(ScooterModel scooter) async {
     // Check if user account is active
     // Refresh user data first to get latest status
@@ -615,26 +654,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (!mounted) return;
 
         // Parse start_time and convert to local timezone
-        final startTimeString = tripData['start_time'];
-        DateTime startTime;
-        try {
-          // Try parsing as ISO 8601 first
-          startTime = DateTime.parse(startTimeString).toLocal();
-        } catch (e) {
-          // If parsing fails, try with different format
-          try {
-            startTime = DateFormat(
-              'yyyy-MM-dd HH:mm:ss',
-            ).parse(startTimeString).toLocal();
-          } catch (e2) {
-            // If all parsing fails, use current time
-            print(
-              '⚠️ Failed to parse start_time: $startTimeString, using current time',
-            );
-            startTime = DateTime.now();
-          }
-        }
-
+        final startTime = _parseStartTime(tripData['start_time']);
         print('📅 Parsed start time: $startTime (local)');
 
         // Update scooters immediately to remove the rented scooter from map
@@ -691,7 +711,7 @@ class _HomeScreenState extends State<HomeScreen> {
             await _navigateToActiveTrip(
               activeTrip['id'],
               activeTrip['scooter_code'] ?? 'غير معروف',
-              DateTime.parse(activeTrip['start_time']),
+              _parseStartTime(activeTrip['start_time']),
             );
             return;
           }
@@ -876,7 +896,7 @@ class _HomeScreenState extends State<HomeScreen> {
           await _navigateToActiveTrip(
             activeTrip['id'],
             activeTrip['scooter_code'] ?? 'غير معروف',
-            DateTime.parse(activeTrip['start_time']),
+            _parseStartTime(activeTrip['start_time']),
           );
         }
       }
@@ -1212,7 +1232,7 @@ class _HomeScreenState extends State<HomeScreen> {
             await _navigateToActiveTrip(
               tripData['trip_id'],
               tripData['scooter_code'] ?? 'غير معروف',
-              DateTime.parse(tripData['start_time']),
+              _parseStartTime(tripData['start_time']),
             );
           } catch (navError) {
             print('❌ Navigation error: $navError');
@@ -1280,7 +1300,7 @@ class _HomeScreenState extends State<HomeScreen> {
             await _navigateToActiveTrip(
               activeTrip['id'],
               activeTrip['scooter_code'] ?? 'غير معروف',
-              DateTime.parse(activeTrip['start_time']),
+              _parseStartTime(activeTrip['start_time']),
             );
             return;
           }

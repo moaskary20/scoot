@@ -311,7 +311,7 @@ class MobileTripController extends Controller
                 'data' => [
                     'trip_id' => $trip->id,
                     'scooter_code' => $scooter->code,
-                    'start_time' => $trip->start_time->toDateTimeString(),
+                    'start_time' => $trip->start_time->toIso8601String(), // ISO 8601 format with timezone
                     'status' => $trip->status,
                 ],
             ], 201);
@@ -501,7 +501,7 @@ class MobileTripController extends Controller
                 'data' => [
                     'id' => $trip->id,
                     'scooter_code' => $trip->scooter?->code,
-                    'start_time' => $startTime->toDateTimeString(),
+                    'start_time' => $startTime->toIso8601String(), // ISO 8601 format with timezone
                     'duration_minutes' => round($durationMinutes, 2), // Round to 2 decimals
                     'status' => $trip->status,
                     'current_cost' => round($currentCost, 2), // Current cost based on duration

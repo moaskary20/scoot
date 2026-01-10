@@ -15,7 +15,6 @@ import '../../../core/services/api_service.dart';
 import '../../../core/services/location_service.dart';
 import 'riding_guide_screen.dart';
 import '../../wallet/screens/wallet_screen.dart';
-import '../../wallet/screens/free_balance_screen.dart';
 import '../../wallet/screens/top_up_screen.dart';
 import '../../settings/screens/language_selection_screen.dart';
 import '../../../core/l10n/app_localizations.dart';
@@ -1761,23 +1760,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 MaterialPageRoute(
                                   builder: (context) =>
                                       const LoyaltyPointsScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildMenuItem(
-                            icon: Icons.account_balance,
-                            title:
-                                AppLocalizations.of(context)?.freeBalance ??
-                                'رصيد مجاني',
-                            color: Color(AppConstants.primaryColor),
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const FreeBalanceScreen(),
                                 ),
                               );
                             },

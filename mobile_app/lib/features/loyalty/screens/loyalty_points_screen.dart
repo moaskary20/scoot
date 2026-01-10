@@ -6,6 +6,7 @@ import '../../../core/models/loyalty_transaction_model.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../shared/theme/app_theme.dart';
+import 'redeem_loyalty_points_screen.dart';
 
 class LoyaltyPointsScreen extends StatefulWidget {
   const LoyaltyPointsScreen({super.key});
@@ -133,6 +134,8 @@ class _LoyaltyPointsScreenState extends State<LoyaltyPointsScreen> {
         _buildHeaderCard(loc),
         const SizedBox(height: 16),
         _buildProgressCard(loc),
+        const SizedBox(height: 16),
+        _buildRedeemCard(loc),
         const SizedBox(height: 16),
         _buildTransactionsSection(loc),
       ],
@@ -344,6 +347,137 @@ class _LoyaltyPointsScreenState extends State<LoyaltyPointsScreen> {
                 ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRedeemCard(AppLocalizations? loc) {
+    final redeemSettings = _redeemSettings;
+    final isEnabled = redeemSettings['enabled'] ?? true;
+    final minPoints = redeemSettings['min_points_to_redeem'] ?? 100;
+    final canRedeem = _points >= minPoints && isEnabled;
+
+    if (!isEnabled) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.amber[400]!,
+            Colors.orange[400]!,
+          ],
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.amber.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.card_giftcard, color: Colors.white, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'استبدال النقاط',
+                  style: AppTheme.tajawal(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (canRedeem) ...[
+            Text(
+              'يمكنك استبدال نقاط الولاء برصيد في المحفظة',
+              style: AppTheme.tajawal(
+                fontSize: 14,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RedeemLoyaltyPointsScreen(
+                        currentPoints: _points,
+                        redeemSettings: _redeemSettings,
+                      ),
+                    ),
+                  );
+                  
+                  // Refresh data if redemption was successful
+                  if (result == true) {
+                    _loadLoyaltyData();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.orange[700],
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'استبدال الآن',
+                  style: AppTheme.tajawal(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ] else ...[
+            Text(
+              'تحتاج ${minPoints - _points} نقطة إضافية للاستبدال',
+              style: AppTheme.tajawal(
+                fontSize: 14,
+                color: Colors.white70,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white.withOpacity(0.3),
+                  foregroundColor: Colors.white70,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'النقاط غير كافية',
+                  style: AppTheme.tajawal(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

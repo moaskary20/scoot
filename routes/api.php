@@ -71,6 +71,7 @@ Route::prefix('referral')->middleware('auth:sanctum')->group(function () {
 // Mobile App Loyalty Routes
 Route::prefix('loyalty')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [MobileLoyaltyController::class, 'index']);
+    Route::post('/redeem', [MobileLoyaltyController::class, 'redeem']);
 });
 
 // Mobile App Geo Zones Routes (no auth required - public map data)

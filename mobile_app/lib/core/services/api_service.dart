@@ -471,6 +471,41 @@ class ApiService {
     }
   }
 
+  // Redeem loyalty points to wallet balance
+  Future<Map<String, dynamic>> redeemLoyaltyPoints(int points) async {
+    try {
+      print('🔄 Redeeming $points loyalty points...');
+      
+      final response = await _dio.post(
+        ApiConstants.redeemLoyaltyPoints,
+        data: {
+          'points': points,
+        },
+      );
+
+      print('📦 Redeem response: ${response.statusCode}');
+      print('📦 Response data: ${response.data}');
+
+      if (response.data['success'] == true) {
+        return response.data;
+      }
+
+      final errorMessage = response.data['message'] ?? 'فشل استبدال النقاط';
+      print('❌ Redeem failed: $errorMessage');
+      throw Exception(errorMessage);
+    } catch (e) {
+      print('❌ Error redeeming loyalty points: $e');
+      if (e is DioException) {
+        print('📡 Status Code: ${e.response?.statusCode}');
+        print('📡 Response Data: ${e.response?.data}');
+        if (e.response?.data != null && e.response?.data['message'] != null) {
+          throw Exception(e.response!.data['message']);
+        }
+      }
+      throw _handleError(e);
+    }
+  }
+
   // Get active allowed geo zones
   Future<List<GeoZoneModel>> getGeoZones() async {
     try {

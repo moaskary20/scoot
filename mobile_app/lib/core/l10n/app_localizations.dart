@@ -165,6 +165,7 @@ class AppLocalizations {
   String get loyaltyProgressDescription => _localizedValues[locale.languageCode]?['loyaltyProgressDescription'] ?? 'كل ما تكمل رحلات أكتر، تجمع نقاط أكتر وتطلع لمستوى أعلى.';
   String get loyaltyEarned => _localizedValues[locale.languageCode]?['loyaltyEarned'] ?? 'نقاط مكتسبة';
   String get loyaltyRedeemed => _localizedValues[locale.languageCode]?['loyaltyRedeemed'] ?? 'نقاط مستخدمة';
+  String get loyaltyRedeem => _localizedValues[locale.languageCode]?['loyaltyRedeem'] ?? 'استبدال نقاط الولاء';
   String get loyaltyAdjusted => _localizedValues[locale.languageCode]?['loyaltyAdjusted'] ?? 'تعديل نقاط';
   String get loyaltyExpired => _localizedValues[locale.languageCode]?['loyaltyExpired'] ?? 'نقاط منتهية';
   String get balanceAfter => _localizedValues[locale.languageCode]?['balanceAfter'] ?? 'الرصيد بعد';
@@ -194,6 +195,7 @@ class AppLocalizations {
       'loyaltyProgressDescription': 'كل ما تكمل رحلات أكتر، تجمع نقاط أكتر وتطلع لمستوى أعلى.',
       'loyaltyEarned': 'نقاط مكتسبة',
       'loyaltyRedeemed': 'نقاط مستخدمة',
+      'loyaltyRedeem': 'استبدال نقاط الولاء',
       'loyaltyAdjusted': 'تعديل نقاط',
       'loyaltyExpired': 'نقاط منتهية',
       'balanceAfter': 'الرصيد بعد',
@@ -327,6 +329,7 @@ class AppLocalizations {
       'loyaltyProgressDescription': 'The more you ride, the more points you earn and unlock higher levels.',
       'loyaltyEarned': 'Points earned',
       'loyaltyRedeemed': 'Points redeemed',
+      'loyaltyRedeem': 'Redeem Loyalty Points',
       'loyaltyAdjusted': 'Points adjusted',
       'loyaltyExpired': 'Points expired',
       'balanceAfter': 'Balance after',

@@ -49,6 +49,10 @@ class ApiConstants {
   // Referral
   static const String referral = '/referral';
   
+  // Loyalty
+  static const String loyalty = '/loyalty';
+  static const String redeemLoyaltyPoints = '/loyalty/redeem';
+  
   // Geo Zones
   static const String geoZones = '/geo-zones';
   

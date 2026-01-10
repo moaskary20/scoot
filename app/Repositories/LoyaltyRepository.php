@@ -5,12 +5,14 @@ namespace App\Repositories;
 use App\Models\User;
 use App\Models\LoyaltyPointsTransaction;
 use App\Repositories\UserRepository;
+use App\Repositories\WalletRepository;
 use Illuminate\Support\Facades\DB;
 
 class LoyaltyRepository
 {
     public function __construct(
         private readonly UserRepository $userRepository,
+        private readonly WalletRepository $walletRepository,
     ) {
         //
     }
@@ -201,6 +203,70 @@ class LoyaltyRepository
         }
 
         return (int) ceil($discountAmount * $settings['points_to_egp_rate']);
+    }
+
+    /**
+     * Redeem loyalty points to wallet balance
+     * 
+     * @param User $user
+     * @param int $points Number of points to redeem
+     * @return array Returns ['success' => bool, 'wallet_amount' => float, 'transaction' => LoyaltyPointsTransaction, 'wallet_transaction' => WalletTransaction]
+     */
+    public function redeemPoints(User $user, int $points): array
+    {
+        $settings = $this->getPointsRedeemSettings();
+
+        // Check if redeem is enabled
+        if (!$settings['enabled']) {
+            throw new \Exception('استبدال النقاط معطل حالياً');
+        }
+
+        // Check minimum points
+        $minPoints = $settings['min_points_to_redeem'] ?? 100;
+        if ($points < $minPoints) {
+            throw new \Exception("الحد الأدنى لاستبدال النقاط هو {$minPoints} نقطة");
+        }
+
+        // Check if user has enough points
+        $userPoints = (int) ($user->loyalty_points ?? 0);
+        if ($userPoints < $points) {
+            throw new \Exception("ليس لديك نقاط كافية. النقاط المتاحة: {$userPoints} نقطة");
+        }
+
+        return DB::transaction(function () use ($user, $points, $settings) {
+            // Calculate wallet amount from points
+            $pointsToEgpRate = $settings['points_to_egp_rate'] ?? 100;
+            $walletAmount = $points / $pointsToEgpRate;
+
+            // Deduct points from user
+            $pointsTransaction = $this->deductPoints(
+                $user,
+                $points,
+                'redeemed',
+                "استبدال {$points} نقطة برصيد {$walletAmount} جنيه في المحفظة"
+            );
+
+            // Add balance to wallet
+            $walletTransaction = $this->walletRepository->topUp(
+                $user,
+                $walletAmount,
+                'loyalty_points_redeem',
+                "LP-{$pointsTransaction->id}",
+                "استبدال {$points} نقطة ولاء برصيد {$walletAmount} جنيه",
+                [
+                    'loyalty_points_transaction_id' => $pointsTransaction->id,
+                    'points_redeemed' => $points,
+                    'points_to_egp_rate' => $pointsToEgpRate,
+                ]
+            );
+
+            return [
+                'success' => true,
+                'wallet_amount' => $walletAmount,
+                'points_transaction' => $pointsTransaction,
+                'wallet_transaction' => $walletTransaction,
+            ];
+        });
     }
 
     /**

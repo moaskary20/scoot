@@ -8,6 +8,7 @@ import '../../../core/models/wallet_transaction_model.dart';
 import '../../../core/l10n/app_localizations.dart';
 import 'top_up_screen.dart';
 import 'transaction_history_screen.dart';
+import '../../loyalty/screens/loyalty_points_screen.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -204,6 +205,11 @@ class _WalletScreenState extends State<WalletScreen> {
                         const SizedBox(height: 24),
                         // Promo Code Section
                         _buildPromoCodeSection(),
+                        const SizedBox(height: 24),
+                        const Divider(height: 1),
+                        const SizedBox(height: 24),
+                        // Loyalty Points Redeem Section
+                        _buildLoyaltyRedeemSection(),
                       ],
                     ),
                   ),
@@ -716,6 +722,101 @@ class _WalletScreenState extends State<WalletScreen> {
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoyaltyRedeemSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Icons.stars_rounded,
+                color: Colors.amber[700],
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'استبدال نقاط الولاء',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const LoyaltyPointsScreen(),
+              ),
+            ).then((result) {
+              // Refresh wallet data if needed
+              if (result == true) {
+                _refreshData();
+              }
+            });
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.amber[50]!,
+                  Colors.orange[50]!,
+                ],
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.amber[300]!),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.card_giftcard, color: Colors.amber[700], size: 28),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'عرض نقاطي واستبدالها',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber[900],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'استبدل نقاط الولاء برصيد في المحفظة',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.arrow_forward_ios, size: 16, color: Colors.amber[700]),
+              ],
+            ),
+          ),
         ),
       ],
     );

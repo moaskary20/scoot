@@ -1567,12 +1567,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                       _showRidingGuide();
                                     },
                                     icon: const Icon(Icons.qr_code_scanner),
-                                    label: const Text(
-                                      'سكان وابدأ الرحلة',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                    label: Builder(
+                                      builder: (context) {
+                                        final loc = AppLocalizations.of(context);
+                                        return Text(
+                                          loc?.scanAndStartTrip ?? 'سكان وابدأ الرحلة',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        );
+                                      },
                                     ),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Color(AppConstants.primaryColor),
@@ -1636,12 +1641,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                       _showRidingGuide();
                                     },
                                     icon: const Icon(Icons.qr_code_scanner),
-                                    label: const Text(
-                                      'سكان وابدأ الرحلة',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                    label: Builder(
+                                      builder: (context) {
+                                        final loc = AppLocalizations.of(context);
+                                        return Text(
+                                          loc?.scanAndStartTrip ?? 'سكان وابدأ الرحلة',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        );
+                                      },
                                     ),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Color(AppConstants.primaryColor),

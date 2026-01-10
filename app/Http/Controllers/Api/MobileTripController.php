@@ -636,6 +636,15 @@ class MobileTripController extends Controller
                 ], 404);
             }
 
+            // Check if scooter is locked before completing trip
+            if (!$trip->scooter || !$trip->scooter->is_locked) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'يجب أن تقفل القفل أولاً قبل إنهاء الرحلة',
+                    'error_code' => 'SCOOTER_NOT_LOCKED',
+                ], 400);
+            }
+
             $endTime = Carbon::now();
             $startTime = Carbon::parse($trip->start_time);
             // Calculate duration in minutes with decimals (fractional minutes)

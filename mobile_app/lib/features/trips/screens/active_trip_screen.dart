@@ -339,6 +339,92 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
   Future<void> _completeTrip() async {
     if (_isCompleting) return;
 
+    // Refresh lock status before checking
+    try {
+      await _loadScooterBattery(); // This will update _isScooterLocked
+    } catch (e) {
+      print('⚠️ Error loading scooter battery before completing trip: $e');
+    }
+
+    // Check if scooter is locked before completing trip
+    if (!_isScooterLocked) {
+      if (mounted) {
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.lock_open, color: Colors.orange[700], size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'القفل غير مغلق',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange[900],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'يجب أن تقفل القفل أولاً قبل إنهاء الرحلة.',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.orange[700], size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'يرجى التأكد من أن القفل مغلق بشكل صحيح ثم المحاولة مرة أخرى.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text(
+                  'حسناً',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+
     // Show confirmation dialog
     final confirm = await showDialog<bool>(
       context: context,
@@ -527,7 +613,94 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           _isCompleting = false;
         });
         
-        // Show error dialog with option to go back anyway
+        // Check if error is about scooter not being locked
+        final errorMessage = e.toString().toLowerCase();
+        final isScooterNotLockedError = errorMessage.contains('قفل') || 
+                                        errorMessage.contains('locked') ||
+                                        errorMessage.contains('scooter_not_locked');
+        
+        if (isScooterNotLockedError) {
+          // Show specific error dialog for scooter not locked
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.lock_open, color: Colors.orange[700], size: 28),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'القفل غير مغلق',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange[900],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'يجب أن تقفل القفل أولاً قبل إنهاء الرحلة.',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.orange[700], size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'يرجى التأكد من أن القفل مغلق بشكل صحيح ثم المحاولة مرة أخرى.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    // Refresh lock status
+                    _loadScooterBattery();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text(
+                    'حسناً',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          );
+          return; // Don't show the general error dialog
+        }
+        
+        // Show general error dialog for other errors
         final shouldGoBack = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(

@@ -13,6 +13,7 @@ import '../../../core/models/scooter_model.dart';
 import '../../../core/models/user_model.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/location_service.dart';
+import 'package:dio/dio.dart';
 import 'riding_guide_screen.dart';
 import '../../wallet/screens/wallet_screen.dart';
 import '../../wallet/screens/top_up_screen.dart';
@@ -571,12 +572,22 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // Show loading
+    bool isLoadingDialogOpen = false;
     if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
+      try {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => PopScope(
+            canPop: false,
+            child: const Center(child: CircularProgressIndicator()),
+          ),
+        );
+        isLoadingDialogOpen = true;
+      } catch (e) {
+        print('⚠️ Error showing loading dialog: $e');
+        isLoadingDialogOpen = false;
+      }
     }
 
     try {
@@ -590,22 +601,18 @@ class _HomeScreenState extends State<HomeScreen> {
         position.longitude,
       );
 
-      // Close loading dialog safely
-      if (mounted) {
-        await Future.microtask(() {
-          if (mounted) {
-            try {
-              Navigator.of(context, rootNavigator: false).pop();
-            } catch (e) {
-              print('⚠️ Error closing loading dialog: $e');
-            }
-          }
-        });
-      }
-
       if (mounted) {
         print('✅ Trip started successfully, navigating to active trip screen');
         print('📊 Trip data: $tripData');
+
+        // Close loading dialog safely before navigation
+        await _closeLoadingDialogSafely(isLoadingDialogOpen);
+        isLoadingDialogOpen = false;
+        
+        // Small delay to ensure dialog is fully closed
+        await Future.delayed(const Duration(milliseconds: 100));
+        
+        if (!mounted) return;
 
         // Parse start_time and convert to local timezone
         final startTimeString = tripData['start_time'];
@@ -635,6 +642,8 @@ class _HomeScreenState extends State<HomeScreen> {
         print('🔄 Updating scooters list immediately after trip start...');
         await _loadScooters();
 
+        if (!mounted) return;
+
         await _navigateToActiveTrip(
           tripData['trip_id'],
           tripData['scooter_code'] ?? scooter.code,
@@ -642,18 +651,17 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     } catch (e) {
-      // Close loading if still open
-      if (mounted) {
-        await Future.microtask(() {
-          if (mounted) {
-            try {
-              Navigator.of(context, rootNavigator: false).pop();
-            } catch (popError) {
-              print('⚠️ Error closing loading dialog: $popError');
-            }
-          }
-        });
-      }
+      print('❌ Error in _startTrip: $e');
+      print('❌ Error type: ${e.runtimeType}');
+      
+      // Close loading dialog first - use multiple strategies to ensure it closes
+      await _closeLoadingDialogSafely(isLoadingDialogOpen);
+      isLoadingDialogOpen = false;
+
+      // Wait a bit to ensure dialog is fully closed before showing error
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      if (!mounted) return;
 
       // Check if error is due to active trip
       final errorStr = e.toString();
@@ -709,6 +717,16 @@ class _HomeScreenState extends State<HomeScreen> {
           errorMessage = match.group(1)!;
         }
       }
+      
+      // Try to extract from DioException if available
+      try {
+        if (e is DioException && e.response?.data != null) {
+        // Try to extract from DioException response
+        final responseData = e.response!.data;
+        if (responseData is Map && responseData['message'] != null) {
+          errorMessage = responseData['message'].toString();
+        }
+      }
 
       if (mounted) {
         // Check if error message indicates scooter is unavailable (rented, maintenance, unlocked, etc.)
@@ -716,29 +734,61 @@ class _HomeScreenState extends State<HomeScreen> {
                                      errorMessage.contains('الصيانة') ||
                                      errorMessage.contains('غير متاح') ||
                                      errorMessage.contains('مفتوح') ||
+                                     errorMessage.contains('مقفول') ||
                                      errorMessage.contains('UNLOCKED') ||
+                                     errorMessage.contains('LOCKED') ||
                                      errorStr.contains('SCOOTER_UNLOCKED_RENTED') ||
                                      errorStr.contains('SCOOTER_NOT_AVAILABLE') ||
                                      errorStr.contains('SCOOTER_RENTED') ||
+                                     errorStr.contains('SCOOTER_LOCKED') ||
                                      errorStr.contains('SCOOTER_MAINTENANCE');
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-            action: isScooterUnavailable
-                ? SnackBarAction(
-                    label: 'بحث عن سكوتر',
-                    textColor: Colors.white,
-                    onPressed: () {
-                      // Refresh scooters list
-                      _loadScooters();
-                    },
-                  )
-                : null,
-          ),
-        );
+        // Show error message in SnackBar
+        try {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+              action: isScooterUnavailable
+                  ? SnackBarAction(
+                      label: 'بحث عن سكوتر',
+                      textColor: Colors.white,
+                      onPressed: () {
+                        // Refresh scooters list
+                        _loadScooters();
+                      },
+                    )
+                  : null,
+            ),
+          );
+        } catch (snackBarError) {
+          print('❌ Error showing SnackBar: $snackBarError');
+          // Fallback: show dialog if SnackBar fails
+          if (mounted) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('خطأ'),
+                content: Text(errorMessage),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('حسناً'),
+                  ),
+                  if (isScooterUnavailable)
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _loadScooters();
+                      },
+                      child: const Text('بحث عن سكوتر'),
+                    ),
+                ],
+              ),
+            );
+          }
+        }
       }
     }
   }
@@ -833,12 +883,87 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Safely close loading dialog using multiple strategies
+  Future<void> _closeLoadingDialogSafely(bool isDialogOpen) async {
+    if (!isDialogOpen || !mounted) return;
+
+    try {
+      // Wait a bit to ensure dialog is fully rendered
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      if (!mounted) return;
+
+      // Strategy 1: Try rootNavigator first (most reliable for dialogs)
+      try {
+        final rootNavigator = Navigator.of(context, rootNavigator: true);
+        if (rootNavigator.canPop()) {
+          rootNavigator.pop();
+          return;
+        }
+      } catch (e1) {
+        print('⚠️ Strategy 1 failed: $e1');
+      }
+
+      // Strategy 2: Try regular navigator
+      try {
+        final navigator = Navigator.of(context, rootNavigator: false);
+        if (navigator.canPop()) {
+          navigator.pop();
+          return;
+        }
+      } catch (e2) {
+        print('⚠️ Strategy 2 failed: $e2');
+      }
+
+      // Strategy 3: Last resort - pop multiple times (but not more than 2 to avoid closing too much)
+      try {
+        int popCount = 0;
+        final navigator = Navigator.of(context);
+        while (navigator.canPop() && popCount < 2) {
+          navigator.pop();
+          popCount++;
+          // Wait a bit between pops
+          await Future.delayed(const Duration(milliseconds: 50));
+        }
+      } catch (e3) {
+        print('⚠️ Strategy 3 failed: $e3');
+      }
+    } catch (e) {
+      print('❌ All strategies failed to close loading dialog: $e');
+      // Don't throw - we've done our best to close the dialog
+      // As a last resort, try to ensure we're back on the home screen
+      try {
+        if (mounted) {
+          // Use rootNavigator to ensure we're not stuck
+          final rootNavigator = Navigator.of(context, rootNavigator: true);
+          if (rootNavigator.canPop()) {
+            rootNavigator.popUntil((route) => route.isFirst);
+          }
+        }
+      } catch (finalError) {
+        print('❌ Final fallback also failed: $finalError');
+      }
+    }
+  }
+
   Future<void> _navigateToActiveTrip(
     int tripId,
     String scooterCode,
     DateTime startTime,
   ) async {
     if (!mounted) return;
+
+    // Ensure any open dialogs are closed before navigation
+    // Check if there's a dialog open by trying to pop once
+    try {
+      final navigator = Navigator.of(context, rootNavigator: true);
+      if (navigator.canPop()) {
+        // There might be a dialog open, try to close it safely
+        await _closeLoadingDialogSafely(true);
+      }
+    } catch (e) {
+      print('⚠️ Error closing dialogs before navigation: $e');
+    }
 
     // Small delay to ensure camera is fully closed and Navigator is ready
     await Future.delayed(const Duration(milliseconds: 300));
@@ -881,24 +1006,8 @@ class _HomeScreenState extends State<HomeScreen> {
           print('⚠️ Navigation error: $navError');
           // Last resort: use push with rootNavigator
           if (mounted) {
-            Navigator.of(context, rootNavigator: true).push(
-              MaterialPageRoute(
-                builder: (context) => ActiveTripScreen(
-                  tripId: tripId,
-                  scooterCode: scooterCode,
-                  startTime: startTime,
-                ),
-              ),
-            );
-          }
-        }
-      } catch (e) {
-        print('❌ Critical navigation error: $e');
-        // If all else fails, try one more time with a delay
-        Future.delayed(const Duration(milliseconds: 100), () {
-          if (mounted) {
             try {
-              Navigator.of(context).push(
+              Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute(
                   builder: (context) => ActiveTripScreen(
                     tripId: tripId,
@@ -907,11 +1016,53 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               );
-            } catch (finalError) {
-              print('❌ Final navigation attempt failed: $finalError');
+            } catch (rootNavError) {
+              print('❌ RootNavigator navigation also failed: $rootNavError');
+              // Show error message instead of black screen
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('حدث خطأ في الانتقال إلى شاشة الرحلة'),
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              }
             }
           }
-        });
+        }
+      } catch (e) {
+        print('❌ Critical navigation error: $e');
+        // Show error message instead of black screen
+        if (mounted) {
+          try {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('حدث خطأ في الانتقال إلى شاشة الرحلة. يرجى المحاولة مرة أخرى.'),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          } catch (snackBarError) {
+            print('❌ Error showing error message: $snackBarError');
+            // Last resort: show dialog
+            if (mounted) {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('خطأ'),
+                  content: const Text('حدث خطأ في الانتقال إلى شاشة الرحلة. يرجى المحاولة مرة أخرى.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('حسناً'),
+                    ),
+                  ],
+                ),
+              );
+            }
+          }
+        }
       }
     });
   }
@@ -1010,12 +1161,22 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // Show loading
+    bool isLoadingDialogOpen = false;
     if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
+      try {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => PopScope(
+            canPop: false,
+            child: const Center(child: CircularProgressIndicator()),
+          ),
+        );
+        isLoadingDialogOpen = true;
+      } catch (e) {
+        print('⚠️ Error showing loading dialog: $e');
+        isLoadingDialogOpen = false;
+      }
     }
 
     try {
@@ -1030,24 +1191,8 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       // Close loading dialog safely
-      if (mounted) {
-        try {
-          // Use rootNavigator if regular pop fails
-          if (Navigator.of(context, rootNavigator: false).canPop()) {
-            Navigator.of(context, rootNavigator: false).pop();
-          } else if (Navigator.of(context, rootNavigator: true).canPop()) {
-            Navigator.of(context, rootNavigator: true).pop();
-          }
-        } catch (e) {
-          print('⚠️ Error closing loading dialog: $e');
-          // Try alternative method
-          try {
-            Navigator.of(context).pop();
-          } catch (e2) {
-            print('⚠️ Alternative pop also failed: $e2');
-          }
-        }
-      }
+      await _closeLoadingDialogSafely(isLoadingDialogOpen);
+      isLoadingDialogOpen = false;
 
       if (mounted) {
         print('✅ Trip started successfully, navigating to active trip screen');
@@ -1092,18 +1237,17 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
     } catch (e) {
-      // Close loading if still open
-      if (mounted) {
-        await Future.microtask(() {
-          if (mounted) {
-            try {
-              Navigator.of(context, rootNavigator: false).pop();
-            } catch (popError) {
-              print('⚠️ Error closing loading dialog: $popError');
-            }
-          }
-        });
-      }
+      print('❌ Error in _startTripFromGuide: $e');
+      print('❌ Error type: ${e.runtimeType}');
+      
+      // Close loading dialog first - use multiple strategies to ensure it closes
+      await _closeLoadingDialogSafely(isLoadingDialogOpen);
+      isLoadingDialogOpen = false;
+
+      // Wait a bit to ensure dialog is fully closed before showing error
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      if (!mounted) return;
 
       // Check if error is due to active trip
       final errorStr = e.toString();
@@ -1142,24 +1286,98 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
 
-      if (mounted) {
-        // Extract and display user-friendly error message
-        String errorMessage = AppLocalizations.of(context)?.errorStartingTrip ?? 'حدث خطأ في بدء الرحلة';
-        
-        // Try to extract message from exception
-        if (errorStr.contains('Exception: ')) {
-          final parts = errorStr.split('Exception: ');
-          if (parts.length > 1) {
-            final message = parts[1].split('|')[0].trim(); // Remove any additional info after |
-            errorMessage = message;
-          }
-        } else if (errorStr.contains('message')) {
-          // Try to extract from JSON-like string
-          final match = RegExp(r'"message"\s*:\s*"([^"]+)"').firstMatch(errorStr);
-          if (match != null) {
-            errorMessage = match.group(1)!;
+      // Extract and display user-friendly error message
+      String errorMessage = AppLocalizations.of(context)?.errorStartingTrip ?? 'حدث خطأ في بدء الرحلة';
+      
+      // Try to extract message from exception
+      if (errorStr.contains('Exception: ')) {
+        final parts = errorStr.split('Exception: ');
+        if (parts.length > 1) {
+          final message = parts[1].split('|')[0].trim(); // Remove any additional info after |
+          errorMessage = message;
+        }
+      } else if (errorStr.contains('message')) {
+        // Try to extract from JSON-like string
+        final match = RegExp(r'"message"\s*:\s*"([^"]+)"').firstMatch(errorStr);
+        if (match != null) {
+          errorMessage = match.group(1)!;
+        }
+      }
+      
+      // Try to extract from DioException if available
+      try {
+        if (e is DioException && e.response?.data != null) {
+          final responseData = e.response!.data;
+          if (responseData is Map && responseData['message'] != null) {
+            errorMessage = responseData['message'].toString();
           }
         }
+      } catch (dioError) {
+        print('⚠️ Error extracting DioException message: $dioError');
+      }
+
+      if (mounted) {
+        // Check if error message indicates scooter is unavailable (rented, maintenance, unlocked, etc.)
+        final isScooterUnavailable = errorMessage.contains('مستأجر') || 
+                                     errorMessage.contains('الصيانة') ||
+                                     errorMessage.contains('غير متاح') ||
+                                     errorMessage.contains('مفتوح') ||
+                                     errorMessage.contains('مقفول') ||
+                                     errorMessage.contains('UNLOCKED') ||
+                                     errorMessage.contains('LOCKED') ||
+                                     errorStr.contains('SCOOTER_UNLOCKED_RENTED') ||
+                                     errorStr.contains('SCOOTER_NOT_AVAILABLE') ||
+                                     errorStr.contains('SCOOTER_RENTED') ||
+                                     errorStr.contains('SCOOTER_LOCKED') ||
+                                     errorStr.contains('SCOOTER_MAINTENANCE');
+        
+        // Show error message in SnackBar
+        try {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+              action: isScooterUnavailable
+                  ? SnackBarAction(
+                      label: 'بحث عن سكوتر',
+                      textColor: Colors.white,
+                      onPressed: () {
+                        // Refresh scooters list
+                        _loadScooters();
+                      },
+                    )
+                  : null,
+            ),
+          );
+        } catch (snackBarError) {
+          print('❌ Error showing SnackBar: $snackBarError');
+          // Fallback: show dialog if SnackBar fails
+          if (mounted) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('خطأ'),
+                content: Text(errorMessage),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('حسناً'),
+                  ),
+                  if (isScooterUnavailable)
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _loadScooters();
+                      },
+                      child: const Text('بحث عن سكوتر'),
+                    ),
+                ],
+              ),
+            );
+          }
+        }
+      }
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

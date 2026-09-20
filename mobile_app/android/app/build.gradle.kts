@@ -31,6 +31,11 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Ship 64-bit native libs only to avoid 16 KB page-size
+        // incompatibilities from some third-party 32-bit binaries.
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
         
         // Support for 16 KB page size devices (required for Google Play)
         // Flutter and modern Android Gradle Plugin (8.1+) automatically handle
@@ -100,6 +105,12 @@ android {
                     """.trimIndent()
                 )
             }
+        }
+    }
+
+    packaging {
+        jniLibs {
+            excludes += setOf("**/armeabi-v7a/*.so")
         }
     }
 }

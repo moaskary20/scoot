@@ -6,11 +6,10 @@
     <!-- Location Permissions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <!-- Android 12+ (API 31+) requires foreground service type for location -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <!-- Android 13+ (API 33+) requires POST_NOTIFICATIONS for notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Android 13+ advertising identifier permission -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
     
     <!-- Camera Permissions -->
     <uses-permission android:name="android.permission.CAMERA" />
@@ -56,7 +55,7 @@
         <!-- Google Maps API Key - Must be inside <application> tag -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyAYx3NYuaW2KfRt28bdfC-g37i9B-6rVgA"/>
+            android:value="AIzaSyBQ1cF7BrBPjWYMTPAgzH2cwjlwHYosKSU"/>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

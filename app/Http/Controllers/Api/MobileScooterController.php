@@ -41,8 +41,8 @@ class MobileScooterController extends Controller
             // Get all active scooters with GPS coordinates
             // Only show locked scooters (available for rent) - exclude unlocked scooters (rented/in use)
             $scooters = Scooter::where('is_active', true)
-                ->where('is_locked', true) // فقط السكوترات المقفولة (المتاحة للتأجير)
-                ->where('status', '!=', 'rented') // لا نعرض السكوترات المؤجرة
+                ->where('is_locked', true)
+                ->where('status', '!=', 'rented')
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
                 ->where('latitude', '!=', 0)
@@ -94,7 +94,7 @@ class MobileScooterController extends Controller
             $data = $nearbyScooters->map(function ($scooter) {
                 // Scooter is available if it's locked AND status is available
                 $isAvailable = $scooter->is_locked && $scooter->status === 'available';
-                
+
                 return [
                     'id' => $scooter->id,
                     'code' => $scooter->code,
@@ -136,8 +136,8 @@ class MobileScooterController extends Controller
         try {
             // Only show locked scooters (available for rent) - exclude unlocked scooters (rented/in use)
             $scooters = Scooter::where('is_active', true)
-                ->where('is_locked', true) // فقط السكوترات المقفولة (المتاحة للتأجير)
-                ->where('status', '!=', 'rented') // لا نعرض السكوترات المؤجرة
+                ->where('is_locked', true)
+                ->where('status', '!=', 'rented')
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
                 ->get();
@@ -145,7 +145,7 @@ class MobileScooterController extends Controller
             $data = $scooters->map(function ($scooter) {
                 // Scooter is available if it's locked AND status is available
                 $isAvailable = $scooter->is_locked && $scooter->status === 'available';
-                
+
                 return [
                     'id' => $scooter->id,
                     'code' => $scooter->code,
@@ -183,7 +183,7 @@ class MobileScooterController extends Controller
 
             // Scooter is available if it's locked AND status is available
             $isAvailable = $scooter->is_locked && $scooter->status === 'available';
-            
+
             return response()->json([
                 'success' => true,
                 'data' => [

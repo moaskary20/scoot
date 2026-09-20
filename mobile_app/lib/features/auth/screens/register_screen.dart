@@ -27,12 +27,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _universityIdController = TextEditingController();
   final _apiService = ApiService();
   final _imagePicker = ImagePicker();
-  
+
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  bool _acceptTerms = false; // موافقة على الشروط والأحكام
-  // صور البطاقة الشخصية (الوجه الأمامي والخلفي)
+  bool _acceptTerms = false;
+
   File? _nationalIdFrontPhoto;
   File? _nationalIdBackPhoto;
 
@@ -53,7 +53,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final DateTime initialDate = now.subtract(const Duration(days: 365 * 20)); // 20 years ago
     final DateTime firstDate = DateTime(1900);
     final DateTime lastDate = now.subtract(const Duration(days: 365 * 16)); // Minimum 16 years old
-    
+
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -73,7 +73,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       },
     );
-    
+
     if (picked != null) {
       setState(() {
         _ageController.text = DateFormat('yyyy/MM/dd').format(picked);
@@ -178,7 +178,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         phone: _phoneController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        // نرسل تاريخ الميلاد كما هو بصيغة YYYY/MM/DD
+
         age: _ageController.text.trim(),
         universityId: _universityIdController.text.trim(),
         nationalIdFrontPhoto: _nationalIdFrontPhoto,
@@ -205,16 +205,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      
+
       print('❌ Registration error caught: $e');
       print('❌ Error type: ${e.runtimeType}');
-      
+
       // Extract user-friendly error message
       String errorMessage = 'حدث خطأ في إنشاء الحساب';
       final errorStr = e.toString();
-      
+
       print('📝 Error string: $errorStr');
-      
+
       // Try to extract message from exception
       if (errorStr.contains('Exception: ')) {
         final parts = errorStr.split('Exception: ');
@@ -244,7 +244,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           // Keep default message
         }
       }
-      
+
       // Check for specific error types
       if (errorStr.contains('email') && (errorStr.contains('already') || errorStr.contains('مستخدم') || errorStr.contains('unique'))) {
         errorMessage = 'البريد الإلكتروني مستخدم بالفعل';
@@ -263,9 +263,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       } else if (errorStr.contains('storage') || errorStr.contains('file') || errorStr.contains('upload')) {
         errorMessage = 'خطأ في رفع الصور. يرجى المحاولة مرة أخرى';
       }
-      
+
       print('✅ Final error message: $errorMessage');
-      
+
       // Show error in a dialog for better visibility
       showDialog(
         context: context,
@@ -280,7 +280,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ],
         ),
       );
-      
+
       // Also show snackbar
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -429,7 +429,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (value == null || value.isEmpty) {
                       return 'يرجى إدخال تاريخ الميلاد';
                     }
-                    // التحقق من الصيغة YYYY/MM/DD
+
                     final regex = RegExp(r'^\d{4}/\d{2}/\d{2}$');
                     if (!regex.hasMatch(value.trim())) {
                       return 'صيغة التاريخ يجب أن تكون YYYY/MM/DD';

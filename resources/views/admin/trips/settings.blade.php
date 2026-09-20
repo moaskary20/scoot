@@ -29,7 +29,7 @@
                     @csrf
 
                     <div class="space-y-6">
-                        <!-- الإعدادات الأساسية -->
+
                         <div>
                             <h3 class="text-sm font-semibold text-secondary mb-4">{{ trans('messages.Basic Trip Limits') }}</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -110,7 +110,6 @@
                             </div>
                         </div>
 
-                        <!-- إعدادات إضافية -->
                         <div class="border-t border-gray-200 pt-6">
                             <h3 class="text-sm font-semibold text-secondary mb-4">{{ trans('messages.Additional Settings') }}</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -176,7 +175,6 @@
                             </div>
                         </div>
 
-                        <!-- إعدادات التحذيرات -->
                         <div class="border-t border-gray-200 pt-6">
                             <h3 class="text-sm font-semibold text-secondary mb-4">{{ trans('messages.Warning Settings') }}</h3>
                             <div class="space-y-4">

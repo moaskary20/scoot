@@ -19,7 +19,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // إدراج الإعدادات الافتراضية لـ Paymob
         \DB::table('payment_settings')->insert([
             [
                 'key' => 'paymob_enabled',

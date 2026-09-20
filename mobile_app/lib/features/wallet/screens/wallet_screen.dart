@@ -40,13 +40,11 @@ class _WalletScreenState extends State<WalletScreen> {
 
     try {
       final user = await _apiService.getCurrentUser();
-      // جلب جميع المعاملات المالية المتعلقة بالشحن والمحفظة
-      // بما فيها المعاملات التي تمت من admin panel (top_up, adjustment, refund, subscription)
+
       final transactions = await _apiService.getWalletTransactions(
-        // لا نستخدم type filter لجلب جميع المعاملات المالية
-        perPage: 20, // جلب آخر 20 معاملة
+        perPage: 20,
       );
-      
+
       if (mounted) {
         setState(() {
           _currentUser = user;
@@ -80,7 +78,7 @@ class _WalletScreenState extends State<WalletScreen> {
         builder: (context) => const TopUpScreen(),
       ),
     );
-    
+
     // Refresh wallet data if payment was initiated
     if (result == true) {
       _refreshData();
@@ -109,7 +107,7 @@ class _WalletScreenState extends State<WalletScreen> {
         setState(() {
           _isLoadingTransactions = false;
         });
-        
+
         final localizations = AppLocalizations.of(context);
         if (result['success'] == true) {
           _promoCodeController.clear();
@@ -164,7 +162,7 @@ class _WalletScreenState extends State<WalletScreen> {
     final languageService = Provider.of<LanguageService>(context, listen: false);
     final localizations = AppLocalizations.of(context);
     final isArabic = languageService.isArabic;
-    
+
     return Directionality(
       textDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
       child: Scaffold(
@@ -230,7 +228,7 @@ class _WalletScreenState extends State<WalletScreen> {
     final balance = _currentUser?.walletBalance ?? 0.0;
     final recentTransactions = _transactions.take(5).toList();
     final localizations = AppLocalizations.of(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -418,7 +416,7 @@ class _WalletScreenState extends State<WalletScreen> {
     final isCredit = transaction.transactionType == 'credit';
     final statusColor = _getStatusColor(transaction.status);
     final typeIcon = _getTransactionTypeIcon(transaction.type);
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -625,7 +623,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
   Widget _buildPromoCodeSection() {
     final localizations = AppLocalizations.of(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -717,7 +715,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
   Widget _buildLoyaltyRedeemSection() {
     final localizations = AppLocalizations.of(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

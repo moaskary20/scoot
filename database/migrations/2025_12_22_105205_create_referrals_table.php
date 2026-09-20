@@ -13,20 +13,20 @@ return new class extends Migration
     {
         Schema::create('referrals', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('referrer_id')->constrained('users')->onDelete('cascade'); // المستخدم الذي قام بالإحالة
-            $table->foreignId('referred_id')->constrained('users')->onDelete('cascade'); // المستخدم الذي تمت إحالته
-            $table->string('referral_code'); // كود الإحالة
-            $table->foreignId('trip_id')->nullable()->constrained('trips')->onDelete('set null'); // الرحلة التي أكملها المستخدم المُحال
-            $table->enum('status', ['pending', 'completed', 'rewarded'])->default('pending'); // pending: تم التسجيل، completed: أكمل رحلة، rewarded: تم إعطاء المكافأة
-            $table->decimal('reward_amount', 10, 2)->default(0); // المبلغ الممنوح
-            $table->timestamp('registered_at')->nullable(); // تاريخ التسجيل
-            $table->timestamp('trip_completed_at')->nullable(); // تاريخ إتمام الرحلة
-            $table->timestamp('rewarded_at')->nullable(); // تاريخ إعطاء المكافأة
+            $table->foreignId('referrer_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('referred_id')->constrained('users')->onDelete('cascade');
+            $table->string('referral_code');
+            $table->foreignId('trip_id')->nullable()->constrained('trips')->onDelete('set null');
+            $table->enum('status', ['pending', 'completed', 'rewarded'])->default('pending');
+            $table->decimal('reward_amount', 10, 2)->default(0);
+            $table->timestamp('registered_at')->nullable();
+            $table->timestamp('trip_completed_at')->nullable();
+            $table->timestamp('rewarded_at')->nullable();
             $table->timestamps();
-            
+
             $table->index(['referrer_id', 'status']);
             $table->index('referral_code');
-            $table->unique(['referrer_id', 'referred_id']); // كل مستخدم يمكن إحالته مرة واحدة فقط
+            $table->unique(['referrer_id', 'referred_id']);
         });
     }
 

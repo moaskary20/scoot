@@ -54,11 +54,11 @@ class MobileAuthController extends Controller
             $token = $user->createToken('mobile-app')->plainTextToken;
 
             // Determine account status
-            $accountStatus = 'pending'; // قيد التفعيل
+            $accountStatus = 'pending';
             if ($user->is_active) {
-                $accountStatus = 'active'; // مفعل
+                $accountStatus = 'active';
             } elseif ($user->review_notes && !empty(trim($user->review_notes))) {
-                $accountStatus = 'rejected'; // مرفوض
+                $accountStatus = 'rejected';
             }
 
             return response()->json([
@@ -97,10 +97,10 @@ class MobileAuthController extends Controller
                 'phone' => 'required|string|unique:users,phone',
                 'email' => 'required|string|email|max:255|unique:users,email',
                 'password' => 'required|string|min:8|confirmed',
-                // تاريخ الميلاد بصيغة YYYY/MM/DD
+
                 'age' => 'required|date_format:Y/m/d',
                 'university_id' => 'required|string',
-                // صورة البطاقة الشخصية - وجه أمامي وخلفي
+
                 'national_id_front' => 'required|image|mimes:jpeg,png,jpg|max:2048',
                 'national_id_back' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             ]);
@@ -113,7 +113,6 @@ class MobileAuthController extends Controller
                 ], 422);
             }
 
-            // حساب السن من تاريخ الميلاد
             $birthDate = Carbon::createFromFormat('Y/m/d', $request->age);
             $calculatedAge = $birthDate->age;
 
@@ -133,21 +132,21 @@ class MobileAuthController extends Controller
                 // Generate unique filename with extension
                 $extension = $front->getClientOriginalExtension() ?: 'jpg';
                 $frontName = time() . '_front_' . uniqid() . '.' . $extension;
-                
+
                 // Ensure directory exists
                 $directory = 'national_ids';
                 $fullPath = storage_path('app/public/' . $directory);
                 if (!File::exists($fullPath)) {
                     File::makeDirectory($fullPath, 0755, true);
                 }
-                
+
                 // Store file using Storage facade
                 $storedPath = Storage::disk('public')->putFileAs(
                     $directory,
                     $front,
                     $frontName
                 );
-                
+
                 if ($storedPath) {
                     $userData['national_id_front_photo'] = $storedPath;
                     \Log::info('✅ National ID front photo saved', [
@@ -169,21 +168,21 @@ class MobileAuthController extends Controller
                 // Generate unique filename with extension
                 $extension = $back->getClientOriginalExtension() ?: 'jpg';
                 $backName = time() . '_back_' . uniqid() . '.' . $extension;
-                
+
                 // Ensure directory exists
                 $directory = 'national_ids';
                 $fullPath = storage_path('app/public/' . $directory);
                 if (!File::exists($fullPath)) {
                     File::makeDirectory($fullPath, 0755, true);
                 }
-                
+
                 // Store file using Storage facade
                 $storedPath = Storage::disk('public')->putFileAs(
                     $directory,
                     $back,
                     $backName
                 );
-                
+
                 if ($storedPath) {
                     $userData['national_id_back_photo'] = $storedPath;
                     \Log::info('✅ National ID back photo saved', [
@@ -234,7 +233,7 @@ class MobileAuthController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            
+
             // Return more detailed error message
             $errorMessage = 'حدث خطأ في إنشاء الحساب';
             if (str_contains($e->getMessage(), 'SQLSTATE')) {
@@ -250,7 +249,7 @@ class MobileAuthController extends Controller
             } elseif (str_contains($e->getMessage(), 'storage') || str_contains($e->getMessage(), 'file')) {
                 $errorMessage = 'خطأ في رفع الصور. يرجى المحاولة مرة أخرى';
             }
-            
+
             return response()->json([
                 'success' => false,
                 'message' => $errorMessage,
@@ -266,7 +265,7 @@ class MobileAuthController extends Controller
     {
         try {
             $user = $request->user();
-            
+
             \Log::info('📱 User API Request', [
                 'user_id' => $user->id,
                 'age' => $user->age,
@@ -276,11 +275,11 @@ class MobileAuthController extends Controller
             ]);
 
             // Determine account status
-            $accountStatus = 'pending'; // قيد التفعيل
+            $accountStatus = 'pending';
             if ($user->is_active) {
-                $accountStatus = 'active'; // مفعل
+                $accountStatus = 'active';
             } elseif ($user->review_notes && !empty(trim($user->review_notes))) {
-                $accountStatus = 'rejected'; // مرفوض
+                $accountStatus = 'rejected';
             }
 
             return response()->json([
@@ -413,21 +412,21 @@ class MobileAuthController extends Controller
             // Generate unique filename with extension
             $extension = $avatar->getClientOriginalExtension() ?: 'jpg';
             $avatarName = 'avatar_' . $user->id . '_' . time() . '_' . uniqid() . '.' . $extension;
-            
+
             // Ensure directory exists
             $directory = 'avatars';
             $fullPath = storage_path('app/public/' . $directory);
             if (!File::exists($fullPath)) {
                 File::makeDirectory($fullPath, 0755, true);
             }
-            
+
             // Store file using Storage facade
             $storedPath = Storage::disk('public')->putFileAs(
                 $directory,
                 $avatar,
                 $avatarName
             );
-            
+
             if (!$storedPath) {
                 \Log::error('❌ Failed to save avatar', [
                     'filename' => $avatarName,
@@ -438,7 +437,7 @@ class MobileAuthController extends Controller
                     'message' => 'فشل في حفظ الصورة الشخصية',
                 ], 500);
             }
-            
+
             \Log::info('✅ Avatar saved', [
                 'stored_path' => $storedPath,
                 'filename' => $avatarName,
@@ -504,19 +503,19 @@ class MobileAuthController extends Controller
                 $front = $request->file('national_id_front');
                 $extension = $front->getClientOriginalExtension() ?: 'jpg';
                 $frontName = time() . '_front_' . uniqid() . '.' . $extension;
-                
+
                 $directory = 'national_ids';
                 $fullPath = storage_path('app/public/' . $directory);
                 if (!File::exists($fullPath)) {
                     File::makeDirectory($fullPath, 0755, true);
                 }
-                
+
                 $storedPath = Storage::disk('public')->putFileAs(
                     $directory,
                     $front,
                     $frontName
                 );
-                
+
                 if ($storedPath) {
                     $user->national_id_front_photo = $storedPath;
                     \Log::info('✅ National ID front photo resubmitted', [
@@ -530,19 +529,19 @@ class MobileAuthController extends Controller
                 $back = $request->file('national_id_back');
                 $extension = $back->getClientOriginalExtension() ?: 'jpg';
                 $backName = time() . '_back_' . uniqid() . '.' . $extension;
-                
+
                 $directory = 'national_ids';
                 $fullPath = storage_path('app/public/' . $directory);
                 if (!File::exists($fullPath)) {
                     File::makeDirectory($fullPath, 0755, true);
                 }
-                
+
                 $storedPath = Storage::disk('public')->putFileAs(
                     $directory,
                     $back,
                     $backName
                 );
-                
+
                 if ($storedPath) {
                     $user->national_id_back_photo = $storedPath;
                     \Log::info('✅ National ID back photo resubmitted', [
@@ -573,7 +572,7 @@ class MobileAuthController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'حدث خطأ في رفع الصور',

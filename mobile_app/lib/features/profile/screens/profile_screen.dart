@@ -22,11 +22,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _apiService = ApiService();
   final _imagePicker = ImagePicker();
   final _formKey = GlobalKey<FormState>();
-  
+
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   UserModel? _user;
   bool _isLoading = true;
   bool _isUpdatingPassword = false;
@@ -67,7 +67,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       print('  - Age > 0: ${user.age != null && user.age! > 0}');
       print('  - University ID is null: ${user.universityId == null}');
       print('  - University ID is not empty: ${user.universityId != null && user.universityId!.isNotEmpty}');
-      
+
       if (mounted) {
         setState(() {
           _user = user;
@@ -133,27 +133,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final updatedUser = await _apiService.updateAvatar(selectedFile);
       print('✅ Avatar upload successful');
       print('📋 Updated user avatar: ${updatedUser.avatar}');
-      
+
       if (mounted) {
         // Update user data immediately
         setState(() {
           _user = updatedUser;
           _isUpdatingAvatar = false;
         });
-        
+
         // Wait a bit then reload to ensure server has processed the image
         await Future.delayed(const Duration(milliseconds: 500));
-        
+
         // Reload user data to get the latest avatar URL from server
         await _loadUserData();
-        
+
         // Clear selected avatar after successful update and reload
         if (mounted) {
           setState(() {
             _selectedAvatar = null;
           });
         }
-        
+
         if (mounted) {
           final localizations = AppLocalizations.of(context);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -253,7 +253,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final languageService = Provider.of<LanguageService>(context, listen: false);
     final localizations = AppLocalizations.of(context);
     final isArabic = languageService.isArabic;
-    
+
     return Directionality(
       textDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
       child: Scaffold(
@@ -418,7 +418,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   Icons.phone,
                                   localizations,
                                 ),
-                                // Always show university ID field (even if null/empty, show "غير متوفر")
+
                                 const SizedBox(height: 16),
                                 _buildReadOnlyField(
                                   localizations?.universityId ?? 'الرقم الجامعي',
@@ -428,7 +428,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   Icons.school,
                                   localizations,
                                 ),
-                                // Always show age field (even if null/0, show "غير متوفر")
+
                                 const SizedBox(height: 16),
                                 _buildReadOnlyField(
                                   localizations?.age ?? 'السن',
@@ -446,7 +446,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        
+
                         // Resubmit National ID Section (if account is rejected)
                         if (_user!.accountStatus == 'rejected') ...[
                           _buildResubmitNationalIdSection(localizations),

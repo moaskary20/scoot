@@ -13,27 +13,27 @@ return new class extends Migration
     {
         Schema::create('coupons', function (Blueprint $table) {
             $table->id();
-            $table->string('code')->unique(); // كود الكوبون
-            $table->string('name'); // اسم الكوبون
-            
-            $table->enum('discount_type', ['percentage', 'fixed'])->default('percentage'); // نوع الخصم
-            $table->decimal('discount_value', 10, 2); // قيمة الخصم (% أو مبلغ ثابت)
-            $table->decimal('max_discount', 10, 2)->nullable(); // الحد الأقصى للخصم (للنسبة المئوية)
-            $table->decimal('min_amount', 10, 2)->default(0); // الحد الأدنى لاستخدام الكوبون
-            
-            $table->unsignedInteger('usage_limit')->nullable(); // عدد مرات الاستخدام الإجمالي
-            $table->unsignedInteger('usage_count')->default(0); // عدد مرات الاستخدام الحالي
-            $table->unsignedInteger('user_usage_limit')->default(1); // عدد مرات الاستخدام لكل مستخدم
-            
-            $table->enum('applicable_to', ['trips', 'subscriptions', 'all'])->default('all'); // ينطبق على
-            $table->timestamp('starts_at')->nullable(); // تاريخ بداية
-            $table->timestamp('expires_at')->nullable(); // تاريخ انتهاء
-            
-            $table->boolean('is_active')->default(true); // مفعل أم لا
-            $table->text('description')->nullable(); // وصف الكوبون
-            
+            $table->string('code')->unique();
+            $table->string('name');
+
+            $table->enum('discount_type', ['percentage', 'fixed'])->default('percentage');
+            $table->decimal('discount_value', 10, 2);
+            $table->decimal('max_discount', 10, 2)->nullable();
+            $table->decimal('min_amount', 10, 2)->default(0);
+
+            $table->unsignedInteger('usage_limit')->nullable();
+            $table->unsignedInteger('usage_count')->default(0);
+            $table->unsignedInteger('user_usage_limit')->default(1);
+
+            $table->enum('applicable_to', ['trips', 'subscriptions', 'all'])->default('all');
+            $table->timestamp('starts_at')->nullable();
+            $table->timestamp('expires_at')->nullable();
+
+            $table->boolean('is_active')->default(true);
+            $table->text('description')->nullable();
+
             $table->timestamps();
-            
+
             $table->index(['code', 'is_active']);
             $table->index(['expires_at', 'is_active']);
         });

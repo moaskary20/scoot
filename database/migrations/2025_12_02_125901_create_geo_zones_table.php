@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('geo_zones', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->enum('type', ['allowed', 'forbidden', 'parking']); // نوع المنطقة
-            $table->string('color')->default('#FFD600'); // لون العرض على الخريطة
-            $table->json('polygon'); // نقاط الـ Polygon كـ JSON
+            $table->enum('type', ['allowed', 'forbidden', 'parking']);
+            $table->string('color')->default('#FFD600');
+            $table->json('polygon');
 
             $table->decimal('center_latitude', 10, 7)->nullable();
             $table->decimal('center_longitude', 10, 7)->nullable();

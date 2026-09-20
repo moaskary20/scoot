@@ -19,7 +19,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // إدراج الإعدادات الافتراضية
         \DB::table('loyalty_settings')->insert([
             [
                 'key' => 'points_per_minute',

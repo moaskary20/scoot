@@ -37,7 +37,7 @@ class MobileTripController extends Controller
             $data = $trips->getCollection()->map(function (Trip $trip) {
                 // Get penalty details if exists - check both penalty_id and penalty relation
                 $penaltyData = null;
-                
+
                 // Try to get penalty from relation first
                 $penalty = null;
                 if ($trip->penalty) {
@@ -66,7 +66,7 @@ class MobileTripController extends Controller
                         ]);
                     }
                 }
-                
+
                 // Build penalty data if penalty found
                 if ($penalty) {
                     $penaltyData = [
@@ -78,7 +78,7 @@ class MobileTripController extends Controller
                         'status' => $penalty->status ?? 'pending',
                         'applied_at' => $penalty->applied_at?->toDateTimeString(),
                     ];
-                    
+
                     \Log::info('Penalty data loaded for trip', [
                         'trip_id' => $trip->id,
                         'penalty_id' => $penalty->id,
@@ -86,7 +86,7 @@ class MobileTripController extends Controller
                         'has_description' => !empty($penalty->description),
                     ]);
                 }
-                
+
                 return [
                     'id' => $trip->id,
                     'scooter_code' => $trip->scooter?->code,
@@ -97,7 +97,7 @@ class MobileTripController extends Controller
                     'base_cost' => (float) ($trip->base_cost ?? 0),
                     'discount_amount' => (float) ($trip->discount_amount ?? 0),
                     'penalty_amount' => (float) ($trip->penalty_amount ?? 0),
-                    'penalty' => $penaltyData, // إضافة تفاصيل الغرامة
+                    'penalty' => $penaltyData,
                     'status' => $trip->status,
                     'zone_exit_detected' => (bool) $trip->zone_exit_detected,
                     'zone_exit_details' => $trip->zone_exit_details,
@@ -219,7 +219,7 @@ class MobileTripController extends Controller
                     'status' => $scooter->status,
                     'user_id' => $user->id,
                 ]);
-                
+
                 return response()->json([
                     'success' => false,
                     'message' => 'السكوتر مستأجر حالياً من مستخدم آخر. يرجى البحث عن سكوتر آخر.',
@@ -232,7 +232,7 @@ class MobileTripController extends Controller
             $activeTripForScooter = Trip::where('scooter_id', $scooter->id)
                 ->where('status', 'active')
                 ->first();
-            
+
             if ($activeTripForScooter) {
                 \Log::warning('Scooter already has active trip', [
                     'scooter_id' => $scooter->id,
@@ -241,7 +241,7 @@ class MobileTripController extends Controller
                     'active_trip_user_id' => $activeTripForScooter->user_id,
                     'current_user_id' => $user->id,
                 ]);
-                
+
                 // If the active trip belongs to current user, return that trip
                 if ($activeTripForScooter->user_id === $user->id) {
                     return response()->json([
@@ -250,7 +250,7 @@ class MobileTripController extends Controller
                         'trip_id' => $activeTripForScooter->id,
                     ], 400);
                 }
-                
+
                 return response()->json([
                     'success' => false,
                     'message' => 'السكوتر مستأجر حالياً من مستخدم آخر. يرجى البحث عن سكوتر آخر.',
@@ -268,7 +268,7 @@ class MobileTripController extends Controller
                     'status' => $scooter->status,
                     'user_id' => $user->id,
                 ]);
-                
+
                 $statusMessages = [
                     'rented' => 'السكوتر مستأجر حالياً من مستخدم آخر. يرجى البحث عن سكوتر آخر.',
                     'maintenance' => 'السكوتر قيد الصيانة حالياً. يرجى البحث عن سكوتر آخر.',
@@ -276,9 +276,9 @@ class MobileTripController extends Controller
                     'damaged' => 'السكوتر معطل. يرجى البحث عن سكوتر آخر.',
                     'lost' => 'السكوتر مفقود. يرجى البحث عن سكوتر آخر.',
                 ];
-                
+
                 $message = $statusMessages[$scooter->status] ?? 'السكوتر غير متاح حالياً. يرجى البحث عن سكوتر آخر.';
-                
+
                 return response()->json([
                     'success' => false,
                     'message' => $message,
@@ -359,14 +359,14 @@ class MobileTripController extends Controller
                 ]);
                 $startTime = Carbon::now();
             }
-            
+
             // Calculate duration in minutes with decimals (fractional minutes)
             $durationSeconds = $startTime->diffInSeconds(Carbon::now());
             $durationMinutes = $durationSeconds / 60.0; // Convert to minutes with decimals
 
             // Ensure scooter relationship is loaded and battery is from database
             $trip->load('scooter');
-            
+
             // Get fresh battery data from database
             $batteryPercentage = 0;
             $scooterData = null;
@@ -374,21 +374,21 @@ class MobileTripController extends Controller
                 // Refresh scooter to get latest battery data
                 $trip->scooter->refresh();
                 $batteryPercentage = (int) ($trip->scooter->battery_percentage ?? 0);
-                
+
                 // Ensure battery is valid (0-100)
                 if ($batteryPercentage < 0) {
                     $batteryPercentage = 0;
                 } elseif ($batteryPercentage > 100) {
                     $batteryPercentage = 100;
                 }
-                
+
                 $scooterData = [
                     'id' => $trip->scooter->id,
                     'code' => $trip->scooter->code,
                     'battery_percentage' => $batteryPercentage, // From database
                     'is_locked' => (bool) $trip->scooter->is_locked, // Lock status
                 ];
-                
+
                 \Log::info('🔋 Active trip battery data', [
                     'trip_id' => $trip->id,
                     'scooter_id' => $trip->scooter->id,
@@ -402,7 +402,7 @@ class MobileTripController extends Controller
                     'scooter_id' => $trip->scooter_id,
                 ]);
             }
-            
+
             // Always include scooter data in response (even if null) for consistency
             if ($scooterData === null) {
                 $scooterData = [
@@ -441,12 +441,12 @@ class MobileTripController extends Controller
                     ]);
                     $geoZone = null;
                 }
-                
+
                 if ($geoZone && $geoZone->price_per_minute) {
                     $tripStartFee = (float) ($geoZone->trip_start_fee ?? 0);
                     $pricePerMinute = (float) ($geoZone->price_per_minute ?? 0);
                     $currentCost = $tripStartFee + ($durationMinutes * $pricePerMinute);
-                    
+
                     \Log::info('💰 Cost calculation (from geo zone)', [
                         'trip_id' => $trip->id,
                         'geo_zone_id' => $geoZone->id,
@@ -460,7 +460,7 @@ class MobileTripController extends Controller
                     $defaultTripStartFee = 5.0; // Default base cost
                     $defaultPricePerMinute = 0.5; // Default cost per minute
                     $currentCost = $defaultTripStartFee + ($durationMinutes * $defaultPricePerMinute);
-                    
+
                     \Log::warning('⚠️ No geo zone or pricing found, using default pricing', [
                         'trip_id' => $trip->id,
                         'start_latitude' => $trip->start_latitude,
@@ -475,7 +475,7 @@ class MobileTripController extends Controller
                 // If no coordinates, use default pricing based on duration only
                 $defaultPricePerMinute = 0.5; // Default cost per minute
                 $currentCost = $durationMinutes * $defaultPricePerMinute;
-                
+
                 \Log::warning('⚠️ Trip missing start coordinates, using default per-minute pricing', [
                     'trip_id' => $trip->id,
                     'start_latitude' => $trip->start_latitude,
@@ -485,10 +485,10 @@ class MobileTripController extends Controller
                     'calculated_cost' => $currentCost,
                 ]);
             }
-            
+
             // Ensure cost is not negative and has minimum value
             $currentCost = max(0, $currentCost);
-            
+
             // Log final cost
             \Log::info('💰 Final cost calculation', [
                 'trip_id' => $trip->id,
@@ -508,14 +508,14 @@ class MobileTripController extends Controller
                     'scooter' => $scooterData, // Always include scooter data
                 ],
             ];
-            
+
             \Log::info('📤 Sending active trip response', [
                 'trip_id' => $trip->id,
                 'battery_percentage' => $scooterData['battery_percentage'] ?? 0,
                 'current_cost' => $responseData['data']['current_cost'],
                 'duration_minutes' => $responseData['data']['duration_minutes'],
             ]);
-            
+
             return response()->json($responseData, 200);
         } catch (\Exception $e) {
             \Log::error('❌ Error in getActiveTrip', [
@@ -523,7 +523,7 @@ class MobileTripController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'حدث خطأ في جلب الرحلة النشطة',
@@ -579,7 +579,7 @@ class MobileTripController extends Controller
                 $yj = is_array($points[$j]) ? (float) $points[$j][1] : (float) ($points[$j + 1] ?? 0);
 
                 // Check if point is on the edge
-                if (($yi == $longitude && $yj == $longitude && 
+                if (($yi == $longitude && $yj == $longitude &&
                      (($xi <= $latitude && $latitude <= $xj) || ($xj <= $latitude && $latitude <= $xi)))) {
                     return true;
                 }
@@ -587,7 +587,7 @@ class MobileTripController extends Controller
                 // Check intersection
                 $intersect = (($yi > $longitude) != ($yj > $longitude)) &&
                              ($latitude < ($xj - $xi) * ($longitude - $yi) / ($yj - $yi) + $xi);
-                
+
                 if ($intersect) {
                     $inside = !$inside;
                 }

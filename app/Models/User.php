@@ -153,17 +153,16 @@ class User extends Authenticatable
     public function getCalculatedLoyaltyLevelAttribute(): string
     {
         $points = $this->loyalty_points;
-        
-        // الحصول على العتبات من الإعدادات
+
         $thresholds = \DB::table('loyalty_settings')
             ->whereIn('key', ['bronze_threshold', 'silver_threshold', 'gold_threshold'])
             ->pluck('value', 'key')
             ->toArray();
-        
+
         $goldThreshold = (int) ($thresholds['gold_threshold'] ?? 1000);
         $silverThreshold = (int) ($thresholds['silver_threshold'] ?? 500);
         $bronzeThreshold = (int) ($thresholds['bronze_threshold'] ?? 0);
-        
+
         if ($points >= $goldThreshold) {
             return 'gold';
         } elseif ($points >= $silverThreshold) {

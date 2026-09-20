@@ -48,7 +48,7 @@ class ApiService {
     try {
       print('🔐 Attempting login to: ${ApiConstants.baseUrl}${ApiConstants.login}');
       print('📱 Phone: $phone');
-      
+
       final response = await _dio.post(
         ApiConstants.login,
         data: {
@@ -56,10 +56,10 @@ class ApiService {
           'password': password,
         },
       );
-      
+
       print('✅ Login response: ${response.statusCode}');
       print('📦 Response data: ${response.data}');
-      
+
       return response.data;
     } catch (e) {
       print('❌ Login error: $e');
@@ -76,7 +76,7 @@ class ApiService {
   }
 
   // Register new user
-  // age هنا هو تاريخ الميلاد بصيغة YYYY/MM/DD
+
   Future<Map<String, dynamic>> register({
     required String name,
     required String phone,
@@ -94,7 +94,7 @@ class ApiService {
         'email': email,
         'password': password,
         'password_confirmation': password,
-        // تاريخ الميلاد بصيغة YYYY/MM/DD
+
         'age': age,
         'university_id': universityId,
         // Note: is_active is handled in backend, don't send it as it might cause SQL errors
@@ -128,50 +128,50 @@ class ApiService {
         ApiConstants.register,
         data: formData,
       );
-      
+
       if (response.data['success'] == true) {
         return response.data;
       }
-      
+
       // If response indicates failure, throw with message
       final errorMessage = response.data['message'] ?? 'فشل إنشاء الحساب';
       throw Exception(errorMessage);
     } catch (e) {
       print('❌ Register error: $e');
       print('❌ Error type: ${e.runtimeType}');
-      
+
       // Handle DioException specifically
       if (e is DioException) {
         print('📡 DioException - Status: ${e.response?.statusCode}');
         print('📡 Response data: ${e.response?.data}');
-        
+
         if (e.response?.data != null) {
           final responseData = e.response!.data;
-          
+
           // Extract message from response
           if (responseData is Map) {
             // First, try to get detailed error message
             if (responseData['error'] != null) {
               final errorDetail = responseData['error'] as String;
               // Use error detail if it's more specific than generic message
-              if (errorDetail.isNotEmpty && 
+              if (errorDetail.isNotEmpty &&
                   !errorDetail.contains('حدث خطأ في إنشاء الحساب') &&
                   !errorDetail.contains('An error occurred')) {
                 throw Exception(errorDetail);
               }
             }
-            
+
             // Then try message
             if (responseData['message'] != null) {
               final message = responseData['message'] as String;
               // Combine with error if available
-              if (responseData['error'] != null && 
+              if (responseData['error'] != null &&
                   responseData['error'] != responseData['message']) {
                 throw Exception('$message\n${responseData['error']}');
               }
               throw Exception(message);
             }
-            
+
             // Handle validation errors
             if (responseData['errors'] != null) {
               final errors = responseData['errors'] as Map<String, dynamic>;
@@ -188,12 +188,12 @@ class ApiService {
           }
         }
       }
-      
+
       // If it's already an Exception with a message, rethrow it
       if (e is Exception) {
         rethrow;
       }
-      
+
       // Otherwise, handle the error
       throw Exception(_handleError(e));
     }
@@ -218,17 +218,17 @@ class ApiService {
       final response = await _dio.get(ApiConstants.user);
       print('📱 User API Response: ${response.statusCode}');
       print('📦 Response data: ${response.data}');
-      
+
       // API returns: { success: true, data: { ... } }
       final userData = response.data['data'] ?? response.data;
       print('👤 Parsed user data: $userData');
       print('📊 Age in response: ${userData['age']} (type: ${userData['age']?.runtimeType})');
       print('📊 University ID in response: ${userData['university_id']} (type: ${userData['university_id']?.runtimeType})');
-      
+
       final user = UserModel.fromJson(userData);
       print('✅ User model created - Name: ${user.name}, Phone: ${user.phone}');
       print('✅ Age: ${user.age}, University ID: ${user.universityId}');
-      
+
       return user;
     } catch (e) {
       print('❌ Error getting user: $e');
@@ -265,7 +265,7 @@ class ApiService {
       print('📸 Starting avatar upload...');
       print('📁 Avatar file path: ${avatarFile.path}');
       print('📁 Avatar file exists: ${await avatarFile.exists()}');
-      
+
       final formData = FormData.fromMap({});
 
       formData.files.add(
@@ -315,7 +315,7 @@ class ApiService {
       print('📸 Starting national ID resubmission...');
       print('📁 Front photo path: ${frontPhoto.path}');
       print('📁 Back photo path: ${backPhoto.path}');
-      
+
       final formData = FormData.fromMap({});
 
       formData.files.add(
@@ -377,7 +377,7 @@ class ApiService {
       final url = '${ApiConstants.baseUrl}${ApiConstants.scootersNearby}';
       print('🛴 Fetching nearby scooters from: $url');
       print('📍 Location: lat=$latitude, lng=$longitude, radius=${AppConstants.nearbyRadius}');
-      
+
       final response = await _dio.get(
         ApiConstants.scootersNearby,
         queryParameters: {
@@ -386,10 +386,10 @@ class ApiService {
           'radius': AppConstants.nearbyRadius,
         },
       );
-      
+
       print('📦 Scooters API Response Status: ${response.statusCode}');
       print('📦 Scooters API Response Data: ${response.data}');
-      
+
       if (response.data != null) {
         // Handle different response formats
         if (response.data['success'] == true && response.data['data'] != null) {
@@ -407,14 +407,14 @@ class ApiService {
           print('⚠️ Unexpected response format: ${response.data}');
         }
       }
-      
+
       print('⚠️ No scooters found or empty response');
       return [];
     } on DioException catch (e) {
       print('❌ DioException fetching scooters: ${e.message}');
       print('📡 Status Code: ${e.response?.statusCode}');
       print('📡 Response Data: ${e.response?.data}');
-      
+
       // Handle 404 or other API errors gracefully
       if (e.response?.statusCode == 404) {
         print('⚠️ Scooters endpoint not found (404). Returning empty list.');
@@ -475,7 +475,7 @@ class ApiService {
   Future<Map<String, dynamic>> redeemLoyaltyPoints(int points) async {
     try {
       print('🔄 Redeeming $points loyalty points...');
-      
+
       final response = await _dio.post(
         ApiConstants.redeemLoyaltyPoints,
         data: {
@@ -528,7 +528,7 @@ class ApiService {
   Future<List<ScooterModel>> getAvailableScooters() async {
     try {
       final response = await _dio.get(ApiConstants.scooters);
-      
+
       if (response.data['success'] == true && response.data['data'] != null) {
         final List<dynamic> scooters = response.data['data'];
         return scooters
@@ -536,7 +536,7 @@ class ApiService {
             .where((scooter) => scooter.isAvailable)
             .toList();
       }
-      
+
       return [];
     } catch (e) {
       print('Error fetching scooters: $e');
@@ -575,37 +575,37 @@ class ApiService {
         'page': page,
         'per_page': perPage,
       };
-      
+
       // Add type filter if provided
       if (type != null && type.isNotEmpty) {
         queryParams['type'] = type;
       }
-      
+
       print('📊 Fetching wallet transactions from: ${ApiConstants.baseUrl}${ApiConstants.walletTransactions}');
       print('📋 Query parameters: $queryParams');
-      
+
       final response = await _dio.get(
         ApiConstants.walletTransactions,
         queryParameters: queryParams,
       );
-      
+
       print('📦 Wallet transactions API Response Status: ${response.statusCode}');
       print('📦 Wallet transactions API Response Data type: ${response.data.runtimeType}');
       print('📦 Wallet transactions API Response Data: ${response.data}');
-      
+
       List<dynamic> transactions = [];
-      
+
       if (response.data != null && response.data is Map) {
         final responseData = response.data as Map<String, dynamic>;
-        
+
         if (responseData['success'] == true && responseData['data'] != null) {
           final dataField = responseData['data'];
-          
+
           // Handle paginated response: { success: true, data: { data: [...], pagination: {...} } }
           if (dataField is Map && dataField.containsKey('data') && dataField['data'] is List) {
             transactions = dataField['data'] as List;
             print('✅ Found ${transactions.length} transactions (paginated response)');
-          } 
+          }
           // Handle direct data response: { success: true, data: [...] }
           else if (dataField is List) {
             transactions = dataField;
@@ -629,24 +629,24 @@ class ApiService {
       } else {
         print('⚠️ Unexpected response format: ${response.data} (type: ${response.data.runtimeType})');
       }
-      
+
       if (transactions.isNotEmpty) {
         try {
           final parsedTransactions = <WalletTransactionModel>[];
-          
+
           for (int i = 0; i < transactions.length; i++) {
             try {
               final json = transactions[i];
               print('🔄 Parsing transaction ${i + 1}/${transactions.length}: ${json.runtimeType}');
-              
+
               if (json is! Map) {
                 print('⚠️ Transaction $i is not a Map, skipping');
                 continue;
               }
-              
+
               final transactionMap = json as Map<String, dynamic>;
               print('📋 Transaction data: $transactionMap');
-              
+
               final parsed = WalletTransactionModel.fromJson(transactionMap);
               parsedTransactions.add(parsed);
               print('✅ Successfully parsed transaction ${i + 1}');
@@ -657,7 +657,7 @@ class ApiService {
               // Continue parsing other transactions instead of failing completely
             }
           }
-          
+
           print('✅ Successfully parsed ${parsedTransactions.length}/${transactions.length} transaction models');
           return parsedTransactions;
         } catch (e, stackTrace) {
@@ -666,7 +666,7 @@ class ApiService {
           return [];
         }
       }
-      
+
       print('⚠️ No transactions found or empty response');
       return [];
     } on DioException catch (e) {
@@ -708,7 +708,7 @@ class ApiService {
         } else if (response.data is List) {
           trips = response.data as List;
         }
-        
+
         // Log penalty data for debugging
         if (trips.isNotEmpty) {
           print('📋 Fetched ${trips.length} trips');
@@ -718,7 +718,7 @@ class ApiService {
             }
           }
         }
-        
+
         return trips.map((json) => TripModel.fromJson(json)).toList();
       }
 
@@ -785,12 +785,12 @@ class ApiService {
   Future<List<CardModel>> getSavedCards() async {
     try {
       final response = await _dio.get(ApiConstants.getCards);
-      
+
       if (response.data['success'] == true && response.data['data'] != null) {
         final List<dynamic> cards = response.data['data'];
         return cards.map((json) => CardModel.fromJson(json)).toList();
       }
-      
+
       return [];
     } catch (e) {
       print('Error fetching cards: $e');
@@ -812,15 +812,15 @@ class ApiService {
     try {
       print('🔗 Fetching referral data from: ${ApiConstants.baseUrl}${ApiConstants.referral}');
       final response = await _dio.get(ApiConstants.referral);
-      
+
       print('📦 Referral API Response: ${response.data}');
-      
+
       if (response.data['success'] == true && response.data['data'] != null) {
         final referralData = ReferralModel.fromJson(response.data['data']);
         print('✅ Referral data loaded: Code=${referralData.referralCode}, Link=${referralData.affiliateLink}');
         return referralData;
       }
-      
+
       print('⚠️ No referral data in response');
       // Return default if no data
       return ReferralModel(
@@ -850,7 +850,7 @@ class ApiService {
     try {
       print('🚀 Starting trip with QR code: $qrCode');
       print('📍 Location: lat=$latitude, lng=$longitude');
-      
+
       final response = await _dio.post(
         ApiConstants.startTrip,
         data: {
@@ -880,18 +880,18 @@ class ApiService {
           if (responseData['message'] != null) {
             final message = responseData['message'] as String;
             String exceptionMessage = message;
-            
+
             // If there's an active trip, include trip_id in the exception message
             if (responseData['trip_id'] != null) {
               exceptionMessage = '$message|trip_id:${responseData['trip_id']}';
             }
-            
+
             // Include error_code if available for better error handling
             if (responseData['error_code'] != null) {
               final errorCode = responseData['error_code'] as String;
               exceptionMessage = '$exceptionMessage|error_code:$errorCode';
             }
-            
+
             throw Exception(exceptionMessage);
           }
         }
@@ -930,7 +930,7 @@ class ApiService {
       print('🔄 Completing trip: $tripId');
       print('📍 End location: lat=$endLatitude, lng=$endLongitude');
       print('📷 Image path: $imagePath');
-      
+
       final formData = FormData.fromMap({
         'end_latitude': endLatitude,
         'end_longitude': endLongitude,
@@ -989,7 +989,7 @@ class ApiService {
   Future<Map<String, dynamic>> unlockScooter() async {
     try {
       print('🔓 Unlocking scooter during active trip...');
-      
+
       final response = await _dio.post(
         ApiConstants.unlockScooter,
       );
@@ -1026,7 +1026,7 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(AppConstants.tokenKey);
     await prefs.remove(AppConstants.userKey);
-    
+
     // Try to call logout API, but don't fail if it errors (token might be invalid)
     try {
       await _dio.post(ApiConstants.logout);
@@ -1045,11 +1045,11 @@ class ApiService {
           error.type == DioExceptionType.sendTimeout) {
         return 'انتهت مهلة الاتصال. يرجى التحقق من اتصال الإنترنت';
       }
-      
+
       if (error.type == DioExceptionType.connectionError) {
         return 'فشل الاتصال بالخادم. يرجى التحقق من:\n1. أن الخادم يعمل\n2. عنوان IP صحيح\n3. اتصال الإنترنت';
       }
-      
+
       // Handle response errors
       if (error.response != null) {
         final data = error.response?.data;
@@ -1079,7 +1079,7 @@ class ApiService {
         }
         return 'حدث خطأ: $statusCode';
       }
-      
+
       // Network error
       return 'فشل الاتصال بالخادم. يرجى التحقق من:\n1. أن الخادم يعمل على ${ApiConstants.baseUrl}\n2. أنك متصل بنفس الشبكة\n3. اتصال الإنترنت';
     }

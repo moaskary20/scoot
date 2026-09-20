@@ -58,7 +58,7 @@ class TripController extends Controller
         }
 
         $trips = $query->orderByDesc('start_time')->paginate(20);
-        
+
         // Load wallet transactions for payment status calculation
         $trips->load('walletTransactions');
 
@@ -105,8 +105,7 @@ class TripController extends Controller
         ]);
 
         $scooter = Scooter::findOrFail($data['scooter_id']);
-        
-        // تحديث حالة السكوتر إلى "rented"
+
         $scooter->update(['status' => 'rented']);
 
         $data['start_time'] = Carbon::now();
@@ -114,7 +113,6 @@ class TripController extends Controller
         $data['cost'] = 0;
         $data['base_cost'] = 0;
 
-        // إذا تم اختيار منطقة جغرافية، استخدم إحداثيات المركز
         if (isset($data['geo_zone_id']) && $data['geo_zone_id']) {
             $geoZone = \App\Models\GeoZone::find($data['geo_zone_id']);
             if ($geoZone && $geoZone->center_latitude && $geoZone->center_longitude) {
@@ -123,7 +121,6 @@ class TripController extends Controller
             }
         }
 
-        // إزالة geo_zone_id من البيانات قبل الحفظ (لا يوجد عمود في جدول trips)
         unset($data['geo_zone_id']);
 
         $trip = $this->repository->create($data);
@@ -240,7 +237,7 @@ class TripController extends Controller
         $endTime = Carbon::now();
         $startTime = Carbon::parse($trip->start_time);
         $durationMinutes = $startTime->diffInMinutes($endTime);
-        
+
         // Get geo zone for pricing
         $geoZone = null;
         if ($trip->start_latitude && $trip->start_longitude) {
@@ -255,7 +252,7 @@ class TripController extends Controller
                     );
                 });
         }
-        
+
         // Calculate cost
         $cost = 0;
         if ($geoZone && $geoZone->price_per_minute) {
@@ -266,7 +263,7 @@ class TripController extends Controller
             // Use existing cost or calculate from base_cost, discount, and penalty
             $cost = $trip->base_cost - $trip->discount_amount + $trip->penalty_amount;
         }
-        
+
         // Ensure cost is not negative
         $cost = max(0, (float) $cost);
 
@@ -278,7 +275,6 @@ class TripController extends Controller
 
         $this->repository->completeTrip($trip, $data);
 
-        // تحديث حالة السكوتر إلى "available"
         $trip->scooter->update(['status' => 'available']);
 
         return redirect()
@@ -299,7 +295,6 @@ class TripController extends Controller
             'end_time' => Carbon::now(),
         ]);
 
-        // تحديث حالة السكوتر إلى "available"
         $trip->scooter->update(['status' => 'available']);
 
         return redirect()

@@ -19,9 +19,8 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // إدراج الإعدادات الافتراضية
         \DB::table('trip_settings')->insert([
-            // الإعدادات المطلوبة
+
             [
                 'key' => 'max_trip_duration_minutes',
                 'value' => '120',
@@ -57,7 +56,7 @@ return new class extends Migration
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            // اقتراحات إضافية
+
             [
                 'key' => 'max_trip_distance_km',
                 'value' => '50',

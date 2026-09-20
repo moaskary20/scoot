@@ -297,7 +297,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       print('❌ Error loading geo zones: $e');
-      // لا نعرض SnackBar هنا حتى لا نزعج المستخدم؛ فقط لوج
+
     }
   }
 
@@ -330,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       return !isRented;
     }).toList();
-    
+
     print('🛴 Adding ${availableScooters.length} available scooter markers (filtered ${_scooters.length - availableScooters.length} rented)...');
     for (var scooter in availableScooters) {
       if (scooter.latitude == 0.0 && scooter.longitude == 0.0) {
@@ -401,7 +401,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       Text(
-                          scooter.isAvailable 
+                          scooter.isAvailable
                               ? (AppLocalizations.of(context)?.available ?? 'متاح')
                               : (AppLocalizations.of(context)?.unavailable ?? 'غير متاح'),
                         style: TextStyle(
@@ -427,7 +427,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(width: 20),
                 _buildInfoItem(
                   scooter.isLocked ? Icons.lock : Icons.lock_open,
-                  scooter.isLocked 
+                  scooter.isLocked
                       ? (AppLocalizations.of(context)?.locked ?? 'مقفول')
                       : (AppLocalizations.of(context)?.unlocked ?? 'مفتوح'),
                   scooter.isLocked ? Colors.orange : Colors.blue,
@@ -549,7 +549,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Check if user account is active
     // Refresh user data first to get latest status
     await _loadUserData();
-    
+
     if (_currentUser != null && !_currentUser!.isActive) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -647,10 +647,10 @@ class _HomeScreenState extends State<HomeScreen> {
         // Close loading dialog safely before navigation
         await _closeLoadingDialogSafely(isLoadingDialogOpen);
         isLoadingDialogOpen = false;
-        
+
         // Small delay to ensure dialog is fully closed
         await Future.delayed(const Duration(milliseconds: 100));
-        
+
         if (!mounted) return;
 
         // Parse start_time and convert to local timezone
@@ -673,7 +673,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       print('❌ Error in _startTrip: $e');
       print('❌ Error type: ${e.runtimeType}');
-      
+
       // Close loading dialog first - use multiple strategies to ensure it closes
       await _closeLoadingDialogSafely(isLoadingDialogOpen);
       isLoadingDialogOpen = false;
@@ -722,7 +722,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Extract and display user-friendly error message
       String errorMessage = 'حدث خطأ في بدء الرحلة';
-      
+
       // Try to extract message from exception
       if (errorStr.contains('Exception: ')) {
         final parts = errorStr.split('Exception: ');
@@ -737,7 +737,7 @@ class _HomeScreenState extends State<HomeScreen> {
           errorMessage = match.group(1)!;
         }
       }
-      
+
       // Try to extract from DioException if available
       try {
         if (e is DioException && e.response?.data != null) {
@@ -753,7 +753,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (mounted) {
         // Check if error message indicates scooter is unavailable (rented, maintenance, unlocked, etc.)
-        final isScooterUnavailable = errorMessage.contains('مستأجر') || 
+        final isScooterUnavailable = errorMessage.contains('مستأجر') ||
                                      errorMessage.contains('الصيانة') ||
                                      errorMessage.contains('غير متاح') ||
                                      errorMessage.contains('مفتوح') ||
@@ -765,7 +765,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                      errorStr.contains('SCOOTER_RENTED') ||
                                      errorStr.contains('SCOOTER_LOCKED') ||
                                      errorStr.contains('SCOOTER_MAINTENANCE');
-        
+
         // Show error message in SnackBar
         try {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1122,7 +1122,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Check if user account is active
     // Refresh user data first to get latest status
     await _loadUserData();
-    
+
     if (_currentUser != null && !_currentUser!.isActive) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1262,7 +1262,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       print('❌ Error in _startTripFromGuide: $e');
       print('❌ Error type: ${e.runtimeType}');
-      
+
       // Close loading dialog first - use multiple strategies to ensure it closes
       await _closeLoadingDialogSafely(isLoadingDialogOpen);
       isLoadingDialogOpen = false;
@@ -1311,7 +1311,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Extract and display user-friendly error message
       String errorMessage = AppLocalizations.of(context)?.errorStartingTrip ?? 'حدث خطأ في بدء الرحلة';
-      
+
       // Try to extract message from exception
       if (errorStr.contains('Exception: ')) {
         final parts = errorStr.split('Exception: ');
@@ -1326,7 +1326,7 @@ class _HomeScreenState extends State<HomeScreen> {
           errorMessage = match.group(1)!;
         }
       }
-      
+
       // Try to extract from DioException if available
       try {
         if (e is DioException && e.response?.data != null) {
@@ -1341,7 +1341,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (mounted) {
         // Check if error message indicates scooter is unavailable (rented, maintenance, unlocked, etc.)
-        final isScooterUnavailable = errorMessage.contains('مستأجر') || 
+        final isScooterUnavailable = errorMessage.contains('مستأجر') ||
                                      errorMessage.contains('الصيانة') ||
                                      errorMessage.contains('غير متاح') ||
                                      errorMessage.contains('مفتوح') ||
@@ -1353,7 +1353,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                      errorStr.contains('SCOOTER_RENTED') ||
                                      errorStr.contains('SCOOTER_LOCKED') ||
                                      errorStr.contains('SCOOTER_MAINTENANCE');
-        
+
         // Show error message in SnackBar
         try {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -2078,7 +2078,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 // Even if logout API fails, local storage is cleared
                                 print('⚠️ Logout error (ignored): $e');
                               }
-                              
+
                               // Always navigate to login, regardless of API result
                               if (mounted) {
                                 Navigator.pushReplacementNamed(

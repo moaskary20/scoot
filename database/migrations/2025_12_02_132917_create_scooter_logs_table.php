@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('scooter_id')->constrained()->onDelete('cascade');
             $table->foreignId('trip_id')->nullable()->constrained()->onDelete('set null');
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
-            
+
             $table->enum('event_type', [
                 'battery_drop',
                 'zone_exit',
@@ -31,29 +31,26 @@ return new class extends Migration
                 'maintenance_end',
                 'other'
             ])->default('other');
-            
-            $table->string('title'); // عنوان الحدث
-            $table->text('description')->nullable(); // وصف تفصيلي
-            $table->enum('severity', ['info', 'warning', 'critical'])->default('info'); // مستوى الخطورة
-            
-            // بيانات إضافية (JSON)
-            $table->json('data')->nullable(); // بيانات إضافية مثل الإحداثيات القديمة والجديدة، قيمة البطارية، إلخ
-            
-            // إحداثيات الموقع عند الحدث
+
+            $table->string('title');
+            $table->text('description')->nullable();
+            $table->enum('severity', ['info', 'warning', 'critical'])->default('info');
+
+            $table->json('data')->nullable();
+
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();
-            
-            // حالة السكوتر عند الحدث
+
             $table->enum('scooter_status', ['available', 'rented', 'charging', 'maintenance'])->nullable();
             $table->unsignedTinyInteger('battery_percentage')->nullable();
             $table->boolean('was_locked')->nullable();
-            
-            $table->boolean('is_resolved')->default(false); // تم حل المشكلة أم لا
+
+            $table->boolean('is_resolved')->default(false);
             $table->timestamp('resolved_at')->nullable();
             $table->text('resolution_notes')->nullable();
-            
+
             $table->timestamps();
-            
+
             $table->index(['scooter_id', 'created_at']);
             $table->index(['event_type', 'severity']);
             $table->index('is_resolved');

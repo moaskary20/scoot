@@ -14,7 +14,7 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        // إنشاء المستخدم الرئيسي
+
         $user = User::firstOrCreate(
             ['email' => 'mo.askary@gmail.com'],
             [
@@ -30,7 +30,6 @@ class AdminUserSeeder extends Seeder
             ]
         );
 
-        // تحديث كلمة المرور إذا كان المستخدم موجوداً بالفعل
         if ($user->wasRecentlyCreated === false) {
             $user->update([
                 'password' => Hash::make('newpassword'),
@@ -38,7 +37,6 @@ class AdminUserSeeder extends Seeder
             ]);
         }
 
-        // إضافة دور Admin للمستخدم إذا كان موجوداً
         $adminRole = Role::where('name', 'admin')->orWhere('name', 'Admin')->first();
         if ($adminRole && !$user->roles->contains($adminRole->id)) {
             $user->roles()->attach($adminRole->id);

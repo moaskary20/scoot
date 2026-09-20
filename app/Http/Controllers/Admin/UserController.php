@@ -23,7 +23,6 @@ class UserController extends Controller
         $users = $this->repository->paginate(20, $search);
         $users->load('roles');
 
-        // تحديث مستويات الولاء بناءً على نقاط الولاء
         foreach ($users as $user) {
             $calculatedLevel = $user->calculated_loyalty_level;
             if ($user->loyalty_level !== $calculatedLevel) {
@@ -75,7 +74,7 @@ class UserController extends Controller
 
     public function show(User $user)
     {
-        // تحديث مستوى الولاء بناءً على نقاط الولاء
+
         $calculatedLevel = $user->calculated_loyalty_level;
         if ($user->loyalty_level !== $calculatedLevel) {
             $user->update(['loyalty_level' => $calculatedLevel]);
@@ -88,7 +87,7 @@ class UserController extends Controller
         $penalties = $user->penalties()->with(['trip', 'scooter'])->orderByDesc('created_at')->limit(10)->get();
         $loyaltyTransactions = $user->loyaltyPointsTransactions()->with(['trip'])->orderByDesc('created_at')->limit(10)->get();
         $allRoles = \App\Models\Role::where('is_active', true)->orderBy('name')->get();
-        
+
         return view('admin.users.show', compact('user', 'trips', 'penalties', 'loyaltyTransactions', 'allRoles'));
     }
 
@@ -248,7 +247,7 @@ class UserController extends Controller
     private function exportToCsv($users)
     {
         $filename = 'inactive_users_' . date('Y-m-d_His') . '.csv';
-        
+
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
@@ -256,10 +255,10 @@ class UserController extends Controller
 
         $callback = function() use ($users) {
             $file = fopen('php://output', 'w');
-            
+
             // Add BOM for UTF-8
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
-            
+
             // Headers
             fputcsv($file, [
                 trans('messages.Name'),
@@ -304,7 +303,7 @@ class UserController extends Controller
         $walletMax = $request->get('wallet_max');
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
-        
+
         $query = User::where('is_active', true)
             ->with(['roles', 'trips' => function($q) {
                 $q->latest()->limit(1);
@@ -349,7 +348,6 @@ class UserController extends Controller
         $users = $query->paginate(20)->appends(request()->query());
         $activeCount = User::where('is_active', true)->count();
 
-        // تحديث مستويات الولاء
         foreach ($users as $user) {
             $calculatedLevel = $user->calculated_loyalty_level;
             if ($user->loyalty_level !== $calculatedLevel) {

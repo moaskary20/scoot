@@ -131,7 +131,7 @@ class ScooterLogRepository
      */
     public function logForcedMovement(Scooter $scooter, array $movementData = []): ScooterLog
     {
-        // قفل السكوتر تلقائياً
+
         $scooter->update(['is_locked' => true]);
 
         return $this->create([
@@ -145,7 +145,7 @@ class ScooterLogRepository
             'longitude' => $scooter->longitude,
             'scooter_status' => $scooter->status,
             'battery_percentage' => $scooter->battery_percentage,
-            'was_locked' => false, // كان غير مقفول قبل القفل التلقائي
+            'was_locked' => false,
         ]);
     }
 
@@ -165,7 +165,7 @@ class ScooterLogRepository
             'longitude' => $scooter->longitude,
             'scooter_status' => $scooter->status,
             'battery_percentage' => $scooter->battery_percentage,
-            'was_locked' => !$isLocked, // الحالة السابقة
+            'was_locked' => !$isLocked,
         ]);
     }
 

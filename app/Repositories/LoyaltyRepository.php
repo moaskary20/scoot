@@ -20,10 +20,9 @@ class LoyaltyRepository
     public function addPoints(User $user, int $points, string $type = 'earned', ?int $tripId = null, ?string $description = null): LoyaltyPointsTransaction
     {
         return DB::transaction(function () use ($user, $points, $type, $tripId, $description) {
-            // إضافة النقاط
+
             $this->userRepository->addLoyaltyPoints($user, $points);
 
-            // إنشاء معاملة
             $transaction = LoyaltyPointsTransaction::create([
                 'user_id' => $user->id,
                 'trip_id' => $tripId,
@@ -40,10 +39,9 @@ class LoyaltyRepository
     public function deductPoints(User $user, int $points, string $type = 'redeemed', ?string $description = null): LoyaltyPointsTransaction
     {
         return DB::transaction(function () use ($user, $points, $type, $description) {
-            // خصم النقاط
+
             $this->userRepository->deductLoyaltyPoints($user, $points);
 
-            // إنشاء معاملة
             $transaction = LoyaltyPointsTransaction::create([
                 'user_id' => $user->id,
                 'trip_id' => null,
@@ -154,7 +152,7 @@ class LoyaltyRepository
 
         foreach ($data as $key => $value) {
             $exists = DB::table('loyalty_settings')->where('key', $key)->exists();
-            
+
             if ($exists) {
                 DB::table('loyalty_settings')
                     ->where('key', $key)
@@ -207,7 +205,7 @@ class LoyaltyRepository
 
     /**
      * Redeem loyalty points to wallet balance
-     * 
+     *
      * @param User $user
      * @param int $points Number of points to redeem
      * @return array Returns ['success' => bool, 'wallet_amount' => float, 'transaction' => LoyaltyPointsTransaction, 'wallet_transaction' => WalletTransaction]
@@ -285,7 +283,7 @@ class LoyaltyRepository
 
         foreach ($transactions as $transaction) {
             $calculatedBalance += $transaction->points;
-            
+
             // Verify balance_after matches calculated balance
             if ($transaction->balance_after != $calculatedBalance) {
                 $issues[] = [
@@ -330,7 +328,7 @@ class LoyaltyRepository
 
         foreach ($transactions as $transaction) {
             $calculatedBalance += $transaction->points;
-            
+
             // Update balance_after if incorrect
             if ($transaction->balance_after != $calculatedBalance) {
                 $transaction->update(['balance_after' => $calculatedBalance]);

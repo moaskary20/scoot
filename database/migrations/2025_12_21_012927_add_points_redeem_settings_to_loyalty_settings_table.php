@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // إضافة إعدادات استبدال النقاط
+
         \DB::table('loyalty_settings')->insert([
             [
                 'key' => 'points_redeem_enabled',

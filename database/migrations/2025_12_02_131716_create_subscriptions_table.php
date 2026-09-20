@@ -14,30 +14,30 @@ return new class extends Migration
         Schema::create('subscriptions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            
-            $table->string('name'); // اسم الباقة (30 دقيقة، 100 دقيقة، Unlimited)
-            $table->enum('type', ['minutes', 'unlimited'])->default('minutes'); // نوع الباقة
-            $table->unsignedInteger('minutes_included')->nullable(); // عدد الدقائق المضمنة (null للـ unlimited)
-            
-            $table->decimal('price', 10, 2); // سعر الاشتراك
-            $table->enum('billing_period', ['daily', 'weekly', 'monthly', 'yearly'])->default('monthly'); // فترة الفوترة
-            
-            $table->timestamp('starts_at'); // تاريخ بداية الاشتراك
-            $table->timestamp('expires_at'); // تاريخ انتهاء الاشتراك
-            $table->timestamp('renewed_at')->nullable(); // تاريخ آخر تجديد
-            
-            $table->boolean('auto_renew')->default(false); // تجديد تلقائي
-            $table->enum('status', ['active', 'expired', 'cancelled', 'suspended'])->default('active'); // حالة الاشتراك
-            
-            $table->unsignedInteger('minutes_used')->default(0); // الدقائق المستخدمة
-            $table->unsignedInteger('trips_count')->default(0); // عدد الرحلات المستخدمة في هذا الاشتراك
-            
-            $table->foreignId('coupon_id')->nullable()->constrained()->onDelete('set null'); // الكوبون المستخدم
-            
-            $table->text('notes')->nullable(); // ملاحظات
-            
+
+            $table->string('name');
+            $table->enum('type', ['minutes', 'unlimited'])->default('minutes');
+            $table->unsignedInteger('minutes_included')->nullable();
+
+            $table->decimal('price', 10, 2);
+            $table->enum('billing_period', ['daily', 'weekly', 'monthly', 'yearly'])->default('monthly');
+
+            $table->timestamp('starts_at');
+            $table->timestamp('expires_at');
+            $table->timestamp('renewed_at')->nullable();
+
+            $table->boolean('auto_renew')->default(false);
+            $table->enum('status', ['active', 'expired', 'cancelled', 'suspended'])->default('active');
+
+            $table->unsignedInteger('minutes_used')->default(0);
+            $table->unsignedInteger('trips_count')->default(0);
+
+            $table->foreignId('coupon_id')->nullable()->constrained()->onDelete('set null');
+
+            $table->text('notes')->nullable();
+
             $table->timestamps();
-            
+
             $table->index(['user_id', 'status']);
             $table->index(['expires_at', 'status']);
             $table->index('auto_renew');

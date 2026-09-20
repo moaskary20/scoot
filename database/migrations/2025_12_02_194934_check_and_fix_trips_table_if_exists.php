@@ -11,15 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // إذا كان الجدول موجوداً بالفعل، نتحقق من الأعمدة المطلوبة
+
         if (Schema::hasTable('trips')) {
             Schema::table('trips', function (Blueprint $table) {
-                // إضافة coupon_id إذا لم يكن موجوداً
+
                 if (!Schema::hasColumn('trips', 'coupon_id')) {
                     $table->unsignedBigInteger('coupon_id')->nullable()->after('zone_exit_details');
                 }
-                
-                // إضافة penalty_id إذا لم يكن موجوداً
+
                 if (!Schema::hasColumn('trips', 'penalty_id')) {
                     $table->unsignedBigInteger('penalty_id')->nullable()->after('coupon_id');
                 }
@@ -32,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // لا حاجة لعكس هذا migration
+
     }
 };

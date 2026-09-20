@@ -224,9 +224,9 @@
             let markers = [];
 
             function initMap() {
-                // Default center (Cairo, Egypt) - يمكن تغييره حسب منطقتك
+
                 const defaultCenter = { lat: 30.0444, lng: 31.2357 };
-                
+
                 map = new google.maps.Map(document.getElementById('scooters-map'), {
                     zoom: 12,
                     center: defaultCenter,
@@ -241,8 +241,7 @@
                 });
 
                 loadScooters();
-                
-                // تحديث الخريطة كل 30 ثانية
+
                 setInterval(loadScooters, 30000);
             }
 
@@ -250,7 +249,7 @@
                 fetch('{{ route('admin.scooters.map-data') }}')
                     .then(response => response.json())
                     .then(data => {
-                        // حذف العلامات القديمة
+
                         markers.forEach(marker => marker.setMap(null));
                         markers = [];
 
@@ -259,26 +258,23 @@
 
                             data.scooters.forEach(scooter => {
                                 const position = { lat: scooter.latitude, lng: scooter.longitude };
-                                
-                                // تحديد لون العلامة حسب الحالة
+
                                 let iconColor = '#10b981'; // emerald (available)
                                 if (scooter.status === 'rented') iconColor = '#3b82f6'; // blue
                                 else if (scooter.status === 'charging') iconColor = '#f59e0b'; // amber
                                 else if (scooter.status === 'maintenance') iconColor = '#ef4444'; // red
 
-                                // إنشاء أيقونة سكوتر مخصصة باستخدام SVG
-                                // شكل سكوتر بسيط: عجلة أمامية، مقبض، جسم، عجلة خلفية
                                 const scooterIcon = {
                                     url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
                                         <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
                                             <circle cx="20" cy="20" r="18" fill="${iconColor}" stroke="#ffffff" stroke-width="2.5"/>
-                                            <!-- عجلة أمامية -->
+
                                             <circle cx="12" cy="15" r="3" fill="#ffffff"/>
-                                            <!-- مقبض -->
+
                                             <line x1="12" y1="15" x2="8" y2="10" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
-                                            <!-- جسم السكوتر -->
+
                                             <rect x="12" y="15" width="12" height="4" rx="2" fill="#ffffff"/>
-                                            <!-- عجلة خلفية -->
+
                                             <circle cx="24" cy="19" r="3" fill="#ffffff"/>
                                         </svg>
                                     `),
@@ -286,7 +282,6 @@
                                     anchor: new google.maps.Point(20, 20),
                                 };
 
-                                // إنشاء علامة مخصصة
                                 const marker = new google.maps.Marker({
                                     position: position,
                                     map: map,
@@ -295,7 +290,6 @@
                                     animation: google.maps.Animation.DROP
                                 });
 
-                                // إنشاء Label أسفل العلامة
                                 class ScooterLabel extends google.maps.OverlayView {
                                     constructor(position, text, map) {
                                         super();
@@ -322,7 +316,7 @@
                                             pointer-events: none;
                                         `;
                                         this.div.textContent = this.text;
-                                        
+
                                         const panes = this.getPanes();
                                         panes.overlayMouseTarget.appendChild(this.div);
                                     }
@@ -330,7 +324,7 @@
                                     draw() {
                                         const overlayProjection = this.getProjection();
                                         const position = overlayProjection.fromLatLngToDivPixel(this.position);
-                                        
+
                                         this.div.style.left = (position.x - this.div.offsetWidth / 2) + 'px';
                                         this.div.style.top = (position.y + 20) + 'px';
                                     }
@@ -353,7 +347,7 @@
                                         <div class="text-gray-600">Locked: <span class="font-medium">${scooter.is_locked ? 'Yes' : 'No'}</span></div>
                                     </div>
                                 `;
-                                
+
                                 const infoWindow = new google.maps.InfoWindow({
                                     content: infoContent
                                 });
@@ -366,7 +360,6 @@
                                 bounds.extend(position);
                             });
 
-                            // ضبط الخريطة لتشمل جميع السكوترات
                             if (data.scooters.length === 1) {
                                 map.setCenter(position);
                                 map.setZoom(15);
@@ -380,7 +373,6 @@
                     });
             }
 
-            // تهيئة الخريطة عند تحميل الصفحة
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', initMap);
             } else {

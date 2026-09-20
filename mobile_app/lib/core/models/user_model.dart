@@ -43,7 +43,7 @@ class UserModel {
         parsedAge = int.tryParse(json['age']);
       }
     }
-    
+
     // Parse university_id - handle both string and null
     String? parsedUniversityId;
     if (json['university_id'] != null) {
@@ -52,22 +52,22 @@ class UserModel {
         parsedUniversityId = null;
       }
     }
-    
+
     print('📋 Parsing UserModel:');
     print('  - age: ${json['age']} (type: ${json['age']?.runtimeType}) -> parsed: $parsedAge');
     print('  - university_id: ${json['university_id']} (type: ${json['university_id']?.runtimeType}) -> parsed: $parsedUniversityId');
-    
+
     // Determine account status
-    String accountStatus = 'pending'; // قيد التفعيل
+    String accountStatus = 'pending';
     final isActive = json['is_active'] == true || json['is_active'] == 1 || json['is_active'] == '1';
     final reviewNotes = json['review_notes']?.toString();
-    
+
     if (isActive) {
-      accountStatus = 'active'; // مفعل
+      accountStatus = 'active';
     } else if (reviewNotes != null && reviewNotes.isNotEmpty && reviewNotes.trim().isNotEmpty) {
-      accountStatus = 'rejected'; // مرفوض
+      accountStatus = 'rejected';
     }
-    
+
     return UserModel(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
       name: json['name']?.toString() ?? '',

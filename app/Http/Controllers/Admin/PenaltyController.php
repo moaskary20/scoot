@@ -90,7 +90,6 @@ class PenaltyController extends Controller
 
         $penalty = $this->repository->create($data);
 
-        // ربط الغرامة بالرحلة إذا كانت موجودة
         if ($penalty->trip_id) {
             $trip = Trip::find($penalty->trip_id);
             if ($trip) {
@@ -143,7 +142,6 @@ class PenaltyController extends Controller
 
         $this->repository->update($penalty, $data);
 
-        // تحديث الرحلة المرتبطة
         if ($penalty->trip_id) {
             $trip = Trip::find($penalty->trip_id);
             if ($trip) {

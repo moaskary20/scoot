@@ -182,9 +182,9 @@
             <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google_maps.api_key', 'YOUR_API_KEY') }}"></script>
             <script>
                 function initScooterMap() {
-                    const position = { 
-                        lat: {{ $scooter->latitude }}, 
-                        lng: {{ $scooter->longitude }} 
+                    const position = {
+                        lat: {{ $scooter->latitude }},
+                        lng: {{ $scooter->longitude }}
                     };
 
                     const map = new google.maps.Map(document.getElementById('scooter-detail-map'), {
@@ -193,7 +193,6 @@
                         mapTypeId: 'roadmap',
                     });
 
-                    // تحديد لون العلامة حسب الحالة
                     let iconColor = '#10b981'; // emerald (available)
                     @if($scooter->status === 'rented')
                         iconColor = '#3b82f6'; // blue
@@ -250,11 +249,11 @@
             // Auto-update lock status every 3 seconds to sync with ESP32 updates
             let autoUpdateInterval;
             const scooterId = {{ $scooter->id }};
-            
+
             function updateLockStatus() {
                 // Only update if page is visible
                 if (document.hidden) return;
-                
+
                 fetch(`/admin/scooters/${scooterId}/lock-status`, {
                     method: 'GET',
                     headers: {
@@ -280,19 +279,19 @@
                     console.error('Error updating lock status:', error);
                 });
             }
-            
+
             function startAutoUpdate() {
                 // Update every 3 seconds
                 autoUpdateInterval = setInterval(updateLockStatus, 3000);
             }
-            
+
             // Start auto-update when page loads
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', startAutoUpdate);
             } else {
                 startAutoUpdate();
             }
-            
+
             // Stop auto-update when page is hidden
             document.addEventListener('visibilitychange', () => {
                 if (document.hidden) {
@@ -304,6 +303,4 @@
         </script>
     @endpush
 </x-app-layout>
-
-
 
